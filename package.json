@@ -1,0 +1,41 @@
+{
+  "name": "doit-skill",
+  "version": "1.0.0",
+  "description": "Spec-driven TDD workflow — a composable AI agent skill",
+  "main": "SKILL.md",
+  "keywords": [
+    "skill",
+    "claude-code",
+    "tdd",
+    "workflow",
+    "spec-driven",
+    "agentic"
+  ],
+  "author": "alice",
+  "license": "MIT",
+  "dependencies": {
+    "skills": {
+      "grill-me": "bundled",
+      "tdd": "bundled",
+      "diagnose": "bundled",
+      "prototype": "bundled",
+      "handoff": "bundled",
+      "improve-codebase-architecture": "bundled"
+    },
+    "optionalSkills": {
+      "code-review": "recommended",
+      "security-review": "recommended",
+      "verify": "recommended",
+      "caveman": "nice-to-have",
+      "find-skills": "nice-to-have",
+      "write-a-skill": "nice-to-have"
+    },
+    "tools": {
+      "rtk": "cargo install rtk",
+      "uv": "pip install uv",
+      "codegraph": "npx @anthropic/codegraph init",
+      "code-review-graph": "pip install code-review-graph",
+      "context-mode": "npx @anthropic/context-mode"
+    }
+  }
+}
