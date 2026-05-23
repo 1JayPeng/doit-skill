@@ -28,3 +28,12 @@ for spec-driven TDD workflows. When making changes to doit-skill:
 5. **Verify changes**:
    - Run `./scripts/install.sh --dry-run`
    - Install and test with `./scripts/install.sh`
+
+## Pre-commit Checks
+
+Before pushing changes:
+1. `./scripts/install.sh --dry-run`
+2. `./scripts/install.sh`
+3. `ls ~/.claude/skills/doit/`
+4. `ls ~/.claude/skills/grill-me/`
+5. `ls ~/.claude/skills/tdd/`
