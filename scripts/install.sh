@@ -21,12 +21,24 @@ echo "  doit-skill Installer"
 echo "=========================================="
 echo ""
 
-# Step 1: Copy doit skill
+# Step 1: Copy doit skill (exclude .git, .code-review-graph, .claude/skills)
 echo "[1/3] Installing doit skill..."
 if [ "$DRY_RUN" = false ]; then
-  mkdir -p "$SKILL_DIR"
-  cp -r "$(dirname "$0")/.." "$SKILL_DIR/doit"
-  echo "  ✅ doit installed to $SKILL_DIR/doit"
+  SKILL_SRC="$(cd "$(dirname "$0")/.." && pwd)"
+  SKILL_DST="$SKILL_DIR/doit"
+
+  # Remove existing installation
+  rm -rf "$SKILL_DST"
+
+  # Copy with exclusions
+  cp -rL "$SKILL_SRC" "$SKILL_DST"
+
+  # Remove excluded directories
+  rm -rf "$SKILL_DST/.git"
+  rm -rf "$SKILL_DST/.code-review-graph"
+  rm -rf "$SKILL_DST/.claude/skills"
+
+  echo "  ✅ doit installed to $SKILL_DST"
 fi
 
 # Step 2: Install bundled skills
