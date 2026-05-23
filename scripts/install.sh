@@ -44,6 +44,7 @@ done
 echo "[3/3] Checking external tools..."
 echo ""
 echo "  Optional tools (install as needed):"
+echo "    context-mode     npx @anthropic/context-mode"
 echo "    rtk              cargo install rtk"
 echo "    uv               pip install uv"
 echo "    codegraph        npx @anthropic/codegraph init"
