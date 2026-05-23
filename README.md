@@ -128,6 +128,7 @@ doit-pack uses a **bundled dependency model** — core skills ship inside `skill
 
 | Tool | Install | Used In |
 |------|---------|---------|
+| Context-Mode | `npx @anthropic/context-mode` | Phase 1-6 |
 | RTK | `cargo install rtk` | Phase 3 |
 | uv | `pip install uv` | Phase 3 |
 | codegraph | `npx @anthropic/codegraph init` | Phase 2, 3 |
