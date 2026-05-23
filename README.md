@@ -18,14 +18,32 @@ Spec-driven, TDD-based development workflow for [Claude&nbsp;Code](https://githu
 
 ## Install
 
+### From GitHub
+
 ```bash
-# From GitHub (replace with your repo)
-npx skills add your-username/doit-skill
+# Clone and install
+git clone https://github.com/1JayPeng/doit-skill.git
+cd doit-skill
+./scripts/install.sh
 
-# Or local test
-npx skills add ./path/to/doit-skill
+# Verify installation
+ls ~/.claude/skills/doit/
+ls ~/.claude/skills/grill-me/
+ls ~/.claude/skills/tdd/
+```
 
-# Or install with all bundled dependencies
+### Dry Run
+
+```bash
+# See what would be installed
+./scripts/install.sh --dry-run
+```
+
+### Update
+
+```bash
+# Pull latest changes
+git pull
 ./scripts/install.sh
 ```
 
