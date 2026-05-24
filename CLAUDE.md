@@ -31,10 +31,11 @@ for spec-driven TDD workflows. When making changes to doit-skill:
    - Run `./scripts/install.sh --dry-run`
    - Install and test with `./scripts/install.sh`
 
-## Commit Message Convention
+## Commit Message Convention (for this repo)
 
-**Mandatory** — every commit follows this format. Read `git log --oneline -10`
-before writing a commit to match existing style.
+This repo's style is documented here for developer reference. The actual
+commit-style detection and CLAUDE.md writing is done by the skill's
+Phase 8 (`shared/commit.md`) when run in any user project.
 
 ```
 <type>: <short description>
@@ -51,24 +52,15 @@ Co-Authored-By: Claude Opus 4.7 <noreply@anthropic.com>
 | `test` | Test changes only |
 | `chore` | Build, CI, dependencies, tooling |
 
-**Rules:**
-- Lowercase subject, imperative present tense, no trailing period
-- Body (optional): WHY not HOW
-- Multiple changes in one commit: separate with ` + `
-- Always append `Co-Authored-By: Claude Opus 4.7 <noreply@anthropic.com>`
-
-**Examples from this repo:**
+**Examples:**
 - `fix: doctor.sh syntax error + install scripts preserve symlinks`
 - `feat: Phase -1 environment detection, writes to CLAUDE.md`
-- `docs: reorganize Install section - each method has its own update path`
 
-## Phase 8 — Commit + Push Workflow
+## Phase 8 — Commit + Push (for this repo)
 
-1. Check `git status` and `git log --oneline -10 origin/master`
-2. Stage only feature-related files (never `git add .`)
-3. Write commit message matching convention above
-4. **Ask user: push to remote? which branch?**
-5. If no response: create new branch (`feat/...` or `fix/...`) and push
+When developing doit-skill locally, follow the same workflow the skill
+enforces for user projects: check git status, learn commit style,
+commit, and push to remote branch.
 
 ## Pre-commit Checks
 
