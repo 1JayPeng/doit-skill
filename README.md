@@ -18,7 +18,23 @@ Spec-driven, TDD-based development workflow for [Claude&nbsp;Code](https://githu
 
 ## Install
 
-### Via npx (recommended)
+### One-Line Installer (recommended)
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/1JayPeng/doit-skill/main/scripts/setup.sh | bash
+```
+
+Installs doit-skill plus all dependencies (required + optional) automatically. Checks for existing installations.
+
+```bash
+# Skip optional skills and external tools
+curl -fsSL https://raw.githubusercontent.com/1JayPeng/doit-skill/main/scripts/setup.sh | bash -s -- --skip-optional
+
+# Dry run (show what would be installed)
+curl -fsSL https://raw.githubusercontent.com/1JayPeng/doit-skill/main/scripts/setup.sh | bash -s -- --dry-run
+```
+
+### Via npx
 
 ```bash
 npx skills add 1JayPeng/doit-skill
