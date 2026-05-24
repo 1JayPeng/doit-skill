@@ -198,9 +198,9 @@ See [e2e.md](e2e.md) for details.
 
 ## Dependencies
 
-doit-pack uses a **bundled dependency model** — core skills ship inside `skills/`. Optional skills and external tools require separate installation.
+doit uses a **bundled dependency model** — core skills ship inside `skills/`. Optional skills and external tools require separate installation.
 
-### Bundled Skills (ship with doit-pack)
+### Bundled Skills (ship with doit)
 
 | Skill | Purpose | Used In |
 |-------|---------|---------|

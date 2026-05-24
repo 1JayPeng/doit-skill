@@ -80,7 +80,11 @@ TEMP_DIR=$(mktemp -d)
 DOIT_DIR="$TEMP_DIR/doit-skill"
 
 echo_info "Cloning doit-skill repository..."
-git clone --depth 1 "$REPO_URL" "$DOIT_DIR" >/dev/null 2>&1
+if ! git clone --depth 1 "$REPO_URL" "$DOIT_DIR" 2>/dev/null; then
+  echo_error "Failed to clone repository: $REPO_URL"
+  echo_error "Check your network connection, or try again later."
+  exit 1
+fi
 echo_success "Repository cloned to $DOIT_DIR"
 
 # Step 1: Install required skills
