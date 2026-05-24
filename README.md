@@ -27,9 +27,7 @@ cd doit-skill
 ./scripts/install.sh
 
 # Verify installation
-ls ~/.claude/skills/doit/
-ls ~/.claude/skills/grill-me/
-ls ~/.claude/skills/tdd/
+./scripts/doctor.sh
 ```
 
 ### Dry Run
@@ -45,6 +43,22 @@ ls ~/.claude/skills/tdd/
 # Pull latest changes
 git pull
 ./scripts/install.sh
+./scripts/doctor.sh
+```
+
+### Doctor
+
+```bash
+# Check all dependencies
+./scripts/doctor.sh
+
+# Output example:
+# ✅ doit skill installed
+# ✅ Core files present
+# ✅ grill-me installed
+# ✅ tdd installed
+# ℹ️  context-mode not installed (recommended)
+# 💡 Install: npx @anthropic/context-mode
 ```
 
 ## Usage
