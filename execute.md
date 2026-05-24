@@ -31,12 +31,12 @@
 
 ### CONTEXT (before RED)
 Before writing tests, understand the code you'll modify:
-1. `codegraph_context` — get focused context for the REQ task (start here)
-   - **Fallback:** If CodeGraph unavailable -> `Agent Explore` with task description
-2. `codegraph_search` — if you need a specific symbol name
-   - **Fallback:** If CodeGraph unavailable -> `grep -rn` + `find`
-3. `codegraph_node` — if you need a function signature from tests
-   - **Fallback:** If CodeGraph unavailable -> `Read` the specific file
+1. `tokensave_context` — get focused context for the REQ task (start here)
+   - **Fallback:** If TokenSave unavailable -> `Agent Explore` with task description
+2. `tokensave_search` — if you need a specific symbol name
+   - **Fallback:** If TokenSave unavailable -> `grep -rn` + `find`
+3. `tokensave_node` — if you need a function signature from tests
+   - **Fallback:** If TokenSave unavailable -> `Read` the specific file
 4. `ctx_search` — look up previously indexed information from this session
    - **Fallback:** If Context-Mode unavailable -> `grep` command output
 

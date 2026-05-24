@@ -8,32 +8,23 @@
 
 ### Step 1: Code Graph Scan
 
-Use **CodeGraph** for symbol-level exploration (fast, AST-accurate):
-1. `codegraph_context` — get focused context for the feature/task (PRIMARY)
-2. `codegraph_search` — find specific symbols by name from spec
-3. `codegraph_impact` — analyze impact radius of specific symbols
-4. `codegraph_files` — understand project file structure
+Use **TokenSave** for code intelligence (discovery + call graph + code quality):
+1. `tokensave_context` — get focused context for the feature/task (PRIMARY)
+2. `tokensave_search` — find specific symbols by name from spec
+3. `tokensave_impact` — analyze impact radius of specific symbols
+4. `tokensave_files` — understand project file structure
+5. `tokensave_coupling` — fan-in/fan-out analysis for module dependencies
+6. `tokensave_health` — composite quality signal, identifies structural risks
 
-- **Fallback:** If CodeGraph not installed -> use `Agent Explore` for codebase exploration. Same structural search, slightly slower.
+- **Fallback:** If TokenSave not installed -> use `Agent Explore` for codebase exploration.
 
-Use **Code-Review-Graph** for community/architecture analysis:
-1. `list_graph_stats` — verify graph built
-2. `list_communities` — see which communities to touch
-3. `get_impact_radius` — understand blast radius of affected modules
+**TokenSave additional tools for deeper analysis:**
+- `tokensave_callers` / `tokensave_callees` — who calls what, what does this call
+- `tokensave_hotspots` — most connected symbols (highest call count)
+- `tokensave_diff_context` — semantic context for changed files
+- `tokensave_dsm` — design structure matrix, reveals hidden coupling
 
-- **Fallback:** If Code-Review-Graph not installed -> skip community analysis. Rely on CodeGraph alone for impact assessment. Announce `[WARN] code-review-graph unavailable, skipping community-level analysis`.
-
-Use **Context-Mode** for codebase exploration:
-1. `ctx_batch_execute` — run multiple commands, auto-index output, search with queries (one call replaces many)
-2. `ctx_execute_file` — process large files without loading into context (files >20 lines)
-3. `ctx_fetch_and_index` — fetch and index external documentation/URLs for research
-
-- **Fallback:** If Context-Mode not installed ->
-  - `ctx_batch_execute` -> `Agent Explore` + native `grep`/`find`
-  - `ctx_execute_file` -> `Read` tool (loads file into context, uses more tokens)
-  - `ctx_fetch_and_index` -> `WebFetch` (no indexing, no follow-up search)
-
-**Rule:** `ctx_execute_file` for analysis, `Read` for files you'll Edit. Keep raw data in sandbox.
+**Rule:** `tokensave_context` first, then narrow with `tokensave_search`/`tokensave_impact`.
 
 Tool selection guidance lives in global CLAUDE.md.
 

@@ -7,7 +7,7 @@ set -e
 SKILL_DIR="$HOME/.claude/skills"
 BUNDLED_SKILLS=("grill-me" "tdd" "diagnose" "prototype" "handoff" "improve-codebase-architecture")
 BUILTIN_SKILLS=("code-review" "security-review" "verify" "caveman" "find-skills" "write-a-skill")
-EXTERNAL_TOOLS=("context-mode" "rtk" "uv" "codegraph" "code-review-graph" "tavily")
+EXTERNAL_TOOLS=("context-mode" "rtk" "uv" "tokensave" "tavily")
 SHARED_FILES=("shared/review-simplify.md" "shared/e2e-verify.md" "shared/commit.md")
 SYMLINK_TARGETS=("review-simplify.md:shared/review-simplify.md" "commit.md:shared/commit.md")
 
@@ -117,20 +117,12 @@ for tool in "${EXTERNAL_TOOLS[@]}"; do
                 echo "  💡 Install: pip install uv"
             fi
             ;;
-        "codegraph")
-            if command -v codegraph >/dev/null 2>&1; then
-                echo "  ✅ codegraph installed"
+        "tokensave")
+            if command -v tokensave >/dev/null 2>&1; then
+                echo "  ✅ tokensave installed"
             else
-                echo "  ℹ️  codegraph not installed (recommended)"
-                echo "  💡 Install: curl -fsSL https://raw.githubusercontent.com/colbymchenry/codegraph/main/install.sh | sh"
-            fi
-            ;;
-        "code-review-graph")
-            if command -v code-review-graph >/dev/null 2>&1; then
-                echo "  ✅ code-review-graph installed"
-            else
-                echo "  ℹ️  code-review-graph not installed (optional)"
-                echo "  💡 Install: uv tool install code-review-graph && uvx code-review-graph install --platform claude-code"
+                echo "  ℹ️  tokensave not installed (recommended)"
+                echo "  💡 Install: cargo install tokensave && tokensave install --agent claude"
             fi
             ;;
         "tavily")

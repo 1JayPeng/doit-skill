@@ -90,7 +90,7 @@ for skill in doit grill-me tdd diagnose prototype handoff improve-codebase-archi
 done
 
 # External tools
-for tool in rtk uv codegraph code-review-graph; do
+for tool in rtk uv tokensave; do
   if command -v "$tool" >/dev/null 2>&1; then
     echo "  [OK]   $tool ($(command -v $tool))"
   else
@@ -118,8 +118,8 @@ fi
 ```
 [WARN] context-mode NOT available -> Phase 2/3 will use Agent Explore + native grep (slower)
 [WARN] tavily NOT configured -> Phase 1 will use WebSearch (built-in) for internet research
-[WARN] codegraph NOT installed -> Phase 2/3 will use Agent Explore for symbol search
-[WARN] code-review-graph NOT installed -> Phase 2 will skip community analysis
+[WARN] tokensave NOT installed -> Phase 2/3 will use Agent Explore for symbol search
+[WARN] tokensave NOT installed -> Phase 2/3 will use Agent Explore for codebase intelligence
 [WARN] rtk NOT installed -> shell commands run without token optimization
 [WARN] uv NOT installed -> Python commands will use pip instead of uv
 ```

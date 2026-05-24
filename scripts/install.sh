@@ -21,7 +21,7 @@ echo "  doit-skill Installer"
 echo "=========================================="
 echo ""
 
-# Step 1: Copy doit skill (exclude .git, .code-review-graph, .claude/skills)
+# Step 1: Copy doit skill (exclude .git, .tokensave, .claude/skills)
 echo "[1/3] Installing doit skill..."
 if [ "$DRY_RUN" = false ]; then
   SKILL_SRC="$(cd "$(dirname "$0")/.." && pwd)"
@@ -35,7 +35,7 @@ if [ "$DRY_RUN" = false ]; then
 
   # Remove excluded directories
   rm -rf "$SKILL_DST/.git"
-  rm -rf "$SKILL_DST/.code-review-graph"
+  rm -rf "$SKILL_DST/.tokensave"
   rm -rf "$SKILL_DST/.claude/skills"
 
   echo "  ✅ doit installed to $SKILL_DST"
@@ -66,8 +66,7 @@ echo "  Optional tools (install as needed):"
 echo "    context-mode     npx @anthropic/context-mode"
 echo "    rtk              cargo install rtk"
 echo "    uv               pip install uv"
-echo "    codegraph        npx @anthropic/codegraph init"
-echo "    code-review-graph pip install code-review-graph"
+echo "    tokensave        cargo install tokensave"
 echo ""
 echo "=========================================="
 echo "  ✅ Installation complete!"

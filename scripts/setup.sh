@@ -66,8 +66,7 @@ if [ "$DRY_RUN" = true ]; then
     echo "    • context-mode     (/plugin marketplace add mksglu/context-mode)"
     echo "    • rtk              (curl install script)"
     echo "    • uv               (pip install uv)"
-    echo "    • codegraph        (curl install script)"
-    echo "    • code-review-graph (uv tool install code-review-graph)"
+    echo "    • tokensave        (cargo install tokensave)"
   fi
   echo ""
   echo "=========================================="
@@ -99,12 +98,12 @@ if [ -d "$DOIT_DST" ]; then
   echo_success "doit already installed at $DOIT_DST"
 else
   mkdir -p "$SKILL_DIR"
-  # Use rsync to preserve symlinks, or cp -r as fallback
+  # Use rsync to preserve symlinks, or cp -a as fallback
   if command -v rsync >/dev/null 2>&1; then
-    rsync -a --exclude='.git' --exclude='.code-review-graph' --exclude='.claude/skills' "$DOIT_DIR/" "$DOIT_DST/"
+    rsync -a --exclude='.git' --exclude='.tokensave' --exclude='.claude/skills' "$DOIT_DIR/" "$DOIT_DST/"
   else
     cp -a "$DOIT_DIR" "$DOIT_DST"
-    rm -rf "$DOIT_DST/.git" "$DOIT_DST/.code-review-graph" "$DOIT_DST/.claude/skills"
+    rm -rf "$DOIT_DST/.git" "$DOIT_DST/.tokensave" "$DOIT_DST/.claude/skills"
   fi
   echo_success "doit installed"
 fi
@@ -209,27 +208,19 @@ else
     pip install uv 2>/dev/null || pip3 install uv 2>/dev/null || echo_warn "Failed to install uv"
   fi
 
-  # CodeGraph
-  if command -v codegraph >/dev/null 2>&1; then
-    echo_success "codegraph already installed"
+  # TokenSave
+  if command -v tokensave >/dev/null 2>&1; then
+    echo_success "tokensave already installed"
   else
-    echo_info "Installing codegraph..."
-    curl -fsSL https://raw.githubusercontent.com/colbymchenry/codegraph/main/install.sh 2>/dev/null | sh 2>/dev/null || echo_warn "Failed to install codegraph"
-  fi
-
-  # Code-Review-Graph
-  if command -v code-review-graph >/dev/null 2>&1; then
-    echo_success "code-review-graph already installed"
-  else
-    echo_info "Installing code-review-graph..."
-    if command -v uv >/dev/null 2>&1; then
-      uv tool install code-review-graph 2>/dev/null || echo_warn "Failed to install code-review-graph via uv"
+    echo_info "Installing tokensave..."
+    if command -v cargo >/dev/null 2>&1; then
+      cargo install tokensave 2>/dev/null || echo_warn "Failed to install tokensave via cargo"
+      if command -v tokensave >/dev/null 2>&1; then
+        echo_info "Configuring tokensave for Claude Code..."
+        tokensave install --agent claude 2>/dev/null || true
+      fi
     else
-      pip install code-review-graph 2>/dev/null || pip3 install code-review-graph 2>/dev/null || echo_warn "Failed to install code-review-graph via pip"
-    fi
-    if command -v code-review-graph >/dev/null 2>&1; then
-      echo_info "Configuring code-review-graph for Claude Code..."
-      uvx code-review-graph install --platform claude-code 2>/dev/null || true
+      echo_warn "cargo not found — tokensave requires Rust. Install via: cargo install tokensave"
     fi
   fi
 fi

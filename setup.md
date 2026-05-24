@@ -19,38 +19,22 @@ rtk --version       # should show rtk X.Y.Z
 rtk gain            # should work
 ```
 
-### Code-Review-Graph
-MCP server for code knowledge graph + impact analysis. Community/architecture level. [GitHub](https://github.com/tirth8205/code-review-graph)
+### TokenSave
+MCP server for code intelligence. 40+ tools, 30+ languages. Pre-indexed semantic knowledge graphs for instant code understanding. [GitHub](https://github.com/aovestdipaperino/tokensave)
 
 ```bash
 # Install
-uv tool install code-review-graph
+cargo install tokensave
 
 # Configure for Claude Code
-uvx code-review-graph install --platform claude-code
-
-# Build index for current project
-uvx code-review-graph build
-
-# Verify
-code-review-graph status
-```
-
-### CodeGraph
-MCP server for symbol-level code intelligence. Fast symbol lookup, caller/callee analysis. [GitHub](https://github.com/colbymchenry/codegraph)
-
-```bash
-# Install
-curl -fsSL https://raw.githubusercontent.com/colbymchenry/codegraph/main/install.sh | sh
+tokensave install --agent claude
 
 # Initialize in project
-codegraph init -i
+tokensave init
 
 # Verify
-codegraph status
+tokensave status
 ```
-
-**Tool selection guidance lives in global CLAUDE.md, not here.**
 
 ## Context-Mode Plugin
 
@@ -115,8 +99,7 @@ doit-pack uses a **bundled dependency model**. Core skills ship inside `skills/`
 |------|---------|---------|
 | RTK | `curl -fsSL https://raw.githubusercontent.com/rtk-ai/rtk/refs/heads/master/install.sh | sh` | Phase 3 |
 | uv | `pip install uv` | Phase 3 |
-| codegraph | `curl -fsSL https://raw.githubusercontent.com/colbymchenry/codegraph/main/install.sh | sh` | Phase 2, 3 |
-| code-review-graph | `uv tool install code-review-graph && uvx code-review-graph install --platform claude-code` | Phase 2 |
+| TokenSave | `cargo install tokensave && tokensave install --agent claude` | Phase 2, 3 |
 | Context-Mode | `/plugin marketplace add mksglu/context-mode` | Phase 1-6 |
 | Tavily MCP | Remote, API key only | Phase 1 |
 
@@ -165,25 +148,4 @@ doit-pack uses a **bundled dependency model**. Core skills ship inside `skills/`
 
 ### Project (~/.claude/settings.json in repo)
 
-```jsonc
-{
-  "hooks": {
-    "PostToolUse": [{
-      "matcher": "Edit|Write|Bash",
-      "hooks": [{
-        "type": "command",
-        "command": "git rev-parse --git-dir >/dev/null 2>&1 && code-review-graph update --skip-flows --repo \"/path/to/repo\" || true",
-        "timeout": 30
-      }]
-    }],
-    "SessionStart": [{
-      "matcher": "",
-      "hooks": [{
-        "type": "command",
-        "command": "git rev-parse --git-dir >/dev/null 2>&1 && code-review-graph status --repo \"/path/to/repo\" || echo 'Not a git repo, skipping'",
-        "timeout": 10
-      }]
-    }]
-  }
-}
-```
+TokenSave auto-indexes after edits — no PostToolUse hook needed.

@@ -45,7 +45,7 @@ npx skills add ./path/to/doit-skill
 | -1 | 检测项目环境 | 内置 |
 | 0 | 需求分类（S/F/B） | 内置 |
 | 1 | 规格生成 + Grill | Tavily MCP, grill-me |
-| 2 | 代码图谱规划 | code-review-graph |
+| 2 | 代码图谱规划 | tokensave |
 | 3 | TDD 执行 | RTK, uv, pytest |
 | 4 | 端到端测试（不可跳过） | 真实环境, HITL |
 | 5 | 代码审查 + 合并 | code-review, security-review |
@@ -110,7 +110,7 @@ npx skills add ./path/to/doit-skill
 | 工具 | 安装 |
 |------|------|
 | RTK | `cargo install rtk` |
-| code-review-graph | `uvx code-review-graph` |
+| tokensave | `cargo install tokensave` |
 | Tavily MCP | 远程服务，无需安装 |
 
 完整安装清单见 [setup.md](setup.md)。

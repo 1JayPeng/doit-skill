@@ -147,7 +147,7 @@ A single `/doit` invocation may not complete the entire workflow — spec grilli
 | -1 | Detect project environment | Built-in |
 | 0 | Classify request (S/F/B) | Built-in |
 | 1 | Spec generation + grill | Tavily MCP, grill-me |
-| 2 | Plan with code graph | code-review-graph, codegraph |
+| 2 | Plan with code graph | tokensave |
 | 3 | Execute TDD + Review+Simplify | RTK, uv, pytest |
 | 4 | E2E tests (mandatory) | Real env, HITL |
 | 5 | Review + merge dupes | code-review, security-review |
@@ -233,8 +233,7 @@ doit uses a **bundled dependency model** — core skills ship inside `skills/`. 
 | Context-Mode | `/plugin marketplace add mksglu/context-mode` | Phase 1-6 |
 | RTK | `curl -fsSL https://raw.githubusercontent.com/rtk-ai/rtk/refs/heads/master/install.sh | sh` | Phase 3 |
 | uv | `pip install uv` | Phase 3 |
-| codegraph | `curl -fsSL https://raw.githubusercontent.com/colbymchenry/codegraph/main/install.sh | sh` | Phase 2, 3 |
-| code-review-graph | `uv tool install code-review-graph && uvx code-review-graph install --platform claude-code` | Phase 2 |
+| tokensave | `cargo install tokensave && tokensave install --agent claude` | Phase 2, 3 |
 | Tavily MCP | Remote, API key only | Phase 1 |
 
 ## Structure

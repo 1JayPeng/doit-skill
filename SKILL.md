@@ -42,11 +42,11 @@ Write spec. See [spec.md](spec.md). Grill user ideas ruthlessly. Internet search
 
 ## Phase 2 — Plan
 
-Check code-review-graph AND codegraph. Map impact at community and symbol level. Produce implementation order. See [plan.md](plan.md).
+Check TokenSave code graph. Map impact at symbol and coupling level. Produce implementation order. See [plan.md](plan.md).
 
 ## Phase 3 — Execute
 
-TDD loop per acceptance criteria. See [execute.md](execute.md). Start each REQ with codegraph_context for code understanding. RTK for all shell commands. uv for Python. Context-Mode for context management. Interactive spec alignment after each TDD cycle. Per-REQ review+simplify built in. Full e2e happens after Phase 6.
+TDD loop per acceptance criteria. See [execute.md](execute.md). Start each REQ with tokensave_context for code understanding. RTK for all shell commands. uv for Python. Context-Mode for context management. Interactive spec alignment after each TDD cycle. Per-REQ review+simplify built in. Full e2e happens after Phase 6.
 
 ## Phase 4 — E2E (initial)
 
