@@ -62,7 +62,7 @@ Review what you wrote. Find duplicates, over-engineering, missed README updates.
 
 ## Phase 7 — E2E Verification Loop
 
-Re-run e2e tests after Review + Simplify. Compare actual output against spec REQs (not just test assertions). If mismatch → fix code to match spec, not test to match code. Loop until e2e passes AND output matches spec. See [e2e.md](e2e.md) § E2E Verification Loop.
+Re-run e2e tests after Review + Simplify. Compare actual output against spec REQs (not just test assertions). If mismatch → fix code to match spec, not test to match code. Loop until e2e passes AND output matches spec. See [shared/e2e-verify.md](shared/e2e-verify.md).
 
 ## Phase 8 — Commit
 

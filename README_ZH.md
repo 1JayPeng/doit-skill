@@ -126,11 +126,15 @@ doit-skill/
 ├── plan.md           # 阶段 2: 代码图谱扫描
 ├── debug.md          # 调试工作流 D0-D6 (类型 B)
 ├── execute.md        # 阶段 3: TDD 循环
-├── e2e.md            # 阶段 4: 端到端测试, 阶段 7: E2E 验证循环
+├── e2e.md            # 阶段 4: 端到端测试 (P7 循环在 shared/e2e-verify.md)
 ├── review.md         # 阶段 5: 代码审查
-├── review-simplify.md # 阶段 6: 审视 + 简化
-├── commit.md         # 阶段 8: Git 提交
+├── review-simplify.md -> shared/   # 阶段 6: 审视 + 简化（共享）
+├── commit.md -> shared/            # 阶段 8: Git 提交（共享）
 ├── errors.md         # 失败处理
+├── shared/           # 单一真相源：Feature 和 Debug 共享的阶段
+│   ├── review-simplify.md   # 审视+简化 (Feature P6, Debug D4)
+│   ├── e2e-verify.md        # E2E 验证循环 (Feature P7, Debug D5)
+│   └── commit.md            # Git 提交 (Feature P8, Debug D6)
 ├── setup.md          # 安装清单
 ├── package.json      # 包元数据
 ├── README.md         # 英文版

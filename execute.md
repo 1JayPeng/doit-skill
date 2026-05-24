@@ -54,21 +54,15 @@ After RED→GREEN→REFACTOR completes, **before moving to next REQ**:
 
 **Do not skip this.** Do not move to next REQ without reviewing current changes.
 
-**Full Phase 6 review-simplify runs after Phase 5.**
+**Full Phase 6 review-simplify runs after Phase 5.** Shared source: [shared/review-simplify.md](shared/review-simplify.md)
 
-**Full Phase 4 e2e + Phase 7 e2e verification runs after Phase 6.**
+**Full Phase 4 e2e + Phase 7 e2e verification runs after Phase 6.** Shared source: [shared/e2e-verify.md](shared/e2e-verify.md)
 
 ### Test Execution
-</think>
-
-<tool_call>
-<function=Read>
 
 Use `ctx_execute` for running tests — output auto-indexed for search:
 - `ctx_execute` — run test commands, search results with `ctx_search`
 - `ctx_batch_execute` — run multiple test commands, search all output together
-
-**Full Phase 6 review-simplify runs after Phase 5.**
 
 ### Spec Alignment Check (Interactive)
 

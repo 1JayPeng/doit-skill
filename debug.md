@@ -56,22 +56,27 @@ PASS: test_xxx_regression
 
 **Spec alignment check**: compare actual output against the expected behavior described in the bug report. Fix works = output matches what it should have been.
 
+<!-- D4: Shared phase. Single source of truth: shared/review-simplify.md -->
 ## D4 — Review + Simplify
 
-**Run Phase 6 review-simplify.** Fix introduces code — check for:
+**Shared phase. See [review-simplify.md](shared/review-simplify.md).** (This is the same file as feature flow's Phase 6.)
+
+Check specifically for bugs:
 - Is the fix the simplest possible solution?
 - Does it duplicate error handling that exists elsewhere?
 - Did you fix the symptom instead of the root cause?
 
+<!-- D5: Shared phase. Single source of truth: shared/e2e-verify.md -->
 ## D5 — E2E Verification Loop
 
-**Same as feature flow Phase 7.** Re-run all e2e tests. Compare output against what the user reported should happen. If simplify broke the fix → revert simplify change, re-run e2e.
+**Shared phase. See [shared/e2e-verify.md](shared/e2e-verify.md).** (This is the same file as feature flow's Phase 7.)
 
-See [e2e.md](e2e.md) § E2E Verification Loop.
+Spec alignment check compares actual output against the bug report — what the user reported should happen.
 
+<!-- D6: Shared phase. Single source of truth: shared/commit.md -->
 ## D6 — Commit
 
-**Same as feature flow Phase 8.**
+**Shared phase. See [commit.md](shared/commit.md).** (This is the same file as feature flow's Phase 8.)
 
 Commit message format: `fix: <what was broken>`
 

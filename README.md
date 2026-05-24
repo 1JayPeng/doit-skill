@@ -248,11 +248,15 @@ doit-skill/
 ├── plan.md           # Phase 2: code graph scan
 ├── debug.md          # Debug workflow D0-D6 (Type B)
 ├── execute.md        # Phase 3: TDD loop + Review+Simplify
-├── e2e.md            # Phase 4: end-to-end testing, Phase 7: E2E verification loop
+├── e2e.md            # Phase 4: end-to-end testing (P7 loop in shared/e2e-verify.md)
 ├── review.md         # Phase 5: code review
-├── review-simplify.md # Phase 6: review + simplify
-├── commit.md         # Phase 8: git commit
+├── review-simplify.md -> shared/review-simplify.md # Phase 6: review + simplify
+├── commit.md -> shared/commit.md        # Phase 8: git commit (shared with debug D6)
 ├── errors.md         # Failure handling
+├── shared/           # Single source of truth for shared phases
+│   ├── review-simplify.md   # Review+Simplify (used by Feature P6, Debug D4)
+│   ├── e2e-verify.md        # E2E Verification Loop (used by Feature P7, Debug D5)
+│   └── commit.md            # Commit (used by Feature P8, Debug D6)
 ├── setup.md          # Install manifest
 ├── package.json      # Package metadata + dependencies
 ├── README.md         # This file (English)
