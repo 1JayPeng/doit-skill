@@ -6,14 +6,16 @@ Raw user request (natural language, any length).
 
 ## Process
 
-### Step 1: Internet Brainstorm (Tavily MCP)
+### Step 1: Internet Brainstorm
 
-**Before grilling, search the web for relevant context.** Use Tavily MCP remote server:
+**Before grilling, search the web for relevant context.**
 
-```bash
-# The Tavily MCP server connects to:
-# https://mcp.tavily.com/mcp/?tavilyApiKey=<user-api-key>
-```
+- **Primary:** Use Tavily MCP remote server:
+  ```bash
+  # The Tavily MCP server connects to:
+  # https://mcp.tavily.com/mcp/?tavilyApiKey=<user-api-key>
+  ```
+- **Fallback:** If Tavily MCP not configured -> use built-in `WebSearch` tool. Same search, slightly slower.
 
 Search for:
 - Existing solutions, libraries, or patterns for the requested feature

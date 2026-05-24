@@ -73,7 +73,60 @@ If `CLAUDE.md` exists but doesn't mention environment, add an `## Environment` s
 
 If `CLAUDE.md` doesn't exist at the project root, create one with just the environment section.
 
-### 5. Cannot Determine Environment
+### 5. Check External Tool Availability
+
+Run this detection script to verify all doit-skill external tools are available:
+
+```bash
+echo "=== Tool Availability ==="
+
+# Skill tools
+for skill in doit grill-me tdd diagnose prototype handoff improve-codebase-architecture; do
+  if [ -d "$HOME/.claude/skills/$skill" ]; then
+    echo "  [OK]   $skill (skill)"
+  else
+    echo "  [MISS] $skill (skill)"
+  fi
+done
+
+# External tools
+for tool in rtk uv codegraph code-review-graph; do
+  if command -v "$tool" >/dev/null 2>&1; then
+    echo "  [OK]   $tool ($(command -v $tool))"
+  else
+    echo "  [MISS] $tool"
+  fi
+done
+
+# Context-Mode plugin
+if [ -d "$HOME/.claude/plugins" ] && grep -rl "context-mode" "$HOME/.claude/plugins/" >/dev/null 2>&1; then
+  echo "  [OK]   context-mode (plugin)"
+else
+  echo "  [MISS] context-mode (plugin)"
+fi
+
+# Tavily MCP
+if grep -rl "tavily" "$HOME/.claude/settings.json" "$HOME/.claude/plugins/" "$HOME/.mcp.json" 2>/dev/null; then
+  echo "  [OK]   tavily (MCP)"
+else
+  echo "  [MISS] tavily (MCP — needs API key)"
+fi
+```
+
+**If tools are missing, announce warnings — do not block the workflow:**
+
+```
+[WARN] context-mode NOT available -> Phase 2/3 will use Agent Explore + native grep (slower)
+[WARN] tavily NOT configured -> Phase 1 will use WebSearch (built-in) for internet research
+[WARN] codegraph NOT installed -> Phase 2/3 will use Agent Explore for symbol search
+[WARN] code-review-graph NOT installed -> Phase 2 will skip community analysis
+[WARN] rtk NOT installed -> shell commands run without token optimization
+[WARN] uv NOT installed -> Python commands will use pip instead of uv
+```
+
+Missing tools trigger fallback paths in each phase (see each phase's fallback instructions).
+
+### 6. Cannot Determine Environment
 
 **If detection finds nothing, or multiple conflicting signals:** stop and ask the user.
 
@@ -92,7 +145,7 @@ Which environment should I use for this project?
 
 **Wait for user input. Do not guess.**
 
-### 6. Announce Detected Environment
+### 7. Announce Detected Environment
 
 ```
 [ENV] Python 3.12 via uv (.venv)

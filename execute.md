@@ -3,16 +3,23 @@
 ## Rules
 
 - **uv virtualenv for all Python code.** Create/activate with `uv venv` + `source .venv/bin/activate`. Every Python command runs through uv.
+  - **Fallback:** If uv not available -> use `pip` + `python3 -m venv .venv` + `source .venv/bin/activate`.
 - **RTK for all shell commands.** RTK auto-wraps via PreToolUse hook. Use `rtk` prefix for manual calls.
   - `rtk gain` — token savings analytics
   - `rtk gain --history` — command history with savings
   - `rtk discover` — missed optimization opportunities
   - `rtk proxy <cmd>` — bypass RTK filter (debug only)
+  - **Fallback:** If RTK not available -> run Bash commands directly (no token optimization).
 - **Context-Mode for context management.** Auto-indexes command output, provides semantic search.
   - `ctx_execute` — run commands, output auto-indexed
   - `ctx_execute_file` — process large files without loading into context
   - `ctx_search` — search previously indexed content
   - `ctx_batch_execute` — run multiple commands, search results together
+  - **Fallback:** If Context-Mode not installed ->
+    - `ctx_execute` -> native Bash tool (output not indexed)
+    - `ctx_execute_file` -> `Read` tool (loads file into context)
+    - `ctx_search` -> `grep`/`find` with `Agent Explore`
+    - `ctx_batch_execute` -> parallel Bash calls + `Agent Explore`
 - **Vertical slice TDD.** One REQ at a time. RED -> GREEN -> REFACTOR. No horizontal slicing.
 - **Logging rules:**
   - Entry function: log inputs
@@ -25,9 +32,13 @@
 ### CONTEXT (before RED)
 Before writing tests, understand the code you'll modify:
 1. `codegraph_context` — get focused context for the REQ task (start here)
+   - **Fallback:** If CodeGraph unavailable -> `Agent Explore` with task description
 2. `codegraph_search` — if you need a specific symbol name
+   - **Fallback:** If CodeGraph unavailable -> `grep -rn` + `find`
 3. `codegraph_node` — if you need a function signature from tests
+   - **Fallback:** If CodeGraph unavailable -> `Read` the specific file
 4. `ctx_search` — look up previously indexed information from this session
+   - **Fallback:** If Context-Mode unavailable -> `grep` command output
 
 ### RED
 Write test for REQ-N behavior. Test through public interface, not internals.
@@ -46,7 +57,7 @@ PASS: test_xxx for REQ-00X
 Merge duplicate code with existing code. Minimal change. No architectural restructuring (that's Phase 5).
 
 ### REVIEW + SIMPLIFY (MANDATORY after each REQ)
-After RED→GREEN→REFACTOR completes, **before moving to next REQ**:
+After RED->GREEN->REFACTOR completes, **before moving to next REQ**:
 1. **Read what you wrote** — read the full context of changes, not just the diff
 2. **Simplify** — remove dead imports, flatten unnecessary abstractions, combine redundant loops
 3. **Check documentation** — does README/CLAUDE.md need updating?
@@ -63,6 +74,7 @@ After RED→GREEN→REFACTOR completes, **before moving to next REQ**:
 Use `ctx_execute` for running tests — output auto-indexed for search:
 - `ctx_execute` — run test commands, search results with `ctx_search`
 - `ctx_batch_execute` — run multiple test commands, search all output together
+- **Fallback:** If Context-Mode unavailable -> run tests via native Bash. Output printed to context (more tokens used).
 
 ### Spec Alignment Check (Interactive)
 

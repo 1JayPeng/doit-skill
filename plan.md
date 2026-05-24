@@ -14,15 +14,24 @@ Use **CodeGraph** for symbol-level exploration (fast, AST-accurate):
 3. `codegraph_impact` — analyze impact radius of specific symbols
 4. `codegraph_files` — understand project file structure
 
+- **Fallback:** If CodeGraph not installed -> use `Agent Explore` for codebase exploration. Same structural search, slightly slower.
+
 Use **Code-Review-Graph** for community/architecture analysis:
 1. `list_graph_stats` — verify graph built
 2. `list_communities` — see which communities to touch
 3. `get_impact_radius` — understand blast radius of affected modules
 
+- **Fallback:** If Code-Review-Graph not installed -> skip community analysis. Rely on CodeGraph alone for impact assessment. Announce `[WARN] code-review-graph unavailable, skipping community-level analysis`.
+
 Use **Context-Mode** for codebase exploration:
 1. `ctx_batch_execute` — run multiple commands, auto-index output, search with queries (one call replaces many)
 2. `ctx_execute_file` — process large files without loading into context (files >20 lines)
 3. `ctx_fetch_and_index` — fetch and index external documentation/URLs for research
+
+- **Fallback:** If Context-Mode not installed ->
+  - `ctx_batch_execute` -> `Agent Explore` + native `grep`/`find`
+  - `ctx_execute_file` -> `Read` tool (loads file into context, uses more tokens)
+  - `ctx_fetch_and_index` -> `WebFetch` (no indexing, no follow-up search)
 
 **Rule:** `ctx_execute_file` for analysis, `Read` for files you'll Edit. Keep raw data in sandbox.
 
