@@ -44,6 +44,10 @@ User request → Classify → Spec (grill + REQ) → Plan (code graph)
 - [Features](#features)
 - [How It Works](#how-it-works)
 - [Install](#install)
+  - [One-Line Installer](#one-line-installer-recommended)
+  - [Via npx](#via-npx)
+  - [Local Development](#local-development)
+  - [Doctor](#doctor)
 - [Usage](#usage)
 - [Workflow Phases](#workflow-phases)
 - [Mandatory E2E Gate](#mandatory-e2e-gate)
@@ -61,7 +65,7 @@ User request → Classify → Spec (grill + REQ) → Plan (code graph)
 curl -fsSL https://raw.githubusercontent.com/1JayPeng/doit-skill/master/scripts/setup.sh | bash
 ```
 
-Installs doit-skill plus all dependencies (required + optional) automatically. Checks for existing installations.
+Installs doit-skill plus all dependencies automatically. Detects what's already installed.
 
 ```bash
 # Skip optional skills and external tools
@@ -71,13 +75,17 @@ curl -fsSL https://raw.githubusercontent.com/1JayPeng/doit-skill/master/scripts/
 curl -fsSL https://raw.githubusercontent.com/1JayPeng/doit-skill/master/scripts/setup.sh | bash -s -- --dry-run
 ```
 
+**Update:** just re-run the same command.
+
 ### Via npx
 
 ```bash
 npx skills add 1JayPeng/doit-skill
 ```
 
-### From GitHub
+**Update:** npx skills will prompt to update.
+
+### Local Development
 
 ```bash
 # Clone and install
@@ -85,37 +93,20 @@ git clone https://github.com/1JayPeng/doit-skill.git
 cd doit-skill
 ./scripts/install.sh
 
-# Verify installation
+# Dry run (preview before installing)
+./scripts/install.sh --dry-run
+
+# Verify
 ./scripts/doctor.sh
 ```
 
-### Dry Run
-
-```bash
-# See what would be installed
-./scripts/install.sh --dry-run
-```
-
-### Update
-
-**curl install** — just re-run the same command:
-```bash
-curl -fsSL https://raw.githubusercontent.com/1JayPeng/doit-skill/master/scripts/setup.sh | bash
-```
-
-**npx install** — npx skills will prompt to update.
-
-**local development** — already in the repo:
-```bash
-git pull && ./scripts/install.sh
-```
+**Update:** `git pull && ./scripts/install.sh`
 
 ### Doctor
 
-After installation or update, check all dependencies:
+Check all dependencies (after installation or update):
 
 ```bash
-# If you installed from local repository:
 ./scripts/doctor.sh
 ```
 
