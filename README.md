@@ -13,6 +13,7 @@ Spec-driven, TDD-based development workflow for [Claude&nbsp;Code](https://githu
 - **Review + Simplify** — Every change passes a mandatory review that removes duplication, dead code, and over-engineering. Ships lean code.
 - **Git commit** — Phase 8 commits with meaningful messages, updates spec status. Feature branch ready for PR.
 - **Resume mid-session** — Workflow spans multiple conversation turns. Type `/doit` again to pick up where you left off.
+- **Env detection** — Phase -1 auto-detects project runtime, virtual env, package manager. Writes to CLAUDE.md so future sessions start correct.
 
 ## How It Works
 
@@ -21,9 +22,11 @@ doit addresses a fundamental problem: **AI agents jump straight to implementatio
 doit inserts structured thinking between "user asks" and "agent codes":
 
 ```
-User request → Classify → Spec (grill + REQ) → Plan (code graph)
-       → Execute (TDD per REQ) → E2E (real env) → Review → Simplify → Commit
+User request → Env Detection → Classify → Spec (grill + REQ) → Plan (code graph)
+       → Execute (TDD per REQ) → E2E (real env) → Review → Simplify → E2E Verify → Commit
 ```
+
+**Phase -1** — Detect project environment. What language, what package manager, what virtual env. Write to CLAUDE.md if missing. Cannot determine → ask user.
 
 **Phase 0** — Classify the request. Simple change? Skip the ceremony, do it. Feature? Full pipeline. Bug? Debug workflow (D0-D6) with regression test before fix.
 
@@ -141,6 +144,7 @@ A single `/doit` invocation may not complete the entire workflow — spec grilli
 
 | Phase | What | Tools Used |
 |-------|------|------------|
+| -1 | Detect project environment | Built-in |
 | 0 | Classify request (S/F/B) | Built-in |
 | 1 | Spec generation + grill | Tavily MCP, grill-me |
 | 2 | Plan with code graph | code-review-graph, codegraph |
@@ -238,6 +242,7 @@ doit uses a **bundled dependency model** — core skills ship inside `skills/`. 
 ```
 doit-skill/
 ├── SKILL.md          # Main entry point
+├── env-check.md      # Phase -1: environment detection
 ├── classifier.md     # Request type detection
 ├── spec.md           # Phase 1: grill + REQ generation
 ├── plan.md           # Phase 2: code graph scan

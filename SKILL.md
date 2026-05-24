@@ -17,6 +17,10 @@ Spec-driven TDD workflow. Every feature passes through 9 phases. Nothing ships w
 
 See [setup.md](setup.md) for full tool/skill install manifest.
 
+## Phase -1 — Detect Environment
+
+**Absolute first step. Before anything else.** Detect the project's runtime, virtual env, and package manager. Write to CLAUDE.md if not already documented. Cannot determine → ask user, do not guess. See [env-check.md](env-check.md).
+
 ## Phase 0 — Classify Request
 
 **First — enable caveman mode for the entire session.**

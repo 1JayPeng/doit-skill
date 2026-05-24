@@ -2,6 +2,12 @@
 
 ## Failures by Phase
 
+### Phase -1 (Environment Detection) Fail
+
+Cannot determine project environment. Found conflicting signals or nothing at all.
+
+**Action:** Ask the user. Do not guess. Present what was found and let user choose.
+
 ### Phase 1 (Spec) Fail
 Grill reveals idea is unworkable (tech infeasible, self-contradictory).
 

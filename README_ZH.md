@@ -42,6 +42,7 @@ npx skills add ./path/to/doit-skill
 
 | 阶段 | 内容 | 使用工具 |
 |------|------|----------|
+| -1 | 检测项目环境 | 内置 |
 | 0 | 需求分类（S/F/B） | 内置 |
 | 1 | 规格生成 + Grill | Tavily MCP, grill-me |
 | 2 | 代码图谱规划 | code-review-graph |
@@ -119,6 +120,7 @@ npx skills add ./path/to/doit-skill
 ```
 doit-skill/
 ├── SKILL.md          # 主入口
+├── env-check.md      # 阶段 -1: 环境检测
 ├── classifier.md     # 需求类型检测
 ├── spec.md           # 阶段 1: Grill + REQ 生成
 ├── plan.md           # 阶段 2: 代码图谱扫描
