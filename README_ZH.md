@@ -58,7 +58,7 @@ npx skills add ./path/to/doit-skill
 |------|------|----------|
 | **S (Simple)** | 单文件、重命名、修复 typo | 直接执行，跳过阶段 1-7 |
 | **F (Feature)** | 新功能、跨模块、用户可见 | 完整阶段 1-8 |
-| **B (Bug)** | 功能异常、性能回退 | 转交 diagnose skill |
+| **B (Bug)** | 功能异常、性能回退 | Debug workflow D0-D6 |
 
 ## E2E 强制关卡
 
@@ -122,6 +122,7 @@ doit-skill/
 ├── classifier.md     # 需求类型检测
 ├── spec.md           # 阶段 1: Grill + REQ 生成
 ├── plan.md           # 阶段 2: 代码图谱扫描
+├── debug.md          # 调试工作流 D0-D6 (类型 B)
 ├── execute.md        # 阶段 3: TDD 循环
 ├── e2e.md            # 阶段 4: 端到端测试, 阶段 7: E2E 验证循环
 ├── review.md         # 阶段 5: 代码审查

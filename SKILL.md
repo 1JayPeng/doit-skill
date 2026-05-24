@@ -28,7 +28,7 @@ Then auto-classify. Read [classifier.md](classifier.md). Three types:
 
 - **S (simple)** — single file, rename, quick fix. Execute directly. Skip phases 1-6.
 - **F (feature)** — new functionality, cross-module, user-facing. Run phases 1-8.
-- **B (bug)** — something broken. Route to `diagnose` skill.
+- **B (bug)** — something broken. Run debug workflow D0-D6. See [debug.md](debug.md).
 
 **Classify, announce type to user, proceed. If user disputes type, use their type.**
 

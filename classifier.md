@@ -28,4 +28,6 @@
 - "not working as expected"
 - Performance regression
 
-**Action:** Hand off to `diagnose` skill.
+**Action:** Run debug workflow D0-D6. See [debug.md](debug.md).
+
+**Can use `diagnose` skill** for root cause analysis within D0, but must go through the full debug workflow (regression test → fix → e2e verify) before committing.

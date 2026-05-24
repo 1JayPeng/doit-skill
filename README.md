@@ -25,7 +25,7 @@ User request → Classify → Spec (grill + REQ) → Plan (code graph)
        → Execute (TDD per REQ) → E2E (real env) → Review → Simplify → Commit
 ```
 
-**Phase 0** — Classify the request. Simple change? Skip the ceremony, do it. Feature? Full pipeline. Bug? Route to diagnose.
+**Phase 0** — Classify the request. Simple change? Skip the ceremony, do it. Feature? Full pipeline. Bug? Debug workflow (D0-D6) with regression test before fix.
 
 **Phase 1** — Grill the idea. Internet search for existing solutions. Challenge assumptions. Generate acceptance criteria that are testable and specific.
 
@@ -206,7 +206,7 @@ doit uses a **bundled dependency model** — core skills ship inside `skills/`. 
 |-------|---------|---------|
 | `grill-me` | Idea grilling | Phase 1 |
 | `tdd` | TDD loop | Phase 3 |
-| `diagnose` | Bug diagnosis | Phase 0 (type B) |
+| `diagnose` | Bug diagnosis | Debug workflow D0 |
 | `prototype` | Throwaway prototypes | Phase 1 (design exploration) |
 | `handoff` | Session handoff | Any phase |
 | `improve-codebase-architecture` | Architecture deepening | Phase 5 |
@@ -241,6 +241,7 @@ doit-skill/
 ├── classifier.md     # Request type detection
 ├── spec.md           # Phase 1: grill + REQ generation
 ├── plan.md           # Phase 2: code graph scan
+├── debug.md          # Debug workflow D0-D6 (Type B)
 ├── execute.md        # Phase 3: TDD loop + Review+Simplify
 ├── e2e.md            # Phase 4: end-to-end testing, Phase 7: E2E verification loop
 ├── review.md         # Phase 5: code review

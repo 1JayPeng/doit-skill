@@ -7,6 +7,16 @@ Grill reveals idea is unworkable (tech infeasible, self-contradictory).
 
 **Action:** Terminate. Tell user why. Zero code generated -> zero loss.
 
+### D0 (Diagnose) Fail
+Cannot reproduce the bug.
+
+**Action:** Tell user. Don't guess. Do not write code based on a hunch. Ask user for more details about environment, input, and expected behavior.
+
+### D1 (Regression Test) Fail
+Can't write a test that fails. Either the bug is too deep (infrastructure/env) or you can't reproduce it.
+
+**Action:** Tell user. Don't skip the regression test.
+
 ### Phase 3 (Execute) Fail
 TDD stuck on REQ-N. Previous REQs conflict with current.
 
