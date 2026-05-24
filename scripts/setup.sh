@@ -93,7 +93,32 @@ echo "  Step 1: Installing required skills"
 echo "=========================================="
 echo ""
 
-# Check and install each required skill
+# Install doit core skill — preserves symlinks (shared phases)
+DOIT_DST="$SKILL_DIR/doit"
+if [ -d "$DOIT_DST" ]; then
+  echo_success "doit already installed at $DOIT_DST"
+else
+  mkdir -p "$SKILL_DIR"
+  # Use rsync to preserve symlinks, or cp -r as fallback
+  if command -v rsync >/dev/null 2>&1; then
+    rsync -a --exclude='.git' --exclude='.code-review-graph' --exclude='.claude/skills' "$DOIT_DIR/" "$DOIT_DST/"
+  else
+    cp -r "$DOIT_DIR" "$DOIT_DST"
+    rm -rf "$DOIT_DST/.git" "$DOIT_DST/.code-review-graph" "$DOIT_DST/.claude/skills"
+  fi
+  echo_success "doit installed"
+fi
+
+# Check symlinks are preserved
+for lnk in review-simplify.md commit.md; do
+  if [ -L "$DOIT_DST/$lnk" ]; then
+    echo_success "$lnk -> $(readlink "$DOIT_DST/$lnk") (symlink OK)"
+  else
+    echo_warn "$lnk is not a symlink — running without shared phase symlinks"
+  fi
+done
+
+# Check and install each bundled skill
 install_skill() {
   local skill_name="$1"
   local skill_path="$SKILL_DIR/$skill_name"
@@ -114,8 +139,7 @@ install_skill() {
   return 1
 }
 
-# Install required skills
-install_skill "doit"
+# Install bundled skills
 install_skill "grill-me"
 install_skill "tdd"
 install_skill "diagnose"

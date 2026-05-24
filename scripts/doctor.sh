@@ -8,6 +8,8 @@ SKILL_DIR="$HOME/.claude/skills"
 BUNDLED_SKILLS=("grill-me" "tdd" "diagnose" "prototype" "handoff" "improve-codebase-architecture")
 BUILTIN_SKILLS=("code-review" "security-review" "verify" "caveman" "find-skills" "write-a-skill")
 EXTERNAL_TOOLS=("context-mode" "rtk" "uv" "codegraph" "code-review-graph" "tavily")
+SHARED_FILES=("shared/review-simplify.md" "shared/e2e-verify.md" "shared/commit.md")
+SYMLINK_TARGETS=("review-simplify.md:shared/review-simplify.md" "commit.md:shared/commit.md")
 
 echo "=========================================="
 echo "  doit-skill Doctor"
@@ -31,6 +33,32 @@ if [ -d "$SKILL_DIR/doit" ]; then
     else
         echo "  ❌ Missing core files:$missing_core"
     fi
+
+    # Check shared phases
+    echo "  Checking shared phases..."
+    for sf in "${SHARED_FILES[@]}"; do
+        if [ -f "$SKILL_DIR/doit/$sf" ]; then
+            echo "  ✅ $sf present"
+        else
+            echo "  ❌ $sf missing — re-run install"
+        fi
+    done
+
+    # Check symlinks are correct
+    for lnk in "${SYMLINK_TARGETS[@]}"; do
+        file="${lnk%%:*}"
+        target="${lnk##*:}"
+        if [ -L "$SKILL_DIR/doit/$file" ]; then
+            actual=$(readlink "$SKILL_DIR/doit/$file")
+            if [ "$actual" = "$target" ]; then
+                echo "  ✅ $file -> $target (symlink OK)"
+            else
+                echo "  ⚠️  $file -> $actual (expected $target)"
+            fi
+        else
+            echo "  ⚠️  $file is not a symlink — running without shared phases"
+        fi
+    done
 else
     echo "  ❌ doit skill not installed"
     echo "  💡 Run: cd doit-skill && ./scripts/install.sh"

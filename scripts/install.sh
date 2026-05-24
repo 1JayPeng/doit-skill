@@ -30,8 +30,8 @@ if [ "$DRY_RUN" = false ]; then
   # Remove existing installation
   rm -rf "$SKILL_DST"
 
-  # Copy with exclusions
-  cp -rL "$SKILL_SRC" "$SKILL_DST"
+  # Copy — preserve symlinks (shared phases)
+  cp -r "$SKILL_SRC" "$SKILL_DST"
 
   # Remove excluded directories
   rm -rf "$SKILL_DST/.git"
@@ -39,6 +39,13 @@ if [ "$DRY_RUN" = false ]; then
   rm -rf "$SKILL_DST/.claude/skills"
 
   echo "  ✅ doit installed to $SKILL_DST"
+  for lnk in review-simplify.md commit.md; do
+    if [ -L "$SKILL_DST/$lnk" ]; then
+      echo "  ✅ $lnk -> $(readlink "$SKILL_DST/$lnk") (symlink OK)"
+    else
+      echo "  ⚠️  $lnk is not a symlink"
+    fi
+  done
 fi
 
 # Step 2: Install bundled skills
