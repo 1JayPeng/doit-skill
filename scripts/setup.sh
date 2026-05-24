@@ -103,7 +103,7 @@ else
   if command -v rsync >/dev/null 2>&1; then
     rsync -a --exclude='.git' --exclude='.code-review-graph' --exclude='.claude/skills' "$DOIT_DIR/" "$DOIT_DST/"
   else
-    cp -r "$DOIT_DIR" "$DOIT_DST"
+    cp -a "$DOIT_DIR" "$DOIT_DST"
     rm -rf "$DOIT_DST/.git" "$DOIT_DST/.code-review-graph" "$DOIT_DST/.claude/skills"
   fi
   echo_success "doit installed"

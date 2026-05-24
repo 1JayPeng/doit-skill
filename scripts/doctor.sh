@@ -129,14 +129,8 @@ for tool in "${EXTERNAL_TOOLS[@]}"; do
             if command -v code-review-graph >/dev/null 2>&1; then
                 echo "  ✅ code-review-graph installed"
             else
-"code-review-graph")
-            if command -v code-review-graph >/dev/null 2>&1; then
-                echo "  ✅ code-review-graph installed"
-            else
                 echo "  ℹ️  code-review-graph not installed (optional)"
                 echo "  💡 Install: uv tool install code-review-graph && uvx code-review-graph install --platform claude-code"
-            fi
-            ;;
             fi
             ;;
         "tavily")

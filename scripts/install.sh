@@ -31,7 +31,7 @@ if [ "$DRY_RUN" = false ]; then
   rm -rf "$SKILL_DST"
 
   # Copy — preserve symlinks (shared phases)
-  cp -r "$SKILL_SRC" "$SKILL_DST"
+  cp -a "$SKILL_SRC" "$SKILL_DST"
 
   # Remove excluded directories
   rm -rf "$SKILL_DST/.git"
