@@ -4,8 +4,45 @@ Spec-driven, TDD-based development workflow for [Claude&nbsp;Code](https://githu
 
 [English](README.md) · [简体中文](README_ZH.md)
 
+## Features
+
+- **Auto-classify** — Distinguishes simple fixes, features, and bugs. Simple changes ship immediately; features go through the full pipeline.
+- **Spec before code** — Grills ideas with internet research, generates acceptance criteria (REQ-001, REQ-002...). No code is written until the spec is agreed upon.
+- **TDD enforced** — Each acceptance criteria goes through RED → GREEN → REFACTOR. No implementation without a failing test first.
+- **E2E gate** — End-to-end tests in a real environment. Cannot be skipped, cannot be bypassed by the agent.
+- **Review + Simplify** — Every change passes a mandatory review that removes duplication, dead code, and over-engineering. Ships lean code.
+- **Git commit** — Phase 7 commits with meaningful messages, updates spec status. Feature branch ready for PR.
+- **Resume mid-session** — Workflow spans multiple conversation turns. Type `/doit` again to pick up where you left off.
+
+## How It Works
+
+doit addresses a fundamental problem: **AI agents jump straight to implementation without thinking.** This produces code that looks correct but misses edge cases, has duplicated logic, or doesn't actually solve the stated problem.
+
+doit inserts structured thinking between "user asks" and "agent codes":
+
+```
+User request → Classify → Spec (grill + REQ) → Plan (code graph)
+       → Execute (TDD per REQ) → E2E (real env) → Review → Simplify → Commit
+```
+
+**Phase 0** — Classify the request. Simple change? Skip the ceremony, do it. Feature? Full pipeline. Bug? Route to diagnose.
+
+**Phase 1** — Grill the idea. Internet search for existing solutions. Challenge assumptions. Generate acceptance criteria that are testable and specific.
+
+**Phase 2** — Scan the codebase. What code will be affected? What are the community and symbol-level impacts?
+
+**Phase 3** — Implement one REQ at a time. Test → Code → Refactor. Review and simplify after each REQ.
+
+**Phase 4** — End-to-end tests in real environment. Not unit tests with `subprocess`. Real assertions on exit code, stdout, file output, database state.
+
+**Phase 5–6** — Feature-level code review (OWASP security, architecture). Then simplify — remove duplication, flatten abstractions.
+
+**Phase 7** — Git commit with meaningful message. Feature branch ready for merge.
+
 ## Table of Contents
 
+- [Features](#features)
+- [How It Works](#how-it-works)
 - [Install](#install)
 - [Usage](#usage)
 - [Workflow Phases](#workflow-phases)
