@@ -5,94 +5,64 @@ Everything `doit` depends on. Copy this to replicate the full environment.
 ## Global Tools
 
 ### RTK (Rust Token Killer)
-Token-optimized CLI proxy. 60-90% savings on dev operations.
+Token-optimized CLI proxy. 60-90% savings on dev operations. [GitHub](https://github.com/rtk-ai/rtk)
 
 ```bash
 # Install
-cargo install rtk  # or install via package manager
+curl -fsSL https://raw.githubusercontent.com/rtk-ai/rtk/refs/heads/master/install.sh | sh
+
+# Initialize for Claude Code
+rtk init -g
 
 # Verify
 rtk --version       # should show rtk X.Y.Z
 rtk gain            # should work
-
-# Global hook config (~/.claude/settings.json):
-{
-  "hooks": {
-    "PreToolUse": [{
-      "matcher": "Bash",
-      "hooks": [{"type": "command", "command": "rtk hook claude"}]
-    }]
-  }
-}
 ```
 
 ### Code-Review-Graph
-MCP server for code knowledge graph + impact analysis. Community/architecture level.
+MCP server for code knowledge graph + impact analysis. Community/architecture level. [GitHub](https://github.com/tirth8205/code-review-graph)
 
 ```bash
-# Launch via uvx
-uvx code-review-graph
+# Install
+uv tool install code-review-graph
+
+# Configure for Claude Code
+uvx code-review-graph install --platform claude-code
+
+# Build index for current project
+uvx code-review-graph build
 
 # Verify
-uvx --list 2>/dev/null | grep code-review-graph
-
-# MCP config (project-level .mcp.json):
-{
-  "mcpServers": {
-    "code-review-graph": {
-      "command": "uvx",
-      "args": ["code-review-graph", "serve"],
-      "cwd": "/path/to/repo",
-      "type": "stdio"
-    }
-  }
-}
+code-review-graph status
 ```
 
 ### CodeGraph
-MCP server for symbol-level code intelligence. Fast symbol lookup, caller/callee analysis.
+MCP server for symbol-level code intelligence. Fast symbol lookup, caller/callee analysis. [GitHub](https://github.com/colbymchenry/codegraph)
 
 ```bash
+# Install
+curl -fsSL https://raw.githubusercontent.com/colbymchenry/codegraph/main/install.sh | sh
+
 # Initialize in project
 codegraph init -i
 
 # Verify
 codegraph status
-
-# MCP config (project-level .mcp.json):
-{
-  "mcpServers": {
-    "codegraph": {
-      "command": "codegraph",
-      "args": ["mcp-stdio"],
-      "cwd": "/path/to/repo",
-      "type": "stdio"
-    }
-  }
-}
 ```
 
 **Tool selection guidance lives in global CLAUDE.md, not here.**
 
 ## Context-Mode Plugin
 
-Context window management plugin. Keeps raw data in sandbox, auto-indexes output, provides semantic search. **Must be installed as a Claude Code plugin.**
+Context window management plugin. Keeps raw data in sandbox, auto-indexes output, provides semantic search. **Must be installed as a Claude Code plugin.** [GitHub](https://github.com/mksglu/context-mode)
 
 ```bash
-# Install via npx
-npx @anthropic/context-mode
+# Install (Claude Code v1.0.33+)
+/plugin marketplace add mksglu/context-mode
+/plugin install context-mode@context-mode
 
 # Verify
-ctx doctor
-
-# Status
-ctx stats
-
-# Search indexed content
-ctx search "query here"
-
-# Process large files
-ctx execute_file path/to/file.py -- "print(FILE_CONTENT[:100])"
+/context-mode:ctx-doctor
 ```
 
 **Key features:**
@@ -143,11 +113,11 @@ doit-pack uses a **bundled dependency model**. Core skills ship inside `skills/`
 
 | Tool | Install | Used In |
 |------|---------|---------|
-| RTK | `cargo install rtk` | Phase 3 |
+| RTK | `curl -fsSL https://raw.githubusercontent.com/rtk-ai/rtk/refs/heads/master/install.sh | sh` | Phase 3 |
 | uv | `pip install uv` | Phase 3 |
-| codegraph | `npx @anthropic/codegraph init` | Phase 2, 3 |
-| code-review-graph | `pip install code-review-graph` | Phase 2 |
-| Context-Mode | `npx @anthropic/context-mode` | Phase 1-6 |
+| codegraph | `curl -fsSL https://raw.githubusercontent.com/colbymchenry/codegraph/main/install.sh | sh` | Phase 2, 3 |
+| code-review-graph | `uv tool install code-review-graph && uvx code-review-graph install --platform claude-code` | Phase 2 |
+| Context-Mode | `/plugin marketplace add mksglu/context-mode` | Phase 1-6 |
 | Tavily MCP | Remote, API key only | Phase 1 |
 
 ### Adding Dependencies

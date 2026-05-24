@@ -129,14 +129,13 @@ Check all dependencies:
   ✅ tdd installed
   ...
 
-[3/3] Checking optional skills...
-  ℹ️  code-review not installed (optional)
-  💡 Install: npx skills add code-review
+[3/4] Checking built-in Claude Code skills...
+  ℹ️  code-review built-in (no install needed)
   ...
 
 [4/4] Checking external tools...
   ℹ️  context-mode not installed (recommended)
-  💡 Install: npx @anthropic/context-mode
+  💡 Install: /plugin marketplace add mksglu/context-mode
   ...
 
 ==========================================
@@ -253,11 +252,11 @@ doit-pack uses a **bundled dependency model** — core skills ship inside `skill
 
 | Tool | Install | Used In |
 |------|---------|---------|
-| Context-Mode | `npx @anthropic/context-mode` | Phase 1-6 |
-| RTK | `cargo install rtk` | Phase 3 |
+| Context-Mode | `/plugin marketplace add mksglu/context-mode` | Phase 1-6 |
+| RTK | `curl -fsSL https://raw.githubusercontent.com/rtk-ai/rtk/refs/heads/master/install.sh | sh` | Phase 3 |
 | uv | `pip install uv` | Phase 3 |
-| codegraph | `npx @anthropic/codegraph init` | Phase 2, 3 |
-| code-review-graph | `pip install code-review-graph` | Phase 2 |
+| codegraph | `curl -fsSL https://raw.githubusercontent.com/colbymchenry/codegraph/main/install.sh | sh` | Phase 2, 3 |
+| code-review-graph | `uv tool install code-review-graph && uvx code-review-graph install --platform claude-code` | Phase 2 |
 | Tavily MCP | Remote, API key only | Phase 1 |
 
 ## Structure

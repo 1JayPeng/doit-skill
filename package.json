@@ -39,11 +39,11 @@
       "write-a-skill": "built-in Claude Code skill"
     },
     "tools": {
-      "rtk": "cargo install rtk",
+      "rtk": "curl -fsSL https://raw.githubusercontent.com/rtk-ai/rtk/refs/heads/master/install.sh | sh",
       "uv": "pip install uv",
-      "codegraph": "npx @anthropic/codegraph init",
-      "code-review-graph": "pip install code-review-graph",
-      "context-mode": "npx @anthropic/context-mode"
+      "codegraph": "curl -fsSL https://raw.githubusercontent.com/colbymchenry/codegraph/main/install.sh | sh",
+      "code-review-graph": "uv tool install code-review-graph && uvx code-review-graph install --platform claude-code",
+      "context-mode": "/plugin marketplace add mksglu/context-mode && /plugin install context-mode@context-mode"
     }
   }
 }

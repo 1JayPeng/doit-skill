@@ -63,11 +63,11 @@ if [ "$DRY_RUN" = true ]; then
     echo "    • write-a-skill   (create new skills)"
     echo ""
     echo "  External tools (installed by default):"
-    echo "    • context-mode     (npx @anthropic/context-mode)"
-    echo "    • rtk              (cargo install rtk)"
+    echo "    • context-mode     (/plugin marketplace add mksglu/context-mode)"
+    echo "    • rtk              (curl install script)"
     echo "    • uv               (pip install uv)"
-    echo "    • codegraph        (npx @anthropic/codegraph init)"
-    echo "    • code-review-graph (pip install code-review-graph)"
+    echo "    • codegraph        (curl install script)"
+    echo "    • code-review-graph (uv tool install code-review-graph)"
   fi
   echo ""
   echo "=========================================="
@@ -156,20 +156,21 @@ else
   echo "=========================================="
   echo ""
 
-  # Context-Mode
-  if command -v ctx >/dev/null 2>&1; then
-    echo_success "context-mode already installed"
-  else
-    echo_info "Installing context-mode..."
-    npx --yes @anthropic/context-mode 2>/dev/null || echo_warn "Failed to install context-mode"
-  fi
+# Context-Mode (Claude Code plugin — cannot auto-install via curl)
+  echo_info "context-mode is a Claude Code plugin"
+  echo_warn "Install manually: /plugin marketplace add mksglu/context-mode"
+  echo "  /plugin install context-mode@context-mode"
 
   # RTK
   if command -v rtk >/dev/null 2>&1; then
     echo_success "rtk already installed"
   else
     echo_info "Installing rtk..."
-    cargo install rtk 2>/dev/null || echo_warn "Failed to install rtk"
+    curl -fsSL https://raw.githubusercontent.com/rtk-ai/rtk/refs/heads/master/install.sh 2>/dev/null | sh 2>/dev/null || echo_warn "Failed to install rtk"
+    if command -v rtk >/dev/null 2>&1; then
+      echo_info "Initializing rtk for Claude Code..."
+      rtk init -g 2>/dev/null || true
+    fi
   fi
 
   # UV
@@ -177,7 +178,7 @@ else
     echo_success "uv already installed"
   else
     echo_info "Installing uv..."
-    pip install uv 2>/dev/null || echo_warn "Failed to install uv"
+    pip install uv 2>/dev/null || pip3 install uv 2>/dev/null || echo_warn "Failed to install uv"
   fi
 
   # CodeGraph
@@ -185,7 +186,7 @@ else
     echo_success "codegraph already installed"
   else
     echo_info "Installing codegraph..."
-    npx --yes @anthropic/codegraph init 2>/dev/null || echo_warn "Failed to install codegraph"
+    curl -fsSL https://raw.githubusercontent.com/colbymchenry/codegraph/main/install.sh 2>/dev/null | sh 2>/dev/null || echo_warn "Failed to install codegraph"
   fi
 
   # Code-Review-Graph
@@ -193,7 +194,15 @@ else
     echo_success "code-review-graph already installed"
   else
     echo_info "Installing code-review-graph..."
-    pip install code-review-graph 2>/dev/null || echo_warn "Failed to install code-review-graph"
+    if command -v uv >/dev/null 2>&1; then
+      uv tool install code-review-graph 2>/dev/null || echo_warn "Failed to install code-review-graph via uv"
+    else
+      pip install code-review-graph 2>/dev/null || pip3 install code-review-graph 2>/dev/null || echo_warn "Failed to install code-review-graph via pip"
+    fi
+    if command -v code-review-graph >/dev/null 2>&1; then
+      echo_info "Configuring code-review-graph for Claude Code..."
+      uvx code-review-graph install --platform claude-code 2>/dev/null || true
+    fi
   fi
 fi
 

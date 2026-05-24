@@ -64,12 +64,13 @@ echo ""
 echo "[4/4] Checking external tools..."
 for tool in "${EXTERNAL_TOOLS[@]}"; do
     case $tool in
-        "context-mode")
+"context-mode")
             if command -v ctx >/dev/null 2>&1; then
                 echo "  ✅ context-mode installed"
             else
-                echo "  ℹ️  context-mode not installed (recommended)"
-                echo "  💡 Install: npx @anthropic/context-mode"
+                echo "  ℹ️ context-mode not installed (recommended)"
+                echo "  💡 Install: /plugin marketplace add mksglu/context-mode"
+                echo "  /plugin install context-mode@context-mode"
             fi
             ;;
         "rtk")
@@ -77,7 +78,7 @@ for tool in "${EXTERNAL_TOOLS[@]}"; do
                 echo "  ✅ rtk installed"
             else
                 echo "  ℹ️  rtk not installed (recommended)"
-                echo "  💡 Install: cargo install rtk"
+                echo "  💡 Install: curl -fsSL https://raw.githubusercontent.com/rtk-ai/rtk/refs/heads/master/install.sh | sh"
             fi
             ;;
         "uv")
@@ -93,15 +94,21 @@ for tool in "${EXTERNAL_TOOLS[@]}"; do
                 echo "  ✅ codegraph installed"
             else
                 echo "  ℹ️  codegraph not installed (recommended)"
-                echo "  💡 Install: npx @anthropic/codegraph init"
+                echo "  💡 Install: curl -fsSL https://raw.githubusercontent.com/colbymchenry/codegraph/main/install.sh | sh"
             fi
             ;;
         "code-review-graph")
             if command -v code-review-graph >/dev/null 2>&1; then
                 echo "  ✅ code-review-graph installed"
             else
+"code-review-graph")
+            if command -v code-review-graph >/dev/null 2>&1; then
+                echo "  ✅ code-review-graph installed"
+            else
                 echo "  ℹ️  code-review-graph not installed (optional)"
-                echo "  💡 Install: pip install code-review-graph"
+                echo "  💡 Install: uv tool install code-review-graph && uvx code-review-graph install --platform claude-code"
+            fi
+            ;;
             fi
             ;;
         "tavily")
