@@ -11,7 +11,7 @@ Spec-driven, TDD-based development workflow for [Claude&nbsp;Code](https://githu
 - **TDD enforced** — Each acceptance criteria goes through RED → GREEN → REFACTOR. No implementation without a failing test first.
 - **E2E gate** — End-to-end tests in a real environment. Cannot be skipped, cannot be bypassed by the agent.
 - **Review + Simplify** — Every change passes a mandatory review that removes duplication, dead code, and over-engineering. Ships lean code.
-- **Git commit** — Phase 7 commits with meaningful messages, updates spec status. Feature branch ready for PR.
+- **Git commit** — Phase 8 commits with meaningful messages, updates spec status. Feature branch ready for PR.
 - **Resume mid-session** — Workflow spans multiple conversation turns. Type `/doit` again to pick up where you left off.
 
 ## How It Works
@@ -37,7 +37,9 @@ User request → Classify → Spec (grill + REQ) → Plan (code graph)
 
 **Phase 5–6** — Feature-level code review (OWASP security, architecture). Then simplify — remove duplication, flatten abstractions.
 
-**Phase 7** — Git commit with meaningful message. Feature branch ready for merge.
+**Phase 7** — E2E verification loop. Re-run all e2e tests after simplify, then compare actual output against spec REQs. If output doesn't match spec, fix code. Loop until e2e passes AND output matches spec.
+
+**Phase 8** — Git commit with meaningful message. Feature branch ready for merge.
 
 ## Table of Contents
 
@@ -146,7 +148,8 @@ A single `/doit` invocation may not complete the entire workflow — spec grilli
 | 4 | E2E tests (mandatory) | Real env, HITL |
 | 5 | Review + merge dupes | code-review, security-review |
 | 6 | Review + Simplify (mandatory) | Built-in |
-| 7 | Git commit | git |
+| 7 | E2E Verification Loop | Real env |
+| 8 | Git commit | git |
 
 ## Mandatory E2E Gate
 
@@ -155,6 +158,21 @@ Phase&nbsp;4 (end-to-end testing) **cannot be skipped**. Three-layer defense pre
 1. **Phase&nbsp;3 →&nbsp;4**: automatic transition when all REQs done. Agent must not ask user whether to skip E2E.
 2. **SKILL.md gate**: Phase&nbsp;5 must not start until Phase&nbsp;4 produces `e2e: passed`.
 3. **Review pre-flight gate**: Phase&nbsp;5 checks `.scratch/workflow-state.json` for `"e2e": "passed"` — hard block if missing.
+
+## Phase 7: E2E Verification Loop
+
+**After simplify — verify, don't trust.** Phase 6 (Review + Simplify) rewrites code. Phase 7 re-runs all e2e tests to verify the rewrite didn't break user-facing behavior, then compares actual output against spec REQs to ensure output matches what the user asked for.
+
+```
+Phase 6 Review+Simplify done → Run E2E tests → Pass? → Spec alignment check → Match spec? → Commit
+                                    ↓                        ↓                         ↓
+                                   Fail                   No: fix code
+                                                         to match spec
+```
+
+Max 3 loop iterations. After 3 failures, escalate to user with recommendation to revert Phase 6.
+
+**Spec is ground truth.** When test output differs from spec, fix the code. Never change the spec to match a broken output.
 
 ### E2E Quality
 
@@ -224,10 +242,10 @@ doit-skill/
 ├── spec.md           # Phase 1: grill + REQ generation
 ├── plan.md           # Phase 2: code graph scan
 ├── execute.md        # Phase 3: TDD loop + Review+Simplify
-├── e2e.md            # Phase 4: end-to-end testing
+├── e2e.md            # Phase 4: end-to-end testing, Phase 7: E2E verification loop
 ├── review.md         # Phase 5: code review
 ├── review-simplify.md # Phase 6: review + simplify
-├── commit.md         # Phase 7: git commit
+├── commit.md         # Phase 8: git commit
 ├── errors.md         # Failure handling
 ├── setup.md          # Install manifest
 ├── package.json      # Package metadata + dependencies

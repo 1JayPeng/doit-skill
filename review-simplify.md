@@ -53,10 +53,10 @@ After simplifying, run:
 
 ## Gate
 
-Review + Simplify is a **hard gate**. Code does not proceed to Phase 7 (Commit) or merge until this passes.
+Review + Simplify is a **hard gate**. After this gate, code enters Phase 7 (E2E Verification Loop) — re-run all e2e tests to verify simplify didn't break user-facing behavior.
 
 If you catch yourself thinking "this looks fine, let me move on" — that's exactly when you skip review and leave junk in. Read what you wrote. Cut what's unnecessary.
 
 ## Next Step
 
-Phase 7: Commit — [commit.md](commit.md)
+Phase 7: E2E Verification Loop — [e2e.md](e2e.md) § E2E Verification Loop

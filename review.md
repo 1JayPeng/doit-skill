@@ -2,7 +2,7 @@
 
 ## When
 
-Trigger after all REQs DONE + all e2e tests pass.
+Trigger after all REQs DONE + Phase 4 initial e2e tests pass.
 
 ## Steps
 

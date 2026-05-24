@@ -31,7 +31,19 @@ Code has duplication, over-engineering, or documentation doesn't match new behav
 
 **Phase 6 is a self-correction step.** If you find issues here, fix them and re-run Phase 6 until it passes. Do not report to user unless you find a fundamental design flaw that requires going back to Phase 1.
 
-### Phase 7 (Commit) Fail
+### Phase 7 (E2E Verification) Fail
+
+E2E tests fail after Review + Simplify. Simplify broke user-facing behavior.
+
+**Action:** Don't panic — this is exactly why the loop exists. Debug which simplify change caused the regression, revert or fix it, re-run e2e. Loop up to 3 times. After 3 failures, escalate to user.
+
+### Phase 7 (Spec Alignment) Fail
+
+E2E tests pass but output doesn't match spec REQs. This means simplify changed behavior to something that works but isn't what the user asked for.
+
+**Action:** Fix the code output to match spec. Never change the spec to match a broken output. Re-run e2e + spec alignment check. If fix requires significant rework, escalate to user.
+
+### Phase 8 (Commit) Fail
 
 Staged changes conflict or cannot be committed.
 

@@ -56,7 +56,13 @@ After RED→GREEN→REFACTOR completes, **before moving to next REQ**:
 
 **Full Phase 6 review-simplify runs after Phase 5.**
 
+**Full Phase 4 e2e + Phase 7 e2e verification runs after Phase 6.**
+
 ### Test Execution
+</think>
+
+<tool_call>
+<function=Read>
 
 Use `ctx_execute` for running tests — output auto-indexed for search:
 - `ctx_execute` — run test commands, search results with `ctx_search`

@@ -4,7 +4,7 @@
 
 ## Prerequisites
 
-Phase 7 runs only after Phase 6 Review + Simplify passes.
+Phase 8 runs only after Phase 7 E2E Verification Loop passes (e2e tests all green AND spec alignment verified — output matches spec REQs).
 
 ## Steps
 
@@ -53,6 +53,8 @@ Save to `.scratch/workflow-state.json`:
 {
   "phase": "committed",
   "e2e": "passed",
+  "e2e_verify": "passed",
+  "e2e_verify_iterations": N,
   "review": "passed"
 }
 ```
