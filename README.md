@@ -18,6 +18,12 @@ Spec-driven, TDD-based development workflow for [Claude&nbsp;Code](https://githu
 
 ## Install
 
+### Via npx (recommended)
+
+```bash
+npx skills add 1JayPeng/doit-skill
+```
+
 ### From GitHub
 
 ```bash

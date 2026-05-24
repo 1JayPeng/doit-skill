@@ -13,6 +13,14 @@
   ],
   "author": "alice",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/1JayPeng/doit-skill"
+  },
+  "bugs": {
+    "url": "https://github.com/1JayPeng/doit-skill/issues"
+  },
+  "homepage": "https://github.com/1JayPeng/doit-skill#readme",
   "dependencies": {
     "skills": {
       "grill-me": "bundled",
