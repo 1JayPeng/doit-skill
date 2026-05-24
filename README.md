@@ -54,6 +54,43 @@ git pull
 
 ### Doctor
 
+Check all dependencies:
+
+```bash
+./scripts/doctor.sh
+```
+
+**Output example**:
+
+```
+==========================================
+  doit-skill Doctor
+==========================================
+
+[1/3] Checking doit skill installation...
+  ✅ doit skill installed
+  ✅ Core files present
+
+[2/3] Checking bundled skills...
+  ✅ grill-me installed
+  ✅ tdd installed
+  ...
+
+[3/3] Checking optional skills...
+  ℹ️  code-review not installed (optional)
+  💡 Install: npx skills add code-review
+  ...
+
+[4/4] Checking external tools...
+  ℹ️  context-mode not installed (recommended)
+  💡 Install: npx @anthropic/context-mode
+  ...
+
+==========================================
+  ✅ doit-skill Doctor complete!
+==========================================
+```
+
 ```bash
 # Check all dependencies
 ./scripts/doctor.sh
