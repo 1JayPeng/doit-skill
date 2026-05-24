@@ -98,63 +98,28 @@ cd doit-skill
 
 ### Update
 
+**curl install** — just re-run the same command:
 ```bash
-# Pull latest changes
-git pull
-./scripts/install.sh
-./scripts/doctor.sh
+curl -fsSL https://raw.githubusercontent.com/1JayPeng/doit-skill/master/scripts/setup.sh | bash
+```
+
+**npx install** — npx skills will prompt to update.
+
+**local development** — already in the repo:
+```bash
+git pull && ./scripts/install.sh
 ```
 
 ### Doctor
 
-Check all dependencies:
+After installation or update, check all dependencies:
 
 ```bash
+# If you installed from local repository:
 ./scripts/doctor.sh
 ```
 
-**Output example**:
-
-```
-==========================================
-  doit-skill Doctor
-==========================================
-
-[1/3] Checking doit skill installation...
-  ✅ doit skill installed
-  ✅ Core files present
-
-[2/3] Checking bundled skills...
-  ✅ grill-me installed
-  ✅ tdd installed
-  ...
-
-[3/4] Checking built-in Claude Code skills...
-  ℹ️  code-review built-in (no install needed)
-  ...
-
-[4/4] Checking external tools...
-  ℹ️  context-mode not installed (recommended)
-  💡 Install: /plugin marketplace add mksglu/context-mode
-  ...
-
-==========================================
-  ✅ doit-skill Doctor complete!
-==========================================
-```
-
-```bash
-# Check all dependencies
-./scripts/doctor.sh
-
-# Output example:
-# ✅ doit skill installed
-# ✅ Core files present
-# ✅ grill-me installed
-# ✅ tdd installed
-# ℹ️  context-mode not installed (recommended)
-# 💡 Install: npx @anthropic/context-mode
-```
+---
 
 ## Usage
 
