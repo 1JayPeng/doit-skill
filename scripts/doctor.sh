@@ -6,7 +6,7 @@ set -e
 
 SKILL_DIR="$HOME/.claude/skills"
 BUNDLED_SKILLS=("grill-me" "tdd" "diagnose" "prototype" "handoff" "improve-codebase-architecture")
-OPTIONAL_SKILLS=("code-review" "security-review" "verify" "caveman" "find-skills" "write-a-skill")
+BUILTIN_SKILLS=("code-review" "security-review" "verify" "caveman" "find-skills" "write-a-skill")
 EXTERNAL_TOOLS=("context-mode" "rtk" "uv" "codegraph" "code-review-graph" "tavily")
 
 echo "=========================================="
@@ -49,14 +49,13 @@ for skill in "${BUNDLED_SKILLS[@]}"; do
 done
 echo ""
 
-# Step 3: Check optional skills
-echo "[3/3] Checking optional skills..."
-for skill in "${OPTIONAL_SKILLS[@]}"; do
+# Step 3: Check built-in Claude Code skills
+echo "[3/4] Checking built-in Claude Code skills..."
+for skill in "${BUILTIN_SKILLS[@]}"; do
     if [ -d "$SKILL_DIR/$skill" ]; then
-        echo "  ✅ $skill installed (optional)"
+        echo "  ✅ $skill custom override installed"
     else
-        echo "  ℹ️  $skill not installed (optional)"
-        echo "  💡 Install: npx skills add $skill"
+        echo "  ℹ️  $skill built-in (no install needed)"
     fi
 done
 echo ""

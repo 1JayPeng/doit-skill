@@ -128,13 +128,16 @@ doit-pack uses a **bundled dependency model**. Core skills ship inside `skills/`
 | `handoff` | Session handoff | Any phase |
 | `improve-codebase-architecture` | Architecture deepening | Phase 5 |
 
-### Optional Skills (install separately)
+### Built-in Claude Code Skills (no install needed)
 
 | Skill | Purpose |
 |-------|---------|
 | `code-review` | Code quality review |
 | `security-review` | OWASP security audit |
 | `verify` | Manual behavior verification |
+| `caveman` | Token-compact mode |
+| `find-skills` | Discover skills |
+| `write-a-skill` | Create new skills |
 
 ### External Tools (user installs)
 

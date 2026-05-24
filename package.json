@@ -31,12 +31,12 @@
       "improve-codebase-architecture": "bundled"
     },
     "optionalSkills": {
-      "code-review": "recommended",
-      "security-review": "recommended",
-      "verify": "recommended",
-      "caveman": "nice-to-have",
-      "find-skills": "nice-to-have",
-      "write-a-skill": "nice-to-have"
+      "code-review": "built-in Claude Code skill",
+      "security-review": "built-in Claude Code skill",
+      "verify": "built-in Claude Code skill",
+      "caveman": "built-in Claude Code skill",
+      "find-skills": "built-in Claude Code skill",
+      "write-a-skill": "built-in Claude Code skill"
     },
     "tools": {
       "rtk": "cargo install rtk",
