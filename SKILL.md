@@ -64,9 +64,16 @@ Review what you wrote. Find duplicates, over-engineering, missed README updates.
 
 Re-run e2e tests after Review + Simplify. Compare actual output against spec REQs (not just test assertions). If mismatch → fix code to match spec, not test to match code. Loop until e2e passes AND output matches spec. See [shared/e2e-verify.md](shared/e2e-verify.md).
 
-## Phase 8 — Commit
+## Phase 8 — Commit + Push
 
-Stage changed files, commit with meaningful message, update spec status. See [commit.md](commit.md).
+Stage changed files, commit with meaningful message matching project's commit style, update spec status, and push to remote. See [commit.md](commit.md).
+
+**Push workflow:**
+1. Check git status and remote state
+2. Learn commit style from `git log --oneline -10`
+3. Write commit message matching style + Co-Authored-By tag
+4. Ask user: push? which branch?
+5. No response -> create new feature branch (`feat/...` or `fix/...`) and push
 
 ## Error Handling
 
@@ -74,7 +81,7 @@ See [errors.md](errors.md). Spec fail = discard. Execute fail = re-grill. Review
 
 ## Persistence
 
-Spec in git (`feature/xxx` branch). Runtime state in `.scratch/workflow-state.json`. Phase 7 commits all changes with feature branch ready for PR.
+Spec in git (`feature/xxx` branch). Runtime state in `.scratch/workflow-state.json`. Phase 8 commits all changes and pushes to remote branch.
 
 ## Resume
 
