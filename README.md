@@ -132,6 +132,17 @@ Any requirement statement auto-triggers the workflow:
 [DOIT] Step 2: Grill session...
 ```
 
+### Continuing the Workflow
+
+A single `/doit` invocation may not complete the entire workflow — spec grilling, implementation, testing, and review are a long process. To continue from where you left off, simply type `/doit` again in the same conversation. The workflow picks up from the current phase (tracked in `.scratch/workflow-state.json`).
+
+```
+> /doit
+
+[DOIT] Resuming from Phase 4 (E2E) — Phase 3 completed
+[DOIT] Running E2E tests...
+```
+
 ## Workflow Phases
 
 | Phase | What | Tools Used |
@@ -143,6 +154,7 @@ Any requirement statement auto-triggers the workflow:
 | 4 | E2E tests (mandatory) | Real env, HITL |
 | 5 | Review + merge dupes | code-review, security-review |
 | 6 | Review + Simplify (mandatory) | Built-in |
+| 7 | Git commit | git |
 
 ## Mandatory E2E Gate
 
@@ -223,6 +235,7 @@ doit-skill/
 ├── e2e.md            # Phase 4: end-to-end testing
 ├── review.md         # Phase 5: code review
 ├── review-simplify.md # Phase 6: review + simplify
+├── commit.md         # Phase 7: git commit
 ├── errors.md         # Failure handling
 ├── setup.md          # Install manifest
 ├── package.json      # Package metadata + dependencies

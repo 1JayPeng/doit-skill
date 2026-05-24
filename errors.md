@@ -31,6 +31,12 @@ Code has duplication, over-engineering, or documentation doesn't match new behav
 
 **Phase 6 is a self-correction step.** If you find issues here, fix them and re-run Phase 6 until it passes. Do not report to user unless you find a fundamental design flaw that requires going back to Phase 1.
 
+### Phase 7 (Commit) Fail
+
+Staged changes conflict or cannot be committed.
+
+**Action:** Resolve the specific conflict (merge, rebase, or re-stage). Do not use `--no-verify` or `--force` to bypass hooks. If the commit itself reveals issues (e.g., pre-commit hook failures), fix them and retry. Do not roll back to earlier phases — this is a git operation, not a code quality issue.
+
 ## Session Recovery
 
 Session restart with existing branch:

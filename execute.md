@@ -78,4 +78,4 @@ Proceed to REQ-00(X+1)? (yes/no, or describe gap)
 
 ### State Tracking
 
-Update `.spec/current.md` status as REQs complete. Save runtime state to `.scratch/workflow-state.json`:
+Update `.spec/current.md` status as REQs complete. Save runtime state to `.scratch/workflow-state.json`. Workflow state includes current phase so `/doit` can resume mid-session.

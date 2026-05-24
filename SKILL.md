@@ -11,7 +11,7 @@ description: >
 
 # Do It
 
-Spec-driven TDD workflow. Every feature passes through 7 phases. Nothing ships without spec. Every change must pass Review + Simplify before proceeding.
+Spec-driven TDD workflow. Every feature passes through 8 phases. Nothing ships without spec. Every change must pass Review + Simplify and git commit before proceeding.
 
 ## Prerequisites
 
@@ -21,8 +21,8 @@ See [setup.md](setup.md) for full tool/skill install manifest.
 
 Auto-classify. Read [classifier.md](classifier.md). Three types:
 
-- **S (simple)** — single file, rename, quick fix. Execute directly. Skip phases 1-5.
-- **F (feature)** — new functionality, cross-module, user-facing. Run phases 1-5.
+- **S (simple)** — single file, rename, quick fix. Execute directly. Skip phases 1-6.
+- **F (feature)** — new functionality, cross-module, user-facing. Run phases 1-7.
 - **B (bug)** — something broken. Route to `diagnose` skill.
 
 **Classify, announce type to user, proceed. If user disputes type, use their type.**
@@ -51,10 +51,18 @@ Feature-level review. Merge duplicate logic. Minimal refactor. See [review.md](r
 
 Review what you wrote. Find duplicates, over-engineering, missed README updates. Simplify. See [review-simplify.md](review-simplify.md). **NEVER skip this step.** This runs after Phase 5 (or after each REQ in Phase 3).
 
+## Phase 7 — Commit
+
+Stage changed files, commit with meaningful message, update spec status. See [commit.md](commit.md).
+
 ## Error Handling
 
 See [errors.md](errors.md). Spec fail = discard. Execute fail = re-grill. Review fail = retain on branch.
 
 ## Persistence
 
-Spec in git (`feature/xxx` branch). Runtime state in `.scratch/workflow-state.json`.
+Spec in git (`feature/xxx` branch). Runtime state in `.scratch/workflow-state.json`. Phase 7 commits all changes with feature branch ready for PR.
+
+## Resume
+
+Workflow spans multiple conversation turns. If `/doit` is called again mid-session, check `.scratch/workflow-state.json` and resume from current phase. Do not restart from Phase 0.

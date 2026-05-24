@@ -53,6 +53,10 @@ After simplifying, run:
 
 ## Gate
 
-Review + Simplify is a **hard gate**. Code does not proceed to Phase 4 or merge until this passes.
+Review + Simplify is a **hard gate**. Code does not proceed to Phase 7 (Commit) or merge until this passes.
 
 If you catch yourself thinking "this looks fine, let me move on" — that's exactly when you skip review and leave junk in. Read what you wrote. Cut what's unnecessary.
+
+## Next Step
+
+Phase 7: Commit — [commit.md](commit.md)

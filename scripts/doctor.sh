@@ -19,7 +19,7 @@ echo "[1/3] Checking doit skill installation..."
 if [ -d "$SKILL_DIR/doit" ]; then
     echo "  ✅ doit skill installed"
     # Check for core files
-    core_files=("SKILL.md" "classifier.md" "spec.md" "plan.md" "execute.md" "e2e.md" "review.md" "review-simplify.md" "errors.md" "setup.md")
+    core_files=("SKILL.md" "classifier.md" "spec.md" "plan.md" "execute.md" "e2e.md" "review.md" "review-simplify.md" "commit.md" "errors.md" "setup.md")
     missing_core=""
     for file in "${core_files[@]}"; do
         if [ ! -f "$SKILL_DIR/doit/$file" ]; then
