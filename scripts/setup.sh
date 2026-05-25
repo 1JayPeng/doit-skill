@@ -78,10 +78,10 @@ if [ "$DRY_RUN" = true ]; then
     echo "    • uv               (pip install uv)"
     echo "    • tokensave        (cargo install tokensave)"
   fi
-  echo ""
+
   echo "  Options (configurable at install):"
   echo "    • doc-capture    (persist reference docs, default: enabled)"
-  fi
+
   echo ""
   echo "=========================================="
   echo_info "Dry run complete"
