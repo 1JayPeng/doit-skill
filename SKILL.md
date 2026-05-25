@@ -76,12 +76,10 @@ Re-run e2e tests after Review + Simplify. Compare actual output against spec REQ
 
 Stage changed files, commit with meaningful message matching project's commit style, update spec status, and push to remote. See [commit.md](commit.md).
 
-**Push workflow:**
-1. Check git status and remote state
-2. Learn commit style from `git log --oneline -10`
-3. Write commit message matching style + Co-Authored-By tag
-4. Ask user: push? which branch?
-5. No response -> create new feature branch (`feat/...` or `fix/...`) and push
+**Auto-push (no confirmation needed):** read `.doit/config.yaml` commit.branch:
+- `branch` (default) — create `feat/...` or `fix/...` branch and push
+- `current` — push current branch
+- `none` — commit only, skip push
 
 ## Error Handling
 
@@ -94,3 +92,38 @@ Spec in git (`feature/xxx` branch). Runtime state in `.scratch/workflow-state.js
 ## Resume
 
 Workflow spans multiple conversation turns. If `/doit` is called again mid-session, check `.scratch/workflow-state.json` and resume from current phase. Do not restart from Phase 0.
+
+## Phase Gate Checklist — DO NOT SKIP
+
+**After completing ANY phase, run this checklist before ending your response.** The conversation may continue, but the workflow MUST complete all phases. Code changes alone are NEVER the end of a doit session.
+
+```
+[Phase Gate] Type F flow (full):
+  [x] Phase -1  Detect Environment + Config
+  [x] Phase 0   Classify Request
+  [x] Phase 1   Spec (grill → write → branch)
+  [x] Phase 2   Plan (impact analysis)
+  [x] Phase 3   Execute (TDD per REQ)
+  [x] Phase 4   E2E (initial tests)
+  [x] Phase 5   Review
+  [x] Phase 6   Review + Simplify
+  [x] Phase 7   E2E Verification Loop
+  [x] Phase 8   Commit + Push
+  [x] Doc Capture (if user prompt has docs)
+
+[Phase Gate] Type S flow (simple):
+  [x] Phase 0   Classify
+  [x] Execute directly
+  [x] Doc Capture (if user prompt has docs)
+
+[Phase Gate] Type B flow (bug):
+  [x] Phase 0   Classify
+  [x] D0-D6     Debug workflow (debug.md)
+  [x] Phase 8   Commit + Push
+```
+
+**After Phase 3 completes:** always continue to Phase 4. Never stop at "tests pass, done."
+**After Phase 6 completes:** always continue to Phase 7. E2E verification after simplification.
+**After Phase 7 completes:** always continue to Phase 8. Every feature ships committed + pushed.
+
+**The only valid end state is Phase 8 committed.** If you're about to say "done" or "completed" and haven't committed, you haven't finished.

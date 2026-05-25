@@ -86,8 +86,16 @@ REQ-00X DONE. Spec says: "user can do X". Current coverage:
 Proceed to REQ-00(X+1)? (yes/no, or describe gap)
 ```
 
-**Wait for user. Don't proceed until confirmed.**
+**Wait for user. After user confirms "yes":**
+- More REQs remaining → go to REQ-00(X+1)
+- This was the last REQ → proceed to Phase 4 (E2E)
 
 ### State Tracking
 
 Update `.spec/current.md` status as REQs complete. Save runtime state to `.scratch/workflow-state.json`. Workflow state includes current phase so `/doit` can resume mid-session.
+
+## Phase 3 End
+
+**When ALL REQs are done: proceed to Phase 4 (E2E). Code changes are NOT the end of the session.**
+
+Full phase flow: Phase 4 → Phase 5 → Phase 6 → Phase 7 → Phase 8 (commit + push). Every phase runs. See SKILL.md Phase Gate Checklist.
