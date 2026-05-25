@@ -119,9 +119,11 @@ git push -u origin HEAD
 
 **`none`** — commit only, skip push.
 
-## Gate
+## Gate — Session End
 
-After push, announce:
+This is the **final phase**. After push, announce:
 - Branch name (remote)
 - Commit hash
 - Summary of changes
+
+**Doit session ends here. No additional confirmation needed.**
