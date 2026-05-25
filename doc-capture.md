@@ -19,6 +19,15 @@ Run immediately after Phase 0 classification when the user's prompt contains ref
 
 ## Steps
 
+### 0. Check Config
+
+Read `.doit/config.yaml` — check `doc-capture.enabled`. If false, skip silently.
+
+Check `doc-capture.mode`:
+- `off` — skip
+- `ask` — confirm with user before saving each doc
+- `auto` — save silently (default)
+
 ### 1. Extract Document Content
 
 Extract the document from the user's message. Preserve original formatting (tables, code blocks, headings). Wrap in a markdown heading describing the topic.
@@ -26,7 +35,7 @@ Extract the document from the user's message. Preserve original formatting (tabl
 ### 2. Create .doit/docs/ and Save
 
 ```bash
-mkdir -p .doit/docs
+mkdir -p .doit/docs  # or use doc-capture.path from config
 ```
 
 Write to `.doit/docs/<descriptive-name>.md`:

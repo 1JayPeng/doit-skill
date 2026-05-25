@@ -160,3 +160,29 @@ Or if written:
 [ENV] Run commands: npx <command>
 [ENV] CLAUDE.md: wrote Environment section
 ```
+
+### 8. Init .doit/config.yaml
+
+Check if `.doit/config.yaml` exists:
+
+```bash
+if [ ! -f .doit/config.yaml ]; then
+  mkdir -p .doit
+  cat > .doit/config.yaml << 'EOF'
+doc-capture:
+  enabled: true
+  mode: auto
+  path: .doit/docs
+
+commit:
+  branch: branch
+  feat_prefix: feat
+  fix_prefix: fix
+  refactor_prefix: refactor
+EOF
+fi
+```
+
+If `enabled` is false (user declined at install), write `doc-capture.enabled: false` instead.
+
+**If config already exists:** skip. No overwrite.

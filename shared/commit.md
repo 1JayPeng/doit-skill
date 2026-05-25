@@ -102,21 +102,22 @@ Save to `.scratch/workflow-state.json`:
 
 **Do NOT ask user. Push directly.** The workflow specifies commit + push — execute both.
 
-1. Generate branch name from the change:
-   - Feature: `feat/<short-description>`
-   - Fix: `fix/<short-description>`
-   - Refactor: `refactor/<short-description>`
+Read `.doit/config.yaml` — check `commit.branch`:
 
-2. Create and push:
+**`branch` (default)** — create feature branch:
 ```bash
-git checkout -b <branch-name>
-git push -u origin <branch-name>
+git checkout -b <prefix>/<short-description>
+git push -u origin <prefix>/<short-description>
 ```
 
-If already on a feature branch, push current branch:
+Prefix from config: `commit.feat_prefix` (feat), `commit.fix_prefix` (fix), `commit.refactor_prefix` (refactor).
+
+**`current`** — push current branch:
 ```bash
 git push -u origin HEAD
 ```
+
+**`none`** — commit only, skip push.
 
 ## Gate
 

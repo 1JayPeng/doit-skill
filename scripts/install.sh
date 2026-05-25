@@ -21,6 +21,31 @@ echo "  doit-skill Installer"
 echo "=========================================="
 echo ""
 
+# Ask about doc-capture (interactive, skip if piped/non-tty)
+DOC_CAPTURE="true"
+if [ -t 0 ] && [ -t 1 ]; then
+  read -r -p "Enable doc-capture (persist reference docs in .doit/docs/)? [Y/n] " answer
+  case "${answer:-Y}" in
+    [yY][eE][sS]|[yY]) DOC_CAPTURE="true" ;;
+    *) DOC_CAPTURE="false" ;;
+  esac
+fi
+
+# Write user config
+SKILL_CONFIG="$SKILL_DIR/doit-config.yaml"
+cat > "$SKILL_CONFIG" <<EOF
+doc-capture:
+  enabled: $DOC_CAPTURE
+  mode: auto
+  path: .doit/docs
+
+commit:
+  branch: branch
+  feat_prefix: feat
+  fix_prefix: fix
+  refactor_prefix: refactor
+EOF
+
 # Step 1: Copy doit skill (exclude .git, .tokensave, .claude/skills)
 echo "[1/3] Installing doit skill..."
 if [ "$DRY_RUN" = false ]; then

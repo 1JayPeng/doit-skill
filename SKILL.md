@@ -17,9 +17,11 @@ Spec-driven TDD workflow. Every feature passes through 9 phases. Nothing ships w
 
 See [setup.md](setup.md) for full tool/skill install manifest.
 
-## Phase -1 — Detect Environment
+## Phase -1 — Detect Environment + Config
 
-**Absolute first step. Before anything else.** Detect the project's runtime, virtual env, and package manager. Write to CLAUDE.md if not already documented. Cannot determine → ask user, do not guess. See [env-check.md](env-check.md).
+**Absolute first step. Before anything else.** Detect the project's runtime, virtual env, and package manager. Write to CLAUDE.md if not already documented. Cannot determine → ask user, do not guess.
+
+Also init `.doit/config.yaml` if not present (default config for doc-capture, commit branch strategy). See [env-check.md](env-check.md) step 8 and [doit-config.md](doit-config.md).
 
 ## Phase 0 — Classify Request
 
