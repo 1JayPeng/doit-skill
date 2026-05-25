@@ -93,39 +93,45 @@ echo "=========================================="
 echo ""
 
 # Install doit core skill — preserves symlinks (shared phases)
+# For updates: only copies new/changed files + fixes broken symlinks. No rm -rf.
 DOIT_DST="$SKILL_DIR/doit"
-NEED_REINSTALL=false
 
 if [ -d "$DOIT_DST" ]; then
-  # Check if symlinks are broken — if so, reinstall
-  for _lnk in review-simplify.md commit.md; do
-    if [ ! -L "$DOIT_DST/$_lnk" ]; then
-      NEED_REINSTALL=true
-      break
-    fi
-  done
-  # Check if shared directory exists
-  if [ ! -d "$DOIT_DST/shared" ]; then
-    NEED_REINSTALL=true
-  fi
-  if [ "$NEED_REINSTALL" = false ]; then
-    echo_success "doit already installed at $DOIT_DST (symlinks OK)"
-  fi
-fi
+  echo_success "doit already installed at $DOIT_DST — updating..."
 
-if [ "$NEED_REINSTALL" = true ] || [ ! -d "$DOIT_DST" ]; then
-  mkdir -p "$SKILL_DIR"
-  rm -rf "$DOIT_DST"
+  # Incremental file update (preserves symlinks, copies only new/changed files)
   if command -v rsync >/dev/null 2>&1; then
     rsync -a --exclude='.git' --exclude='.tokensave' --exclude='.claude/skills' "$DOIT_DIR/" "$DOIT_DST/"
   else
-    cp -a "$DOIT_DIR" "$DOIT_DST"
-    rm -rf "$DOIT_DST/.git" "$DOIT_DST/.tokensave" "$DOIT_DST/.claude/skills"
+    cp -a "$DOIT_DIR/." "$DOIT_DST/"
   fi
+
+  # Fix broken symlinks: if symlink target was copied as regular file, replace it
+  for lnk in review-simplify.md commit.md; do
+    target="shared/$lnk"
+    if [ -f "$DOIT_DST/$lnk" ] && [ ! -L "$DOIT_DST/$lnk" ]; then
+      rm "$DOIT_DST/$lnk"
+      ln -s "$target" "$DOIT_DST/$lnk"
+      echo_success "$lnk -> fixed symlink (was regular file)"
+    fi
+  done
+
+  # Ensure shared/ directory exists with all files
+  if [ ! -d "$DOIT_DST/shared" ] && [ -d "$DOIT_DIR/shared" ]; then
+    cp -a "$DOIT_DIR/shared" "$DOIT_DST/shared"
+    echo_success "shared/ directory restored"
+  fi
+
+  # Clean excluded dirs
+  rm -rf "$DOIT_DST/.git" "$DOIT_DST/.tokensave" "$DOIT_DST/.claude/skills"
+else
+  mkdir -p "$SKILL_DIR"
+  cp -a "$DOIT_DIR" "$DOIT_DST"
+  rm -rf "$DOIT_DST/.git" "$DOIT_DST/.tokensave" "$DOIT_DST/.claude/skills"
   echo_success "doit installed"
 fi
 
-# Check symlinks are preserved
+# Verify symlinks
 for lnk in review-simplify.md commit.md; do
   if [ -L "$DOIT_DST/$lnk" ]; then
     echo_success "$lnk -> $(readlink "$DOIT_DST/$lnk") (symlink OK)"
