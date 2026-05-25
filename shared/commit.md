@@ -41,9 +41,16 @@ Stage all files changed by this feature/fix:
 git add <files changed by this feature>
 ```
 
-Do not use `git add .` — only stage files related to this feature. Exclude:
+Do not use `git add .` — only stage files related to this feature. Include `.doit/docs/` if doc capture ran:
+```bash
+git add <files changed by this feature>
+git add .doit/docs/  # if doc capture saved any files this session
+```
+
+Exclude:
 - IDE files, build artifacts
-- `.scratch/`, `.spec/`, `.venv/`, `__pycache__/`, `node_modules/`
+- `.scratch/`, `.venv/`, `__pycache__/`, `node_modules/`
+- `.spec/` (specs stay local, not committed to user repo)
 
 ### 4. Commit Message
 
@@ -91,19 +98,9 @@ Save to `.scratch/workflow-state.json`:
 
 ## Push to Remote
 
-### 7. Ask User
+### 7. Auto-Push
 
-After commit, ask the user:
-- **Push to remote?** (yes/no)
-- **Which branch?** (master / feature branch name)
-
-If user confirms:
-- Push to specified branch: `git push origin <branch>`
-- If pushing to a new branch: `git push -u origin <branch>`
-
-### 8. Default Behavior (No Response)
-
-If user does not respond, **always create a new remote feature branch** and push:
+**Do NOT ask user. Push directly.** The workflow specifies commit + push — execute both.
 
 1. Generate branch name from the change:
    - Feature: `feat/<short-description>`
@@ -114,6 +111,11 @@ If user does not respond, **always create a new remote feature branch** and push
 ```bash
 git checkout -b <branch-name>
 git push -u origin <branch-name>
+```
+
+If already on a feature branch, push current branch:
+```bash
+git push -u origin HEAD
 ```
 
 ## Gate

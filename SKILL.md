@@ -36,6 +36,12 @@ Then auto-classify. Read [classifier.md](classifier.md). Three types:
 
 **Classify, announce type to user, proceed. If user disputes type, use their type.**
 
+**Before proceeding: check if user's prompt contains reference documentation.** If yes, capture it before any phase runs. See [doc-capture.md](doc-capture.md). Doc capture is independent of classification type (S/F/B) — always run first.
+
+## Doc Capture (Pre-Phase)
+
+If the user's prompt includes reference documents (API specs, business rules, conventions), save to `.doit/docs/`, verify tokensave index, and inject CLAUDE.md reference. This ensures future sessions can find the docs via tokensave search. See [doc-capture.md](doc-capture.md).
+
 ## Phase 1 — Spec
 
 Write spec. See [spec.md](spec.md). Grill user ideas ruthlessly. Internet search via Tavily MCP for brainstorming. Split into acceptance criteria (REQ-001, REQ-002...). Save to `.spec/current.md`.
