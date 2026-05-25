@@ -40,6 +40,16 @@ echo "  $(date)"
 echo "=========================================="
 echo ""
 
+# Ask about doc-capture (interactive, skip if piped/non-tty)
+DOC_CAPTURE="true"
+if [ -t 0 ] && [ -t 1 ]; then
+  read -r -p "Enable doc-capture (persist reference docs in .doit/docs/)? [Y/n] " answer
+  case "${answer:-Y}" in
+    [yY][eE][sS]|[yY]) DOC_CAPTURE="true" ;;
+    *) DOC_CAPTURE="false" ;;
+  esac
+fi
+
 # Handle dry-run
 if [ "$DRY_RUN" = true ]; then
   echo_info "Dry run — showing what would be installed:"
@@ -67,6 +77,10 @@ if [ "$DRY_RUN" = true ]; then
     echo "    • rtk              (curl install script)"
     echo "    • uv               (pip install uv)"
     echo "    • tokensave        (cargo install tokensave)"
+  fi
+  echo ""
+  echo "  Options (configurable at install):"
+  echo "    • doc-capture    (persist reference docs, default: enabled)"
   fi
   echo ""
   echo "=========================================="
