@@ -94,11 +94,28 @@ echo ""
 
 # Install doit core skill — preserves symlinks (shared phases)
 DOIT_DST="$SKILL_DIR/doit"
+NEED_REINSTALL=false
+
 if [ -d "$DOIT_DST" ]; then
-  echo_success "doit already installed at $DOIT_DST"
-else
+  # Check if symlinks are broken — if so, reinstall
+  for _lnk in review-simplify.md commit.md; do
+    if [ ! -L "$DOIT_DST/$_lnk" ]; then
+      NEED_REINSTALL=true
+      break
+    fi
+  done
+  # Check if shared directory exists
+  if [ ! -d "$DOIT_DST/shared" ]; then
+    NEED_REINSTALL=true
+  fi
+  if [ "$NEED_REINSTALL" = false ]; then
+    echo_success "doit already installed at $DOIT_DST (symlinks OK)"
+  fi
+fi
+
+if [ "$NEED_REINSTALL" = true ] || [ ! -d "$DOIT_DST" ]; then
   mkdir -p "$SKILL_DIR"
-  # Use rsync to preserve symlinks, or cp -a as fallback
+  rm -rf "$DOIT_DST"
   if command -v rsync >/dev/null 2>&1; then
     rsync -a --exclude='.git' --exclude='.tokensave' --exclude='.claude/skills' "$DOIT_DIR/" "$DOIT_DST/"
   else
