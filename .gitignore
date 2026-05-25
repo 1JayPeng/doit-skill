@@ -29,3 +29,4 @@ doit-pack/
 # Local settings
 settings.local.json
 package-lock.json
+.tokensave
