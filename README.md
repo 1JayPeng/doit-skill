@@ -96,16 +96,16 @@ npx skills add 1JayPeng/doit-skill
 # Clone and install
 git clone https://github.com/1JayPeng/doit-skill.git
 cd doit-skill
-./scripts/install.sh
+./scripts/setup.sh
 
 # Dry run (preview before installing)
-./scripts/install.sh --dry-run
+./scripts/setup.sh --dry-run
 
 # Verify
 ./scripts/doctor.sh
 ```
 
-**Update:** `git pull && ./scripts/install.sh`
+**Update:** `git pull && ./scripts/setup.sh`
 
 ### Doctor
 
@@ -262,7 +262,7 @@ doit-skill/
 ├── README_ZH.md      # Chinese version
 ├── skills/           # Bundled skill dependencies
 ├── scripts/          # Install and utility scripts
-│   ├── install.sh    # Full install script
+│   ├── setup.sh      # Full install script (curl or local)
 │   └── add-dependency.sh # Add a new skill dependency
 └── tests/            # Skill self-tests (future)
 ```

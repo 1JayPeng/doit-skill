@@ -37,7 +37,7 @@ Every doit phase that modifies project state reads config first:
 
 ## Install Interaction
 
-During `./scripts/install.sh`, ask user:
+During `./scripts/setup.sh`, ask user:
 ```
 Enable doc-capture (persist reference docs in .doit/docs/)? [Y/n]
 ```

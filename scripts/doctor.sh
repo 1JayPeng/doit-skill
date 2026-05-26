@@ -61,7 +61,7 @@ if [ -d "$SKILL_DIR/doit" ]; then
     done
 else
     echo "  ❌ doit skill not installed"
-    echo "  💡 Run: cd doit-skill && ./scripts/install.sh"
+    echo "  💡 Run: cd doit-skill && ./scripts/setup.sh"
 fi
 echo ""
 
@@ -72,7 +72,7 @@ for skill in "${BUNDLED_SKILLS[@]}"; do
         echo "  ✅ $skill installed"
     else
         echo "  ❌ $skill not installed"
-        echo "  💡 Re-run: cd doit-skill && ./scripts/install.sh"
+        echo "  💡 Re-run: cd doit-skill && ./scripts/setup.sh"
     fi
 done
 echo ""

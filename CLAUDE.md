@@ -28,8 +28,8 @@ for spec-driven TDD workflows. When making changes to doit-skill:
    - Documentation in `README.md` and `setup.md`
 
 5. **Verify changes**:
-   - Run `./scripts/install.sh --dry-run`
-   - Install and test with `./scripts/install.sh`
+   - Run `./scripts/setup.sh --dry-run`
+   - Install and test with `./scripts/setup.sh`
 
 ## Commit Message Convention (for this repo)
 
@@ -65,8 +65,8 @@ commit, and push to remote branch.
 ## Pre-commit Checks
 
 Before pushing changes:
-1. `./scripts/install.sh --dry-run`
-2. `./scripts/install.sh`
+1. `./scripts/setup.sh --dry-run`
+2. `./scripts/setup.sh`
 3. `ls ~/.claude/skills/doit/`
 4. `ls ~/.claude/skills/grill-me/`
 5. `ls ~/.claude/skills/tdd/`
