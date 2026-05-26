@@ -10,7 +10,7 @@ set -e
 
 # Configuration
 SKILL_DIR="$HOME/.claude/skills"
-REPO_URL=" https://v6.gh-proxy.org/https://github.com/1JayPeng/doit-skill"
+REPO_URL="https://v6.gh-proxy.org/https://github.com/1JayPeng/doit-skill"
 DRY_RUN=false
 SKIP_OPTIONAL=false
 UPDATED_FILES=()
