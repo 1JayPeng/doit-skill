@@ -13,6 +13,71 @@ SKILL_DIR="$HOME/.claude/skills"
 REPO_URL="https://github.com/1JayPeng/doit-skill"
 DRY_RUN=false
 SKIP_OPTIONAL=false
+UPDATED_FILES=()
+
+# Hash function: portable across Linux/macOS
+file_hash() {
+  if command -v md5sum >/dev/null 2>&1; then
+    md5sum "$1" 2>/dev/null | cut -d' ' -f1
+  elif command -v md5 >/dev/null 2>&1; then
+    md5 -q "$1" 2>/dev/null
+  else
+    sha256sum "$1" 2>/dev/null | cut -d' ' -f1
+  fi
+}
+
+# Create a hash snapshot of a directory: "hash relative_path" per file
+make_snapshot() {
+  local dir="$1"
+  local output="$2"
+  while IFS= read -r f; do
+    local full="$dir/$f"
+    if [ -f "$full" ] && [ ! -L "$full" ]; then
+      echo "$(file_hash "$full") $f"
+    else
+      echo "SYMLINK $f"
+    fi
+  done < <(find "$dir" \( -type f -o -type l \) \
+    \! -path "*/.git/*" \
+    \! -path "*/.tokensave/*" \
+    \! -path "*/.claude/skills/*" \
+    | sed "s|$dir/||" | sort) > "$output"
+}
+
+# Compare two hash snapshots, append changed files to UPDATED_FILES
+collect_changes() {
+  local before_snap="$1"
+  local after_snap="$2"
+
+  # Extract paths from hash lines (field 2+)
+  local before_paths after_paths
+  before_paths=$(mktemp)
+  after_paths=$(mktemp)
+  cut -d' ' -f2- "$before_snap" > "$before_paths"
+  cut -d' ' -f2- "$after_snap" > "$after_paths"
+
+  # Find new files
+  while IFS= read -r f; do
+    [ -n "$f" ] && UPDATED_FILES+=("$f (new)")
+  done < <(comm -13 "$before_paths" "$after_paths")
+
+  # Find deleted files
+  while IFS= read -r f; do
+    [ -n "$f" ] && UPDATED_FILES+=("$f (removed)")
+  done < <(comm -23 "$before_paths" "$after_paths")
+
+  # Find modified files (same path, different hash)
+  while IFS= read -r f; do
+    local h1 h2
+    h1=$(grep " $f$" "$before_snap" | cut -d' ' -f1)
+    h2=$(grep " $f$" "$after_snap" | cut -d' ' -f1)
+    if [ "$h1" != "SYMLINK" ] && [ "$h2" != "SYMLINK" ] && [ "$h1" != "$h2" ]; then
+      UPDATED_FILES+=("$f (modified)")
+    fi
+  done < <(comm -12 "$before_paths" "$after_paths")
+
+  rm -f "$before_paths" "$after_paths"
+}
 
 # Parse arguments
 for arg in "$@"; do
@@ -113,6 +178,10 @@ DOIT_DST="$SKILL_DIR/doit"
 if [ -d "$DOIT_DST" ]; then
   echo_success "doit already installed at $DOIT_DST — updating..."
 
+  # Snapshot before update for change log
+  BEFORE_SNAP=$(mktemp)
+  make_snapshot "$DOIT_DST" "$BEFORE_SNAP"
+
   # Incremental file update (preserves symlinks, copies only new/changed files)
   if command -v rsync >/dev/null 2>&1; then
     rsync -a --exclude='.git' --exclude='.tokensave' --exclude='.claude/skills' "$DOIT_DIR/" "$DOIT_DST/"
@@ -120,12 +189,19 @@ if [ -d "$DOIT_DST" ]; then
     cp -a "$DOIT_DIR/." "$DOIT_DST/"
   fi
 
+  # Snapshot after update, compare
+  AFTER_SNAP=$(mktemp)
+  make_snapshot "$DOIT_DST" "$AFTER_SNAP"
+  collect_changes "$BEFORE_SNAP" "$AFTER_SNAP"
+  rm -f "$BEFORE_SNAP" "$AFTER_SNAP"
+
   # Fix broken symlinks: if symlink target was copied as regular file, replace it
   for lnk in review-simplify.md commit.md; do
     target="shared/$lnk"
     if [ -f "$DOIT_DST/$lnk" ] && [ ! -L "$DOIT_DST/$lnk" ]; then
       rm "$DOIT_DST/$lnk"
       ln -s "$target" "$DOIT_DST/$lnk"
+      UPDATED_FILES+=("$lnk (symlink fixed)")
       echo_success "$lnk -> fixed symlink (was regular file)"
     fi
   done
@@ -133,6 +209,9 @@ if [ -d "$DOIT_DST" ]; then
   # Ensure shared/ directory exists with all files
   if [ ! -d "$DOIT_DST/shared" ] && [ -d "$DOIT_DIR/shared" ]; then
     cp -a "$DOIT_DIR/shared" "$DOIT_DST/shared"
+    while IFS= read -r f; do
+      UPDATED_FILES+=("$f")
+    done < <(find "$DOIT_DST/shared" -type f | sed "s|$DOIT_DST/||")
     echo_success "shared/ directory restored"
   fi
 
@@ -160,7 +239,21 @@ install_skill() {
   local skill_path="$SKILL_DIR/$skill_name"
 
   if [ -d "$skill_path" ]; then
-    echo_success "$skill_name already installed at $skill_path"
+    # Update existing: compare and record changes
+    if [ -d "$DOIT_DIR/skills/$skill_name" ]; then
+      local before_snap after_snap
+      before_snap=$(mktemp)
+      after_snap=$(mktemp)
+      make_snapshot "$skill_path" "$before_snap"
+      rm -rf "$skill_path"
+      cp -r "$DOIT_DIR/skills/$skill_name" "$skill_path"
+      make_snapshot "$skill_path" "$after_snap"
+      collect_changes "$before_snap" "$after_snap"
+      rm -f "$before_snap" "$after_snap"
+      echo_success "$skill_name updated"
+    else
+      echo_success "$skill_name already installed at $skill_path"
+    fi
     return 0
   fi
 
@@ -279,9 +372,25 @@ rm -rf "$TEMP_DIR"
 
 echo ""
 echo "=========================================="
-echo "  ✅ doit-skill installation complete!"
-echo "=========================================="
-echo ""
-echo "  To update: re-run this curl command (downloads latest and installs)"
-echo "  To check dependencies: ./scripts/doctor.sh"
-echo ""
+if [ ${#UPDATED_FILES[@]} -gt 0 ]; then
+  echo "  ✅ doit-skill updated!"
+  echo "=========================================="
+  echo ""
+  UNIQUE_FILES=$(printf '%s\n' "${UPDATED_FILES[@]}" | sort -u)
+  CHANGE_COUNT=$(echo "$UNIQUE_FILES" | wc -l | tr -d ' ')
+  echo "  Changed files (${CHANGE_COUNT}):"
+  echo "$UNIQUE_FILES" | while IFS= read -r f; do
+    echo "    • $f"
+  done
+  echo ""
+  echo "  To update: re-run this curl command (downloads latest and installs)"
+  echo "  To check dependencies: ./scripts/doctor.sh"
+  echo ""
+else
+  echo "  ✅ doit-skill installation complete!"
+  echo "=========================================="
+  echo ""
+  echo "  To update: re-run this curl command (downloads latest and installs)"
+  echo "  To check dependencies: ./scripts/doctor.sh"
+  echo ""
+fi
