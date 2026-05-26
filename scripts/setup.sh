@@ -38,9 +38,9 @@ make_snapshot() {
       echo "SYMLINK $f"
     fi
   done < <(find "$dir" \( -type f -o -type l \) \
-    \! -path "*/.git/*" \
-    \! -path "*/.tokensave/*" \
-    \! -path "*/.claude/skills/*" \
+    \! -path "$dir/.git/*" \
+    \! -path "$dir/.tokensave/*" \
+    \! -path "$dir/.claude/skills/*" \
     | sed "s|$dir/||" | sort) > "$output"
 }
 
