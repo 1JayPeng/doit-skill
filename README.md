@@ -67,7 +67,7 @@ User request → Env Detection → Classify → Spec (grill + REQ) → Plan (cod
 ### One-Line Installer (recommended)
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/1JayPeng/doit-skill/master/scripts/setup.sh | bash
+curl -fsSL https://gh-proxy.org/https://raw.githubusercontent.com/1JayPeng/doit-skill/master/scripts/setup.sh | bash
 ```
 
 Installs doit-skill plus all dependencies automatically. Detects what's already installed.
