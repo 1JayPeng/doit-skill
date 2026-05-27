@@ -86,22 +86,20 @@ doit-pack uses a **bundled dependency model**. Core skills ship inside `skills/`
 
 | Skill | Purpose |
 |-------|---------|
-| `code-review` | Code quality review |
-| `security-review` | OWASP security audit |
-| `verify` | Manual behavior verification |
 | `find-skills` | Discover skills |
-| `write-a-skill` | Create new skills |
 
 ### External Tools (user installs)
 
 | Tool | Install | Used In |
 |------|---------|---------|
+| Context-Mode | `/plugin marketplace add mksglu/context-mode` | Phase 1-6 |
 | RTK | `curl -fsSL https://raw.githubusercontent.com/rtk-ai/rtk/refs/heads/master/install.sh | sh` | Phase 3 |
 | uv | `pip install uv` | Phase 3 |
-| TokenSave | `cargo install tokensave && tokensave install --agent claude` | Phase 2, 3 |
-| Context-Mode | `/plugin marketplace add mksglu/context-mode` | Phase 1-6 |
-| Tavily MCP | Remote, API key only | Phase 1 |
+| TokenSave | `cargo install tokensave && tokensave install --agent claude` | Phase 2, 3, 5, 6 |
 | caveman | `curl -fsSL https://raw.githubusercontent.com/JuliusBrussee/caveman/main/install.sh | bash` | Phase 0+ |
+| code-review | `claude plugin install code-review` | Phase 5 |
+| skill-creator | `claude install anthropics/skills/skill-creator` | Skill dev |
+| Tavily MCP | Remote, API key only | Phase 1 |
 
 ### Adding Dependencies
 

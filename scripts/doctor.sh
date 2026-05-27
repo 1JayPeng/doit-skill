@@ -6,8 +6,8 @@ set -e
 
 SKILL_DIR="$HOME/.claude/skills"
 BUNDLED_SKILLS=("grill-me" "tdd" "diagnose" "prototype" "handoff" "improve-codebase-architecture")
-BUILTIN_SKILLS=("code-review" "security-review" "verify" "find-skills" "write-a-skill")
-EXTERNAL_TOOLS=("context-mode" "rtk" "uv" "tokensave" "tavily" "caveman")
+BUILTIN_SKILLS=("find-skills")
+EXTERNAL_TOOLS=("context-mode" "rtk" "uv" "tokensave" "tavily" "caveman" "code-review" "skill-creator")
 SHARED_FILES=("shared/review-simplify.md" "shared/e2e-verify.md" "shared/commit.md")
 SYMLINK_TARGETS=("review-simplify.md:shared/review-simplify.md" "commit.md:shared/commit.md")
 
@@ -134,11 +134,27 @@ for tool in "${EXTERNAL_TOOLS[@]}"; do
             fi
             ;;
         "caveman")
-            if [ -d "$SKILL_DIR/caveman" ]; then
+if [ -d "$SKILL_DIR/caveman" ]; then
                 echo "  ✅ caveman installed"
             else
                 echo "  ℹ️  caveman not installed (recommended)"
                 echo "  💡 Install: curl -fsSL https://raw.githubusercontent.com/JuliusBrussee/caveman/main/install.sh | bash"
+            fi
+            ;;
+        "code-review")
+            if [ -d "$SKILL_DIR/code-review" ]; then
+                echo "  ✅ code-review installed"
+            else
+                echo "  ℹ️  code-review not installed (recommended)"
+                echo "  💡 Install: claude plugin install code-review"
+            fi
+            ;;
+        "skill-creator")
+            if [ -d "$SKILL_DIR/skill-creator" ]; then
+                echo "  ✅ skill-creator installed"
+            else
+                echo "  ℹ️  skill-creator not installed (optional)"
+                echo "  💡 Install: claude install anthropics/skills/skill-creator"
             fi
             ;;
     esac

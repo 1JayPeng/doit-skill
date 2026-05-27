@@ -13,42 +13,51 @@ Run `code-review` skill. Focus:
 - Dead code -> remove
 - Over-abstraction -> flatten
 
-**tokensave tools to prepare review context:**
-1. `tokensave_diff_context(files=[<changed_files>])` — semantic diff of changed symbols
-2. `tokensave_simplify_scan(files=[<changed_files>])` — duplications, dead code, coupling, complexity
-3. `tokensave_dead_code()` — find symbols with no incoming edges
-4. `tokensave_unused_imports()` — find unreferenced imports
+**tokensave tools for code review (use flexibly, pick what fits):**
+- `tokensave_health(details=true)` — baseline quality signal before review
+- `tokensave_diff_context(files=[<changed_files>])` — semantic diff of changed symbols, dependents, affected tests
+- `tokensave_simplify_scan(files=[<changed_files>])` — auto-detect duplications, dead code, coupling, complexity
+- `tokensave_dead_code()` — find symbols with no incoming edges (potentially unreachable)
+- `tokensave_unused_imports()` — find unreferenced import/use nodes
+- `tokensave_complexity(path="<changed_dir>", limit=5)` — rank functions by complexity, find hotspots
+- `tokensave_circular()` — detect circular file dependencies
+- `tokensave_recursion()` — detect recursive/mutually-recursive call cycles
 - **Fallback:** If TokenSave unavailable -> `git diff` + `git diff --stat` manually review.
 
 ### 2. Architecture Check
 
 Run `improve-codebase-architecture` skill for insight only. **Do not execute architectural refactors.** Suggest, don't break.
 
-**tokensave tools for architecture analysis:**
-1. `tokensave_dsm(path="<src_dir>", format="clusters")` — design structure matrix, reveals clusters and layering violations
-2. `tokensave_coupling(direction="fan_in")` — which files are depended on most
-3. `tokensave_coupling(direction="fan_out")` — which files depend on most others
-4. `tokensave_hotspots()` — highest connectivity symbols (change blast radius)
-5. `tokensave_dependency_depth()` — longest dependency chains, fragile files
-6. `tokensave_health(details=true)` — composite quality signal with breakdown
+**tokensave tools for architecture analysis (use flexibly, pick what fits):**
+- `tokensave_dsm(path="<src_dir>", format="clusters")` — design structure matrix, reveals clusters and layering violations
+- `tokensave_coupling(direction="fan_in")` — which files are depended on most (high coupling risk)
+- `tokensave_coupling(direction="fan_out")` — which files depend on most others (fragile modules)
+- `tokensave_hotspots()` — highest connectivity symbols (change blast radius)
+- `tokensave_dependency_depth()` — longest dependency chains, fragile files
+- `tokensave_gini(metric="complexity")` — find god files with uneven complexity distribution
+- `tokensave_inheritance_depth()` — deepest class/interface hierarchies
 - **Fallback:** If TokenSave unavailable -> `Agent Explore` for architectural overview.
 
-### 3. Security Review
+### 3. Security Review (tokensave-based)
 
-Run `security-review` skill. Check OWASP top 10.
+Use tokensave tools for security scanning instead of `security-review` skill:
 
 **tokensave tools for security scanning:**
-1. `tokensave_unsafe_patterns(kinds=["unwrap", "expect", "panic", "todo", "unimplemented", "unsafe_block"])` — surface panic/unsafe sites
-2. `tokensave_todos(kinds=["HACK", "TODO"])` — find security-related TODOs
+- `tokensave_unsafe_patterns(kinds=["unwrap", "expect", "panic", "todo", "unimplemented", "unsafe_block"])` — surface panic/unsafe sites
+- `tokensave_todos(kinds=["HACK", "TODO"])` — find security-related TODOs
+- `tokensave_doc_coverage(path="<src_dir>")` — public symbols missing documentation (API surface gaps)
+- `tokensave_test_risk(path="<src_dir>")` — risk-weighted test-gap analysis (high risk = high fan-in + low coverage)
+- `tokensave_module_api(path="<src_dir>")` — public API surface (attack surface inventory)
 - **Fallback:** If TokenSave unavailable -> `grep -rn "TODO\|FIXME\|HACK\|unsafe" src/`.
 
 ### 4. Spec Final Check
 
 Re-read `.spec/current.md`. Every REQ must be DONE. Gaps -> flag, don't auto-fix.
 
-**tools for cross-referencing spec vs implementation:**
-1. `tokensave_search(query="<REQ keyword>")` — verify the REQ functionality exists in code
-2. `ctx_search(queries=[<REQ descriptions>])` — look up previously indexed spec content
+**tokensave tools for cross-referencing spec vs implementation:**
+- `tokensave_search(query="<REQ keyword>")` — verify the REQ functionality exists in code
+- `tokensave_context(task="<REQ description>")` — get relevant code context for the REQ
+- `ctx_search(queries=[<REQ descriptions>])` — look up previously indexed spec content
 - **Fallback:** Read `.spec/current.md` directly + `grep -rn` for keywords.
 
 ### 5. Phase 6 Next (MANDATORY)

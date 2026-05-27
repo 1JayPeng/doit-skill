@@ -129,12 +129,8 @@ if [ "$DRY_RUN" = true ]; then
   echo "    • improve-codebase-architecture (architecture)"
   echo ""
   if [ "$SKIP_OPTIONAL" = false ]; then
-    echo "  Built-in Claude Code skills (no install needed):"
-    echo "    • code-review     (code quality review)"
-    echo "    • security-review  (OWASP security audit)"
-    echo "    • verify           (behavior verification)"
+echo "  Built-in Claude Code skills (no install needed):"
     echo "    • find-skills      (discover skills)"
-    echo "    • write-a-skill    (create new skills)"
     echo ""
     echo "  External tools (installed by default):"
     echo "    • context-mode     (/plugin marketplace add mksglu/context-mode)"
@@ -142,6 +138,8 @@ if [ "$DRY_RUN" = true ]; then
     echo "    • uv               (pip install uv)"
     echo "    • tokensave        (cargo install tokensave)"
     echo "    • caveman          (curl install script)"
+    echo "    • code-review      (claude plugin install code-review)"
+    echo "    • skill-creator    (claude install anthropics/skills/skill-creator)"
   fi
 
   echo "  Options (configurable at install):"
@@ -291,7 +289,7 @@ else
   echo ""
 
 # Built-in Claude Code skills — already available, no installation needed
-  BUILTIN_SKILLS=("code-review" "security-review" "verify" "find-skills" "write-a-skill")
+  BUILTIN_SKILLS=("find-skills")
   for skill in "${BUILTIN_SKILLS[@]}"; do
     if [ -d "$SKILL_DIR/$skill" ]; then
       echo_success "$skill already installed (user custom)"
@@ -354,12 +352,28 @@ else
     fi
   fi
 
-  # Caveman (token-compact mode)
+# Caveman (token-compact mode)
   if [ -d "$SKILL_DIR/caveman" ]; then
     echo_success "caveman already installed"
   else
     echo_info "Installing caveman..."
     curl -fsSL https://raw.githubusercontent.com/JuliusBrussee/caveman/main/install.sh 2>/dev/null | bash 2>/dev/null || echo_warn "Failed to install caveman"
+  fi
+
+  # Code Review
+  if [ -d "$SKILL_DIR/code-review" ]; then
+    echo_success "code-review already installed"
+  else
+    echo_info "Installing code-review..."
+    claude plugin install code-review 2>/dev/null || echo_warn "Failed to install code-review (install manually: claude plugin install code-review)"
+  fi
+
+  # Skill Creator
+  if [ -d "$SKILL_DIR/skill-creator" ]; then
+    echo_success "skill-creator already installed"
+  else
+    echo_info "Installing skill-creator..."
+    claude install anthropics/skills/skill-creator 2>/dev/null || echo_warn "Failed to install skill-creator (install manually: claude install anthropics/skills/skill-creator)"
   fi
 fi
 

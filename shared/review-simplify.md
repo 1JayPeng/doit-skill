@@ -14,11 +14,31 @@
 
 Read every file you modified. Not just the diff — read the full context around changes.
 
-**tokensave tools for review:**
-1. `tokensave_diff_context(files=[<changed_files>])` — semantic context: symbols modified, dependents, affected tests
-2. `tokensave_simplify_scan(files=[<changed_files>])` — auto-detect duplications, dead code, coupling, complexity hotspots
-3. `tokensave_dead_code()` — find symbols with no incoming edges (potentially dead)
-4. `tokensave_unused_imports()` — find unreferenced import/use nodes
+**tokensave tools for review (pick what fits, don't call all of them):**
+
+Code health baseline:
+- `tokensave_health(details=true)` — composite quality signal, structural risk before review
+
+Semantic analysis of changes:
+- `tokensave_diff_context(files=[<changed_files>])` — symbols modified, dependents, affected tests
+- `tokensave_simplify_scan(files=[<changed_files>])` — duplications, dead code, coupling, complexity
+
+Code quality scanning:
+- `tokensave_dead_code()` — symbols with no incoming edges (potentially unreachable)
+- `tokensave_unused_imports()` — unreferenced imports
+- `tokensave_complexity(path="<changed_dir>", limit=5)` — highest complexity functions
+- `tokensave_coupling(direction="fan_in", path="<changed_dir>")` — files depended on most
+- `tokensave_coupling(direction="fan_out", path="<changed_dir>")` — files with most dependencies
+- `tokensave_doc_coverage(path="<src_dir>")` — public symbols missing documentation
+
+Discovery (when you need to find specific code):
+- `tokensave_search(query="<symbol name>")` — find specific symbols by name
+- `tokensave_node(node_id="<id>")` — full details + source for a specific symbol
+- `tokensave_callers(node_id="<id>")` — what calls this function
+- `tokensave_callees(node_id="<id>")` — what does this function call
+- `tokensave_impact(node_id="<id>")` — full blast radius of changing a symbol
+- `tokensave_files(path="<dir>")` — list indexed project files
+
 - **Fallback:** If TokenSave unavailable -> `git diff` + manual `Read` of changed files.
 
 Check:
@@ -56,9 +76,10 @@ After writing code, check what documentation needs updating:
 After simplifying, run:
 1. **Tests still pass** — `ctx_execute` (auto-indexes output) or Bash fallback
 2. `tokensave_health(path="<changed_dir>")` — verify quality signal didn't degrade
-3. `tokensave_diff_context(files=[<changed_files>])` — verify changes integrate cleanly
-4. `ctx_search(queries=[<old_functionality_keywords>])` — verify documentation matches new behavior
-5. One final read of the modified files — do they still read correctly after simplifying?
+3. `tokensave_simplify_scan(files=[<changed_files>])` — verify no new duplications introduced
+4. `tokensave_diff_context(files=[<changed_files>])` — verify changes integrate cleanly
+5. `ctx_search(queries=[<old_functionality_keywords>])` — verify documentation matches new behavior
+6. One final read of the modified files — do they still read correctly after simplifying?
 
 **Fallback for all TokenSave tools:** `git diff <files>` + manual `Read`.
 **Fallback for ctx_search:** `grep -rn "<keyword>" .` — search docs manually.

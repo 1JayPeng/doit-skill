@@ -48,8 +48,8 @@ npx skills add ./path/to/doit-skill
 | 2 | 代码图谱规划 | tokensave |
 | 3 | TDD 执行 | RTK, uv, pytest |
 | 4 | 端到端测试（不可跳过） | 真实环境, HITL |
-| 5 | 代码审查 + 合并 | code-review, security-review |
-| 6 | 审视 + 简化（不可跳过） | 内置 |
+| 5 | 代码审查 + 合并 | code-review, tokensave, improve-codebase-architecture |
+| 6 | 审视 + 简化（不可跳过） | tokensave |
 | 7 | E2E 验证循环 | 真实环境 |
 | 8 | Git 提交 | git |
 
@@ -110,8 +110,10 @@ npx skills add ./path/to/doit-skill
 | 工具 | 安装 |
 |------|------|
 | RTK | `curl -fsSL https://raw.githubusercontent.com/rtk-ai/rtk/refs/heads/master/install.sh | sh` |
-| tokensave | `cargo install tokensave` |
+| tokensave | `cargo install tokensave && tokensave install --agent claude` |
 | caveman | `curl -fsSL https://raw.githubusercontent.com/JuliusBrussee/caveman/main/install.sh | bash` |
+| code-review | `claude plugin install code-review` |
+| skill-creator | `claude install anthropics/skills/skill-creator` |
 | Tavily MCP | 远程服务，无需安装 |
 
 完整安装清单见 [setup.md](setup.md)。

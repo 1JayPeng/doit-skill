@@ -33,11 +33,14 @@
 Before writing tests, understand the code you'll modify:
 1. `tokensave_context` — get focused context for the REQ task (start here)
    - **Fallback:** If TokenSave unavailable -> `Agent Explore` with task description
-2. `tokensave_search` — if you need a specific symbol name
+2. `tokensave_search` — find specific symbols by name
    - **Fallback:** If TokenSave unavailable -> `grep -rn` + `find`
-3. `tokensave_node` — if you need a function signature from tests
+3. `tokensave_node` — function signature, full source from tests
    - **Fallback:** If TokenSave unavailable -> `Read` the specific file
-4. `ctx_search` — look up previously indexed information from this session
+4. `tokensave_callers` / `tokensave_callees` — call graph edges, blast radius
+5. `tokensave_impact` — what's affected by changing a symbol
+6. `tokensave_files` — understand project file structure
+7. `ctx_search` — look up previously indexed information from this session
    - **Fallback:** If Context-Mode unavailable -> `grep` command output
 
 ### RED
@@ -58,10 +61,11 @@ Merge duplicate code with existing code. Minimal change. No architectural restru
 
 ### REVIEW + SIMPLIFY (MANDATORY after each REQ)
 After RED->GREEN->REFACTOR completes, **before moving to next REQ**:
-1. **Read what you wrote** — read the full context of changes, not just the diff
-2. **Simplify** — remove dead imports, flatten unnecessary abstractions, combine redundant loops
-3. **Check documentation** — does README/CLAUDE.md need updating?
-4. **Verify** — tests still pass after simplifying
+1. **tokensave scan** — `tokensave_simplify_scan(files=[<changed_files>])` — auto-detect duplications, dead code, complexity
+2. **Read what you wrote** — read the full context of changes, not just the diff
+3. **Simplify** — remove dead imports, flatten unnecessary abstractions, combine redundant loops
+4. **Check documentation** — does README/CLAUDE.md need updating?
+5. **Verify** — tests still pass after simplifying
 
 **Do not skip this.** Do not move to next REQ without reviewing current changes.
 

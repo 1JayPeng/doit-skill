@@ -150,8 +150,8 @@ A single `/doit` invocation may not complete the entire workflow — spec grilli
 | 2 | Plan with code graph | tokensave |
 | 3 | Execute TDD + Review+Simplify | RTK, uv, pytest |
 | 4 | E2E tests (mandatory) | Real env, HITL |
-| 5 | Review + merge dupes | code-review, security-review |
-| 6 | Review + Simplify (mandatory) | Built-in |
+| 5 | Review + merge dupes | code-review, tokensave, improve-codebase-architecture |
+| 6 | Review + Simplify (mandatory) | tokensave |
 | 7 | E2E Verification Loop | Real env |
 | 8 | Git commit | git |
 
@@ -219,11 +219,7 @@ doit uses a **bundled dependency model** — core skills ship inside `skills/`. 
 
 | Skill | Purpose |
 |-------|---------|
-| `code-review` | Code quality review |
-| `security-review` | OWASP security audit |
-| `verify` | Manual behavior verification |
 | `find-skills` | Discover skills |
-| `write-a-skill` | Create new skills |
 
 ### External Tools (user installs)
 
@@ -232,8 +228,10 @@ doit uses a **bundled dependency model** — core skills ship inside `skills/`. 
 | Context-Mode | `/plugin marketplace add mksglu/context-mode` | Phase 1-6 |
 | RTK | `curl -fsSL https://raw.githubusercontent.com/rtk-ai/rtk/refs/heads/master/install.sh | sh` | Phase 3 |
 | uv | `pip install uv` | Phase 3 |
-| tokensave | `cargo install tokensave && tokensave install --agent claude` | Phase 2, 3 |
+| tokensave | `cargo install tokensave && tokensave install --agent claude` | Phase 2, 3, 5, 6 |
 | caveman | `curl -fsSL https://raw.githubusercontent.com/JuliusBrussee/caveman/main/install.sh | bash` | Phase 0+ |
+| code-review | `claude plugin install code-review` | Phase 5 |
+| skill-creator | `claude install anthropics/skills/skill-creator` | Skill dev |
 | Tavily MCP | Remote, API key only | Phase 1 |
 
 ## Structure
