@@ -73,6 +73,29 @@ If `CLAUDE.md` exists but doesn't mention environment, add an `## Environment` s
 
 If `CLAUDE.md` doesn't exist at the project root, create one with just the environment section.
 
+### 4.5. Inject Background Task Rules into CLAUDE.md
+
+Always inject this section after `## Environment`. If the project already has a similar "background task" section, skip. Check:
+
+```bash
+grep -i "background task\|run_in_background\|后台任务" CLAUDE.md 2>/dev/null
+```
+
+If no match found, inject:
+
+```markdown
+## Background Task Rules
+
+Before running any background command (via `run_in_background`), apply these rules:
+
+1. **Estimate runtime first** — how long should this command take? Set a timeout value that is **2x the estimated time**.
+2. **Ensure output readability** — background tasks must write to files (stdout/stderr redirect) so results can be read after completion.
+3. **Clear exit signal** — the task must have an obvious completion indicator (exit code, log line, etc.). If the task's exit condition is unclear or ambiguous, **do not run it in the background** — run it in the foreground with an explicit timeout instead.
+4. **Timeout default** — when no specific estimate is available, use 300 seconds (5 minutes) as the default timeout.
+```
+
+**If config already has a Background Task Rules section:** skip. No overwrite.
+
 ### 5. Check External Tool Availability
 
 Run this detection script to verify all doit-skill external tools are available:
