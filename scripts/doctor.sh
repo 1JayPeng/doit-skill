@@ -6,7 +6,7 @@ set -e
 
 SKILL_DIR="$HOME/.claude/skills"
 BUNDLED_SKILLS=("grill-me" "tdd" "diagnose" "prototype" "handoff" "improve-codebase-architecture")
-BUILTIN_SKILLS=("find-skills")
+BUILTIN_SKILLS=()
 EXTERNAL_TOOLS=("context-mode" "rtk" "uv" "tokensave" "tavily" "caveman" "code-review" "skill-creator")
 SHARED_FILES=("shared/review-simplify.md" "shared/e2e-verify.md" "shared/commit.md")
 SYMLINK_TARGETS=("review-simplify.md:shared/review-simplify.md" "commit.md:shared/commit.md")
@@ -77,19 +77,8 @@ for skill in "${BUNDLED_SKILLS[@]}"; do
 done
 echo ""
 
-# Step 3: Check built-in Claude Code skills
-echo "[3/4] Checking built-in Claude Code skills..."
-for skill in "${BUILTIN_SKILLS[@]}"; do
-    if [ -d "$SKILL_DIR/$skill" ]; then
-        echo "  ✅ $skill custom override installed"
-    else
-        echo "  ℹ️  $skill built-in (no install needed)"
-    fi
-done
-echo ""
-
-# Step 4: Check external tools
-echo "[4/4] Checking external tools..."
+# Step 3: Check external tools
+echo "[3/3] Checking external tools..."
 for tool in "${EXTERNAL_TOOLS[@]}"; do
     case $tool in
 "context-mode")

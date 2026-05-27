@@ -129,9 +129,6 @@ if [ "$DRY_RUN" = true ]; then
   echo "    • improve-codebase-architecture (architecture)"
   echo ""
   if [ "$SKIP_OPTIONAL" = false ]; then
-echo "  Built-in Claude Code skills (no install needed):"
-    echo "    • find-skills      (discover skills)"
-    echo ""
     echo "  External tools (installed by default):"
     echo "    • context-mode     (/plugin marketplace add mksglu/context-mode)"
     echo "    • rtk              (curl install script)"
@@ -288,15 +285,7 @@ else
   echo "=========================================="
   echo ""
 
-# Built-in Claude Code skills — already available, no installation needed
-  BUILTIN_SKILLS=("find-skills")
-  for skill in "${BUILTIN_SKILLS[@]}"; do
-    if [ -d "$SKILL_DIR/$skill" ]; then
-      echo_success "$skill already installed (user custom)"
-    else
-      echo_info "$skill is a built-in Claude Code skill (no install needed)"
-    fi
-  done
+# No built-in skills require checking
 fi
 
 # Step 3: Install external tools

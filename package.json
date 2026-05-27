@@ -30,9 +30,7 @@
       "handoff": "bundled",
       "improve-codebase-architecture": "bundled"
     },
-    "optionalSkills": {
-      "find-skills": "built-in Claude Code skill"
-    },
+    "optionalSkills": {},
     "tools": {
       "rtk": "curl -fsSL https://raw.githubusercontent.com/rtk-ai/rtk/refs/heads/master/install.sh | sh",
       "uv": "pip install uv",

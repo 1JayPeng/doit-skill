@@ -82,12 +82,6 @@ doit-pack uses a **bundled dependency model**. Core skills ship inside `skills/`
 | `handoff` | Session handoff | Any phase |
 | `improve-codebase-architecture` | Architecture deepening | Phase 5 |
 
-### Built-in Claude Code Skills (no install needed)
-
-| Skill | Purpose |
-|-------|---------|
-| `find-skills` | Discover skills |
-
 ### External Tools (user installs)
 
 | Tool | Install | Used In |
