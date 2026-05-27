@@ -39,6 +39,18 @@ Discovery (when you need to find specific code):
 - `tokensave_impact(node_id="<id>")` — full blast radius of changing a symbol
 - `tokensave_files(path="<dir>")` — list indexed project files
 
+Type system (when reviewing interfaces, traits, classes):
+- `tokensave_type_hierarchy(node_id="<id>")` — recursive type hierarchy tree
+- `tokensave_rank(edge_kind="implements", direction="incoming")` — most implemented interface
+- `tokensave_distribution(path="<dir>")` — node kind breakdown
+- `tokensave_largest(node_kind="class", limit=5)` — largest classes
+
+Git & Workflow (for commit preparation, PR descriptions):
+- `tokensave_commit_context()` — semantic summary of uncommitted changes
+- `tokensave_pr_context(head_ref="HEAD", base_ref="<base>")` — semantic diff for PR descriptions
+- `tokensave_changelog(from_ref="<base>", to_ref="HEAD")` — semantic diff between refs
+- `tokensave_test_map(node_id="<id>")` — source-to-test mapping, uncovered symbols
+
 - **Fallback:** If TokenSave unavailable -> `git diff` + manual `Read` of changed files.
 
 Check:

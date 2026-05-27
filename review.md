@@ -36,6 +36,10 @@ Run `improve-codebase-architecture` skill for insight only. **Do not execute arc
 - `tokensave_dependency_depth()` — longest dependency chains, fragile files
 - `tokensave_gini(metric="complexity")` — find god files with uneven complexity distribution
 - `tokensave_inheritance_depth()` — deepest class/interface hierarchies
+- `tokensave_type_hierarchy(node_id="<id>")` — full type hierarchy tree for traits/interfaces/classes
+- `tokensave_rank(edge_kind="implements", direction="incoming")` — most implemented interface (high coupling risk)
+- `tokensave_distribution(path="<dir>")` — node kind breakdown per file/directory
+- `tokensave_largest(node_kind="class", limit=5)` — largest classes (potential god classes)
 - **Fallback:** If TokenSave unavailable -> `Agent Explore` for architectural overview.
 
 ### 3. Security Review (tokensave-based)

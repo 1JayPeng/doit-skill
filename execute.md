@@ -40,8 +40,18 @@ Before writing tests, understand the code you'll modify:
 4. `tokensave_callers` / `tokensave_callees` — call graph edges, blast radius
 5. `tokensave_impact` — what's affected by changing a symbol
 6. `tokensave_files` — understand project file structure
-7. `ctx_search` — look up previously indexed information from this session
+7. `tokensave_test_map(node_id="<id>")` — find test coverage for symbol being modified
+8. `ctx_search` — look up previously indexed information from this session
    - **Fallback:** If Context-Mode unavailable -> `grep` command output
+
+### IMPLEMENT (edit primitives for code changes)
+
+Use tokensave edit primitives instead of Read+Edit when modifying source files — they trigger in-place re-index so the graph never goes stale:
+- `tokensave_str_replace` — replace a unique string; fails if 0 or >1 matches (safe single-edit)
+- `tokensave_multi_str_replace` — apply N replacements atomically (all-or-nothing transaction)
+- `tokensave_insert_at` — insert content before/after an anchor string or line number
+- `tokensave_ast_grep_rewrite` — structural code rewrite via ast-grep CLI (refactoring, renaming)
+- **Fallback:** If TokenSave unavailable -> native Read + Edit tools
 
 ### RED
 Write test for REQ-N behavior. Test through public interface, not internals.

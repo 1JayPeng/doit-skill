@@ -36,6 +36,8 @@ git log --oneline -5 origin/master  # check remote head
 Use TokenSave to get structured change summary:
 1. `tokensave_commit_context()` — semantic summary of uncommitted changes (changed symbols, file roles, recent commit style)
 2. `tokensave_changelog(from_ref="<base_branch>", to_ref="HEAD")` — if on a feature branch, structured diff between refs
+3. `tokensave_pr_context(head_ref="HEAD", base_ref="<base_branch>")` — semantic diff between refs for PR description drafting
+4. `tokensave_test_map(node_id="<id>")` — verify test coverage for changed symbols before committing
 - **Fallback:** If TokenSave unavailable -> `git diff --name-only` + `git log --oneline` manually.
 
 ### 2. Learn Commit Message Style

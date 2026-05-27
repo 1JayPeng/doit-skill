@@ -18,7 +18,9 @@
 5. `tokensave_callees(node_id="<id>", max_depth=2)` — what does this call (downstream call chain)
 6. `tokensave_diagnostics(scope="workspace")` — run cargo check / tsc / pyright for type errors
 7. `tokensave_diagnose(cargo_output="<stderr>")` — parse compiler/linter diagnostics mapped to graph nodes
-8. `ctx_execute(language="shell", code="<reproduce command>")` — reproduce the bug, auto-index output
+8. `tokensave_test_map(file="<bug_file>")` — find existing tests covering this code
+9. `tokensave_affected_tests(files=[<bug_file>], depth=2)` — find affected tests via dependency graph
+10. `ctx_execute(language="shell", code="<reproduce command>")` — reproduce the bug, auto-index output
 - **Fallback for all TokenSave tools:** `grep -rn "<keyword>" src/` + `find` + `Read`.
 - **Fallback for ctx_execute:** native Bash tool.
 
@@ -39,8 +41,6 @@ Use `diagnose` skill for root cause analysis if needed.
 **Write a test that fails because of the bug. This is the single most important step — it prevents the bug from returning.**
 
 **Tool Calling:**
-- `tokensave_test_map(file="<bug_file>")` — find existing tests covering this code
-- `tokensave_affected_tests(files=[<bug_file>], depth=2)` — find affected tests via dependency graph
   - **Fallback:** `grep -rn "def test_" tests/ | grep -i "<keyword>"` to find relevant tests.
 
 1. **Write the test for the expected behavior** — what should happen, not what actually happens

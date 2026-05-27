@@ -24,6 +24,21 @@ Use **TokenSave** for code intelligence (discovery + call graph + code quality):
 - `tokensave_diff_context` — semantic context for changed files
 - `tokensave_dsm` — design structure matrix, reveals hidden coupling
 
+**Type system analysis (when task involves interfaces, traits, classes):**
+- `tokensave_type_hierarchy(node_id="<id>")` — full type hierarchy tree for traits/interfaces/classes
+- `tokensave_rank(edge_kind="implements", direction="incoming")` — most implemented interface (high coupling)
+- `tokensave_distribution(path="<dir>")` — node kind breakdown per file/directory
+- `tokensave_largest(node_kind="class", limit=5)` — largest classes (potential god classes)
+
+**Porting tasks (when porting code between languages/modules):**
+- `tokensave_port_status(source_dir="<src>", target_dir="<tgt>")` — compare symbols, track progress
+- `tokensave_port_order(source_dir="<src>")` — topological sort, port leaves first then dependents
+
+**Multi-branch (when comparing branches):**
+- `tokensave_branch_list()` — list tracked branches with DB sizes
+- `tokensave_branch_search(branch="<name>", query="<symbol>")` — search symbols in another branch
+- `tokensave_branch_diff(head="<head>", base="<base>")` — symbols added/removed/changed between branches
+
 **Rule:** `tokensave_context` first, then narrow with `tokensave_search`/`tokensave_impact`.
 
 Tool selection guidance lives in global CLAUDE.md.

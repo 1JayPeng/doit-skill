@@ -62,6 +62,8 @@ Compare actual output against spec:
    - **Fallback:** Read `.spec/current.md` directly.
 2. `tokensave_diff_context(files=[<files changed by simplify>])` — which symbols simplify actually changed
    - **Fallback:** `git diff --name-only` + `git diff <file>`.
+3. `tokensave_changelog(from_ref="<base_branch>", to_ref="HEAD")` — structured diff of all changes on branch
+   - **Fallback:** `git diff <base>...HEAD`.
 
 ## Rules
 
