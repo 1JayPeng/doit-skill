@@ -81,6 +81,17 @@ Stage changed files, commit with meaningful message matching project's commit st
 - `current` — push current branch
 - `none` — commit only, skip push
 
+## Phase 9 — Cleanup
+
+Remove all intermediate workflow files. See [commit.md](shared/commit.md) step 8.
+
+- `.spec/current.md` — remove (archived in Phase 5)
+- `.scratch/workflow-state.json` — remove (workflow complete)
+- `.spec/doc-capture.md` — remove (temp file)
+- `.scratch/` directory — remove if empty
+
+**Keep:** `.spec/archive/`, `.doit/config.yaml`, `.doit/docs/`
+
 ## Error Handling
 
 See [errors.md](errors.md). Spec fail = discard. Execute fail = re-grill. Review fail = retain on branch.
@@ -109,6 +120,7 @@ Workflow spans multiple conversation turns. If `/doit` is called again mid-sessi
   [x] Phase 6   Review + Simplify
   [x] Phase 7   E2E Verification Loop
   [x] Phase 8   Commit + Push
+  [x] Phase 9   Cleanup intermediate files
   [x] Doc Capture (if user prompt has docs)
 
 [Phase Gate] Type S flow (simple):
@@ -125,5 +137,6 @@ Workflow spans multiple conversation turns. If `/doit` is called again mid-sessi
 **After Phase 3 completes:** always continue to Phase 4. Never stop at "tests pass, done."
 **After Phase 6 completes:** always continue to Phase 7. E2E verification after simplification.
 **After Phase 7 completes:** always continue to Phase 8. Every feature ships committed + pushed.
+**After Phase 8 completes:** always continue to Phase 9. Clean up intermediate files.
 
-**The only valid end state is Phase 8 committed.** If you're about to say "done" or "completed" and haven't committed, you haven't finished.
+**The only valid end state is Phase 9 clean.** If you're about to say "done" or "completed" and intermediate files are still present, you haven't finished.

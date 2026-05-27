@@ -140,11 +140,38 @@ git push -u origin HEAD
 
 **`none`** — commit only, skip push.
 
+### 8. Cleanup Intermediate Files
+
+**After successful push, remove all workflow intermediate files.** The feature is committed + pushed. These files are no longer needed and clutter the working directory.
+
+```bash
+# Remove current spec (already archived in Phase 5 step 6)
+rm -f .spec/current.md
+
+# Remove runtime state (workflow complete, no resume needed)
+rm -f .scratch/workflow-state.json
+
+# Remove doc-capture temp file
+rm -f .spec/doc-capture.md
+
+# Remove any other scratch artifacts
+rm -rf .scratch/  # if empty after removing state
+```
+
+**What to keep:**
+- `.spec/archive/` — archived specs (historical reference)
+- `.doit/config.yaml` — user config (persists across runs)
+- `.doit/docs/` — captured reference docs (already committed)
+
+**What NOT to commit:**
+These files are excluded from git (see step 3). Cleanup is for local directory hygiene, not git.
+
 ## Gate — Session End
 
-This is the **final phase**. After push, announce:
+This is the **final phase**. After push + cleanup, announce:
 - Branch name (remote)
 - Commit hash
 - Summary of changes
+- Intermediate files cleaned
 
 **Doit session ends here. No additional confirmation needed.**
