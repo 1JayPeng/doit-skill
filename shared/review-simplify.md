@@ -14,6 +14,13 @@
 
 Read every file you modified. Not just the diff — read the full context around changes.
 
+**tokensave tools for review:**
+1. `tokensave_diff_context(files=[<changed_files>])` — semantic context: symbols modified, dependents, affected tests
+2. `tokensave_simplify_scan(files=[<changed_files>])` — auto-detect duplications, dead code, coupling, complexity hotspots
+3. `tokensave_dead_code()` — find symbols with no incoming edges (potentially dead)
+4. `tokensave_unused_imports()` — find unreferenced import/use nodes
+- **Fallback:** If TokenSave unavailable -> `git diff` + manual `Read` of changed files.
+
 Check:
 - [ ] Code does what the spec says (not what I thought it said)
 - [ ] No commented-out code or debugging artifacts
@@ -47,10 +54,14 @@ After writing code, check what documentation needs updating:
 ### 4. Final Verification
 
 After simplifying, run:
-1. Tests still pass
-2. `codegraph_context` — verify the changes integrate cleanly with the codebase
-3. `ctx_search` — verify documentation matches new behavior (search for references to old functionality)
-4. One final read of the modified files — do they still read correctly after simplifying?
+1. **Tests still pass** — `ctx_execute` (auto-indexes output) or Bash fallback
+2. `tokensave_health(path="<changed_dir>")` — verify quality signal didn't degrade
+3. `tokensave_diff_context(files=[<changed_files>])` — verify changes integrate cleanly
+4. `ctx_search(queries=[<old_functionality_keywords>])` — verify documentation matches new behavior
+5. One final read of the modified files — do they still read correctly after simplifying?
+
+**Fallback for all TokenSave tools:** `git diff <files>` + manual `Read`.
+**Fallback for ctx_search:** `grep -rn "<keyword>" .` — search docs manually.
 
 ## Gate
 

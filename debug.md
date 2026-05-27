@@ -8,7 +8,21 @@
 
 1. **Capture the reported symptom** — exact error message, command, input that triggers it
 2. **Reproduce the bug** — run the same command/input, confirm you see the same failure
-3. **Narrow to the exact location** — `codegraph_context` for the affected area, trace the call path
+3. **Narrow to the exact location** — see Tool Calling below, trace the call path
+
+**Tool Calling for diagnosis:**
+1. `tokensave_context(task="<bug description>")` — get focused context for the affected area
+2. `tokensave_search(query="<symbol_from_error>")` — find the specific symbol in the error
+3. `tokensave_node(node_id="<id>")` — get function signature/body
+4. `tokensave_callers(node_id="<id>", max_depth=3)` — who calls this function (upstream call chain)
+5. `tokensave_callees(node_id="<id>", max_depth=2)` — what does this call (downstream call chain)
+6. `tokensave_diagnostics(scope="workspace")` — run cargo check / tsc / pyright for type errors
+7. `tokensave_diagnose(cargo_output="<stderr>")` — parse compiler/linter diagnostics mapped to graph nodes
+8. `ctx_execute(language="shell", code="<reproduce command>")` — reproduce the bug, auto-index output
+- **Fallback for all TokenSave tools:** `grep -rn "<keyword>" src/` + `find` + `Read`.
+- **Fallback for ctx_execute:** native Bash tool.
+
+Use `diagnose` skill for root cause analysis if needed.
 
 ```
 [BUG] Symptom: "command X crashes with error Y"
@@ -24,8 +38,13 @@ Use `diagnose` skill for root cause analysis if needed.
 
 **Write a test that fails because of the bug. This is the single most important step — it prevents the bug from returning.**
 
+**Tool Calling:**
+- `tokensave_test_map(file="<bug_file>")` — find existing tests covering this code
+- `tokensave_affected_tests(files=[<bug_file>], depth=2)` — find affected tests via dependency graph
+  - **Fallback:** `grep -rn "def test_" tests/ | grep -i "<keyword>"` to find relevant tests.
+
 1. **Write the test for the expected behavior** — what should happen, not what actually happens
-2. **Run the test — it MUST fail (RED)**
+2. **Run the test — it MUST fail (RED)** — use `ctx_execute` to auto-index test output
 3. **Verify the failure reason IS the bug** — not a test setup error
 
 ```
@@ -49,6 +68,13 @@ PASS: test_xxx_regression
 ## D3 — E2E Verify the Fix
 
 **Run e2e tests to verify the fix works in the real environment and doesn't break other entry points.**
+
+**Tool Calling:**
+- `ctx_execute(language="shell", code="<original bug trigger command>")` — reproduce original failure, now should pass
+- `ctx_execute(language="shell", code="<run all e2e tests>")` — full regression suite
+- `tokensave_affected_tests(files=[<changed_files>], depth=3)` — find affected tests by dependency graph
+  - **Fallback:** `grep -rn "<changed_symbol>" tests/` to find tests referencing changed code.
+- **Fallback for ctx_execute:** native Bash tool.
 
 1. **Run the original bug trigger in real env** — same command/input that caused the crash
 2. **Verify the fix** — expected behavior, not exit code 0

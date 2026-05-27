@@ -116,13 +116,23 @@ fi
 **If tools are missing, announce warnings — do not block the workflow:**
 
 ```
-[WARN] context-mode NOT available -> Phase 2/3 will use Agent Explore + native grep (slower)
+[WARN] context-mode NOT available -> Phase 1-8 will use Bash + grep (no auto-index)
 [WARN] tavily NOT configured -> Phase 1 will use WebSearch (built-in) for internet research
-[WARN] tokensave NOT installed -> Phase 2/3 will use Agent Explore for symbol search
-[WARN] tokensave NOT installed -> Phase 2/3 will use Agent Explore for codebase intelligence
+[WARN] tokensave NOT installed -> Phase 2-8 will use Agent Explore for codebase intelligence
+[WARN] tokensave NOT installed -> Phase 5-6 will use git diff for review (no code graph)
 [WARN] rtk NOT installed -> shell commands run without token optimization
 [WARN] uv NOT installed -> Python commands will use pip instead of uv
 ```
+
+**Per-phase fallback summary (reference for all phases):**
+
+| Tool | Unavailable → Fallback | Affected Phases |
+|------|----------------------|-----------------|
+| tokensave | `Agent Explore` + `grep` + `find` | 2, 3, 5, 6, 7, 8 |
+| context-mode | native Bash (no auto-index) | 2, 3, 4, 7, 8 |
+| tavily MCP | `WebSearch` (built-in) | 1 |
+| rtk | Bash (no token opt) | all |
+| uv | `pip` + `python3 -m venv` | 3, 4, 7 |
 
 Missing tools trigger fallback paths in each phase (see each phase's fallback instructions).
 

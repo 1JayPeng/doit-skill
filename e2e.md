@@ -24,10 +24,49 @@ Phase 4 E2E tests cover: real entry points, real I/O, integration of all layers.
 | L2 | Conflicting param combinations | HITL |
 | L3 | Fuzzy/random input, stability | HITL |
 
+## Tool Calling
+
+### Run E2E Tests
+
+**Primary:** Use Context-Mode to auto-index test output:
+```
+ctx_execute(language="shell", code="uv run pytest tests/e2e/ -v --tb=short")
+ctx_execute(language="shell", code="uv run python -m pytest tests/e2e/ -v --tb=short")
+```
+- **Fallback:** If Context-Mode unavailable -> native Bash tool (output not indexed).
+
+### Detect Test Framework (before generating tests)
+
+Scan project config to determine the test runner:
+```
+ctx_batch_execute(
+  commands=[
+    {"label": "pyproject.toml", "command": "cat pyproject.toml 2>/dev/null || echo missing"},
+    {"label": "package.json scripts", "command": "cat package.json 2>/dev/null | grep -A5 scripts || echo missing"},
+    {"label": "test dirs", "command": "find . -maxdepth 3 -type d -name test\* -o -name __tests__ 2>/dev/null | head -10"},
+  ],
+  queries=["pytest", "jest", "test runner", "test framework"]
+)
+```
+- **Fallback:** If Context-Mode unavailable -> parallel Bash calls to `cat` + `find`.
+
+**tokensave** tools for understanding entry points:
+1. `tokensave_search(query="<entry_point_name>")` — find the entry point function
+2. `tokensave_node(node_id="<id>")` — get function signature for test generation
+3. `tokensave_test_map(file="<source_file>")` — check existing test coverage
+- **Fallback:** If TokenSave unavailable -> `grep -rn "def " src/` + `Read` the file.
+
+### Spec Alignment Check Tools
+
+After tests pass, compare output against spec:
+1. `ctx_search(queries=[<REQ descriptions>])` — look up spec REQs from indexed content
+   - **Fallback:** Read `.spec/current.md` directly.
+2. `tokensave_diff_context(files=[<changed_files>])` — which symbols changed, semantic impact
+   - **Fallback:** `git diff --name-only` + `git diff <file>`.
+
 ## L0/L1 Auto-Generate
 
 For each entry point (function, CLI command, API):
-
 1. List all parameters from signature
 2. Generate L0: one valid call per entry point
 3. Generate L1: boundary for each param

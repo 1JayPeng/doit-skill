@@ -11,11 +11,32 @@ Commit runs only after E2E Verification Loop passes (e2e tests all green AND spe
 ### 1. Check Git Status
 
 Inspect current state and remote:
+
+**Primary:** Use Context-Mode to index git output:
+```
+ctx_batch_execute(
+  commands=[
+    {"label": "git status", "command": "git status"},
+    {"label": "git diff", "command": "git diff --staged"},
+    {"label": "remote head", "command": "git log --oneline -5 origin/master"},
+  ],
+  queries=["changed files", "staged changes"]
+)
+```
+- **Fallback:** If Context-Mode unavailable -> parallel Bash calls.
+
 ```bash
 git status
 git diff --staged
 git log --oneline -5 origin/master  # check remote head
 ```
+
+### 1.5. Generate Commit Context (optional, recommended)
+
+Use TokenSave to get structured change summary:
+1. `tokensave_commit_context()` — semantic summary of uncommitted changes (changed symbols, file roles, recent commit style)
+2. `tokensave_changelog(from_ref="<base_branch>", to_ref="HEAD")` — if on a feature branch, structured diff between refs
+- **Fallback:** If TokenSave unavailable -> `git diff --name-only` + `git log --oneline` manually.
 
 ### 2. Learn Commit Message Style
 

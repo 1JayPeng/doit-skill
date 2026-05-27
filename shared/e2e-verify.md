@@ -45,6 +45,24 @@ After e2e tests pass, **before proceeding to commit**:
 3. **Compare actual output against spec REQ, not against test assertion**
 4. **Mismatch → fix the code output, not the test assertion**
 
+## Tool Calling
+
+### Run E2E Tests (each loop iteration)
+
+**Primary:** Use Context-Mode to auto-index output:
+```
+ctx_execute(language="shell", code="uv run pytest tests/e2e/ -v --tb=short")
+```
+- **Fallback:** If Context-Mode unavailable -> native Bash tool.
+
+### Spec Alignment Tools
+
+Compare actual output against spec:
+1. `ctx_search(queries=[<REQ descriptions from spec>])` — look up REQ expectations from indexed content
+   - **Fallback:** Read `.spec/current.md` directly.
+2. `tokensave_diff_context(files=[<files changed by simplify>])` — which symbols simplify actually changed
+   - **Fallback:** `git diff --name-only` + `git diff <file>`.
+
 ## Rules
 
 - **Run all E2E tests again** — L0 + L1 + L2 + L3
