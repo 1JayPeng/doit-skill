@@ -131,7 +131,7 @@ Any requirement statement auto-triggers the workflow:
 
 ### Continuing the Workflow
 
-A single `/doit` invocation may not complete the entire workflow — spec grilling, implementation, testing, and review are a long process. To continue from where you left off, simply type `/doit` again in the same conversation. The workflow picks up from the current phase (tracked in `.scratch/workflow-state.json`).
+A single `/doit` invocation may not complete the entire workflow — spec grilling, implementation, testing, and review are a long process. To continue from where you left off, simply type `/doit` again in the same conversation. The workflow picks up from the current phase (determined from conversation context and git/spec file state).
 
 ```
 > /doit
@@ -161,7 +161,7 @@ Phase&nbsp;4 (end-to-end testing) **cannot be skipped**. Three-layer defense pre
 
 1. **Phase&nbsp;3 →&nbsp;4**: automatic transition when all REQs done. Agent must not ask user whether to skip E2E.
 2. **SKILL.md gate**: Phase&nbsp;5 must not start until Phase&nbsp;4 produces `e2e: passed`.
-3. **Review pre-flight gate**: Phase&nbsp;5 checks `.scratch/workflow-state.json` for `"e2e": "passed"` — hard block if missing.
+3. **Review pre-flight gate**: Phase&nbsp;5 must verify all L0+L1 e2e tests passed before starting — hard block if not.
 
 ## Phase 7: E2E Verification Loop
 

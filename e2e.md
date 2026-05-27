@@ -126,14 +126,9 @@ REQ-002: "unauthorized access returns 403"
 
 **Key: compare output against spec, not against test assertion.** The test assertion might have been changed to match wrong output (AI lying to itself). Always read the spec as the ground truth.
 
-## State Persistence
+## Phase 5 Pre-flight Gate
 
-After Phase 4 completes (all L0+L1 tests run):
-Write to `.scratch/workflow-state.json`:
-```json
-{ "phase": "e2e", "e2e": "passed", "l0_entry_points": N, "l1_boundary_values": M }
-```
-If tests failed: `"e2e": "failed"`. This is what Phase 5 pre-flight gate checks.
+Phase 5 must not start until Phase 4 produces `e2e: passed`. Verify: all L0+L1 e2e tests passed.
 
 ## E2E Verification Loop (Phase 7 / D5)
 

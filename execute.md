@@ -106,7 +106,7 @@ Proceed to REQ-00(X+1)? (yes/no, or describe gap)
 
 ### State Tracking
 
-Update `.spec/current.md` status as REQs complete. Save runtime state to `.scratch/workflow-state.json`. Workflow state includes current phase so `/doit` can resume mid-session.
+Update `.spec/current.md` status as REQs complete. Cross-session resume uses git branch, commit history, and spec REQ statuses (see SKILL.md Resume).
 
 ## Phase 3 End
 

@@ -23,6 +23,23 @@ See [setup.md](setup.md) for full tool/skill install manifest.
 
 Also init `.doit/config.yaml` if not present (default config for doc-capture, commit branch strategy). See [env-check.md](env-check.md) step 8 and [doit-config.md](doit-config.md).
 
+## Principles
+
+Four principles guide every phase. See [principles.md](principles.md).
+
+| Principle | What it prevents |
+|-----------|------------------|
+| **Think Before Coding** | wrong assumptions, hidden confusion, missing trade-offs |
+| **Brevity First** | over-engineering, bloated abstractions |
+| **Surgical Edits** | unrelated edits, touching code that shouldn't be touched |
+| **Goal-Driven Execution** | vague success criteria, constant clarification |
+
+Per-phase application:
+- **Phase 1 (Spec)** — think before coding: grill ideas, challenge assumptions, present alternatives
+- **Phase 3 (Execute)** — goal-driven (testable verification per REQ), brevity first (minimal code per REQ)
+- **Phase 5-6 (Review + Simplify)** — surgical edits (only touch what's necessary), brevity first (remove unnecessary abstractions)
+- **Debug (D2 Fix)** — surgical edits (minimum change for regression test pass)
+
 ## Phase 0 — Classify Request
 
 **First — enable caveman mode for the entire session.**
@@ -86,7 +103,6 @@ Stage changed files, commit with meaningful message matching project's commit st
 Remove all intermediate workflow files. See [commit.md](shared/commit.md) step 8.
 
 - `.spec/current.md` — remove (archived in Phase 5)
-- `.scratch/workflow-state.json` — remove (workflow complete)
 - `.spec/doc-capture.md` — remove (temp file)
 - `.scratch/` directory — remove if empty
 
@@ -98,11 +114,30 @@ See [errors.md](errors.md). Spec fail = discard. Execute fail = re-grill. Review
 
 ## Persistence
 
-Spec in git (`feature/xxx` branch). Runtime state in `.scratch/workflow-state.json`. Phase 8 commits all changes and pushes to remote branch.
+Spec in git (`feature/xxx` branch). No runtime state file — workflow progress tracked by git branch, commit history, and spec files.
 
 ## Resume
 
-Workflow spans multiple conversation turns. If `/doit` is called again mid-session, check `.scratch/workflow-state.json` and resume from current phase. Do not restart from Phase 0.
+Workflow spans multiple conversation turns. If `/doit` is called again, determine current phase from context and filesystem:
+
+1. **Same session** — conversation history already tracks progress
+2. **Cross-session** (new conversation, same project):
+
+```
+On feature branch (feat/xxx or fix/xxx)?
+  → Work in progress, inspect further:
+
+  .spec/current.md exists?
+    → Spec written (Phase 1+), check REQ-xxx statuses for execution progress
+    .spec/archive/ has files?
+      → Phase 5+ completed
+    git diff --stat shows uncommitted changes?
+      → Middle of a phase
+    git log -1 contains phase info?
+      → Commit message may indicate last completed phase
+  No spec files, no feature branch?
+    → Start from Phase 0
+```
 
 ## Phase Gate Checklist — DO NOT SKIP
 
