@@ -6,8 +6,8 @@ set -e
 
 SKILL_DIR="$HOME/.claude/skills"
 BUNDLED_SKILLS=("grill-me" "tdd" "diagnose" "prototype" "handoff" "improve-codebase-architecture")
-BUILTIN_SKILLS=("code-review" "security-review" "verify" "caveman" "find-skills" "write-a-skill")
-EXTERNAL_TOOLS=("context-mode" "rtk" "uv" "tokensave" "tavily")
+BUILTIN_SKILLS=("code-review" "security-review" "verify" "find-skills" "write-a-skill")
+EXTERNAL_TOOLS=("context-mode" "rtk" "uv" "tokensave" "tavily" "caveman")
 SHARED_FILES=("shared/review-simplify.md" "shared/e2e-verify.md" "shared/commit.md")
 SYMLINK_TARGETS=("review-simplify.md:shared/review-simplify.md" "commit.md:shared/commit.md")
 
@@ -131,6 +131,14 @@ for tool in "${EXTERNAL_TOOLS[@]}"; do
             else
                 echo "  ℹ️  tavily not configured (optional)"
                 echo "  💡 Configure: Add Tavily MCP to ~/.claude/settings.json"
+            fi
+            ;;
+        "caveman")
+            if [ -d "$SKILL_DIR/caveman" ]; then
+                echo "  ✅ caveman installed"
+            else
+                echo "  ℹ️  caveman not installed (recommended)"
+                echo "  💡 Install: curl -fsSL https://raw.githubusercontent.com/JuliusBrussee/caveman/main/install.sh | bash"
             fi
             ;;
     esac

@@ -130,18 +130,18 @@ if [ "$DRY_RUN" = true ]; then
   echo ""
   if [ "$SKIP_OPTIONAL" = false ]; then
     echo "  Built-in Claude Code skills (no install needed):"
-    echo "    • code-review    (code quality review)"
-    echo "    • security-review (OWASP security audit)"
-    echo "    • verify          (behavior verification)"
-    echo "    • caveman         (token-compact mode)"
-    echo "    • find-skills     (discover skills)"
-    echo "    • write-a-skill   (create new skills)"
+    echo "    • code-review     (code quality review)"
+    echo "    • security-review  (OWASP security audit)"
+    echo "    • verify           (behavior verification)"
+    echo "    • find-skills      (discover skills)"
+    echo "    • write-a-skill    (create new skills)"
     echo ""
     echo "  External tools (installed by default):"
     echo "    • context-mode     (/plugin marketplace add mksglu/context-mode)"
     echo "    • rtk              (curl install script)"
     echo "    • uv               (pip install uv)"
     echo "    • tokensave        (cargo install tokensave)"
+    echo "    • caveman          (curl install script)"
   fi
 
   echo "  Options (configurable at install):"
@@ -291,7 +291,7 @@ else
   echo ""
 
 # Built-in Claude Code skills — already available, no installation needed
-  BUILTIN_SKILLS=("code-review" "security-review" "verify" "caveman" "find-skills" "write-a-skill")
+  BUILTIN_SKILLS=("code-review" "security-review" "verify" "find-skills" "write-a-skill")
   for skill in "${BUILTIN_SKILLS[@]}"; do
     if [ -d "$SKILL_DIR/$skill" ]; then
       echo_success "$skill already installed (user custom)"
@@ -352,6 +352,14 @@ else
     else
       echo_warn "cargo not found — tokensave requires Rust. Install via: cargo install tokensave"
     fi
+  fi
+
+  # Caveman (token-compact mode)
+  if [ -d "$SKILL_DIR/caveman" ]; then
+    echo_success "caveman already installed"
+  else
+    echo_info "Installing caveman..."
+    curl -fsSL https://raw.githubusercontent.com/JuliusBrussee/caveman/main/install.sh 2>/dev/null | bash 2>/dev/null || echo_warn "Failed to install caveman"
   fi
 fi
 

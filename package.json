@@ -34,7 +34,6 @@
       "code-review": "built-in Claude Code skill",
       "security-review": "built-in Claude Code skill",
       "verify": "built-in Claude Code skill",
-      "caveman": "built-in Claude Code skill",
       "find-skills": "built-in Claude Code skill",
       "write-a-skill": "built-in Claude Code skill"
     },
@@ -43,7 +42,8 @@
       "uv": "pip install uv",
       "codegraph": "curl -fsSL https://raw.githubusercontent.com/colbymchenry/codegraph/main/install.sh | sh",
       "code-review-graph": "uv tool install code-review-graph && uvx code-review-graph install --platform claude-code",
-      "context-mode": "/plugin marketplace add mksglu/context-mode && /plugin install context-mode@context-mode"
+      "context-mode": "/plugin marketplace add mksglu/context-mode && /plugin install context-mode@context-mode",
+      "caveman": "curl -fsSL https://raw.githubusercontent.com/JuliusBrussee/caveman/main/install.sh | bash"
     }
   }
 }

@@ -89,7 +89,6 @@ doit-pack uses a **bundled dependency model**. Core skills ship inside `skills/`
 | `code-review` | Code quality review |
 | `security-review` | OWASP security audit |
 | `verify` | Manual behavior verification |
-| `caveman` | Token-compact mode |
 | `find-skills` | Discover skills |
 | `write-a-skill` | Create new skills |
 
@@ -102,6 +101,7 @@ doit-pack uses a **bundled dependency model**. Core skills ship inside `skills/`
 | TokenSave | `cargo install tokensave && tokensave install --agent claude` | Phase 2, 3 |
 | Context-Mode | `/plugin marketplace add mksglu/context-mode` | Phase 1-6 |
 | Tavily MCP | Remote, API key only | Phase 1 |
+| caveman | `curl -fsSL https://raw.githubusercontent.com/JuliusBrussee/caveman/main/install.sh | bash` | Phase 0+ |
 
 ### Adding Dependencies
 

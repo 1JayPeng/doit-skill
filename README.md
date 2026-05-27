@@ -222,7 +222,6 @@ doit uses a **bundled dependency model** — core skills ship inside `skills/`. 
 | `code-review` | Code quality review |
 | `security-review` | OWASP security audit |
 | `verify` | Manual behavior verification |
-| `caveman` | Token-compact mode |
 | `find-skills` | Discover skills |
 | `write-a-skill` | Create new skills |
 
@@ -234,6 +233,7 @@ doit uses a **bundled dependency model** — core skills ship inside `skills/`. 
 | RTK | `curl -fsSL https://raw.githubusercontent.com/rtk-ai/rtk/refs/heads/master/install.sh | sh` | Phase 3 |
 | uv | `pip install uv` | Phase 3 |
 | tokensave | `cargo install tokensave && tokensave install --agent claude` | Phase 2, 3 |
+| caveman | `curl -fsSL https://raw.githubusercontent.com/JuliusBrussee/caveman/main/install.sh | bash` | Phase 0+ |
 | Tavily MCP | Remote, API key only | Phase 1 |
 
 ## Structure

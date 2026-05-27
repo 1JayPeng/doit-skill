@@ -109,8 +109,9 @@ npx skills add ./path/to/doit-skill
 
 | 工具 | 安装 |
 |------|------|
-| RTK | `cargo install rtk` |
+| RTK | `curl -fsSL https://raw.githubusercontent.com/rtk-ai/rtk/refs/heads/master/install.sh | sh` |
 | tokensave | `cargo install tokensave` |
+| caveman | `curl -fsSL https://raw.githubusercontent.com/JuliusBrussee/caveman/main/install.sh | bash` |
 | Tavily MCP | 远程服务，无需安装 |
 
 完整安装清单见 [setup.md](setup.md)。
