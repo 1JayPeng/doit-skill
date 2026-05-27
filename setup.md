@@ -69,9 +69,9 @@ Remote MCP. Streamable HTTP transport — no install needed.
 
 ## Skills Dependency Model
 
-doit-pack uses a **bundled dependency model**. Core skills ship inside `skills/` and are installed automatically. Optional skills require separate installation.
+doit uses a **bundled dependency model**. Core skills ship inside `skills/` and are installed automatically. Optional skills require separate installation.
 
-### Bundled Skills (ship with doit-pack)
+### Bundled Skills (ship with doit)
 
 | Skill | Purpose | Used In |
 |-------|---------|---------|

@@ -34,9 +34,7 @@
     "tools": {
       "rtk": "curl -fsSL https://raw.githubusercontent.com/rtk-ai/rtk/refs/heads/master/install.sh | sh",
       "uv": "pip install uv",
-      "codegraph": "curl -fsSL https://raw.githubusercontent.com/colbymchenry/codegraph/main/install.sh | sh",
-      "code-review-graph": "uv tool install code-review-graph && uvx code-review-graph install --platform claude-code",
-      "context-mode": "/plugin marketplace add mksglu/context-mode && /plugin install context-mode@context-mode",
+            "context-mode": "/plugin marketplace add mksglu/context-mode && /plugin install context-mode@context-mode",
       "caveman": "curl -fsSL https://raw.githubusercontent.com/JuliusBrussee/caveman/main/install.sh | bash",
       "code-review": "claude plugin install code-review",
       "skill-creator": "claude install anthropics/skills/skill-creator",

@@ -235,6 +235,8 @@ doit-skill/
 ├── SKILL.md          # Main entry point
 ├── env-check.md      # Phase -1: environment detection
 ├── classifier.md     # Request type detection
+├── doc-capture.md    # Doc capture (pre-phase)
+├── doit-config.md    # Config reference
 ├── spec.md           # Phase 1: grill + REQ generation
 ├── plan.md           # Phase 2: code graph scan
 ├── debug.md          # Debug workflow D0-D6 (Type B)
@@ -253,10 +255,10 @@ doit-skill/
 ├── README.md         # This file (English)
 ├── README_ZH.md      # Chinese version
 ├── skills/           # Bundled skill dependencies
-├── scripts/          # Install and utility scripts
-│   ├── setup.sh      # Full install script (curl or local)
-│   └── add-dependency.sh # Add a new skill dependency
-└── tests/            # Skill self-tests (future)
+└── scripts/          # Install and utility scripts
+    ├── setup.sh      # Full install script (curl or local)
+    ├── doctor.sh     # Dependency health check
+    └── add-dependency.sh # Add a new skill dependency
 ```
 
 ## Adding Dependencies
