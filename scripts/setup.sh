@@ -115,11 +115,19 @@ if [ -t 0 ] && [ -t 1 ]; then
   esac
 fi
 
-# Ask about Tavily API Key (interactive only, pipe installs use TAVILY_API_KEY env var)
+# Ask about Tavily API Key (interactive + pipe installs via /dev/tty)
 TAVILY_API_KEY="${TAVILY_API_KEY:-}"
-if [ -t 0 ] && [ -t 1 ]; then
-  read -r -p "Tavily API Key (for web search, or press Enter to skip): " TAVILY_API_KEY
-fi
+_ask_tavily() {
+  if [ -t 0 ] && [ -t 1 ]; then
+    read -r -p "Tavily API Key (for web search, or press Enter to skip): " TAVILY_API_KEY
+  elif [ -e /dev/tty ]; then
+    # Pipe install (curl | bash) — /dev/tty gives real terminal
+    echo ""
+    echo -n "Tavily API Key (for web search, or press Enter to skip): "
+    read -r TAVILY_API_KEY < /dev/tty || true
+  fi
+}
+_ask_tavily 2>/dev/null
 
 # Handle dry-run
 if [ "$DRY_RUN" = true ]; then
