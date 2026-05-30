@@ -194,7 +194,7 @@ if [ -d "$DOIT_DST" ]; then
 
   # Incremental file update (preserves symlinks, copies only new/changed files)
   if command -v rsync >/dev/null 2>&1; then
-    rsync -a --exclude='.git' --exclude='.tokensave' --exclude='.claude/skills' "$DOIT_DIR/" "$DOIT_DST/"
+    rsync -a --exclude='.git' --exclude='.tokensave' --exclude='.claude/skills' --exclude='skills' "$DOIT_DIR/" "$DOIT_DST/"
   else
     cp -a "$DOIT_DIR/." "$DOIT_DST/"
   fi
@@ -226,11 +226,11 @@ if [ -d "$DOIT_DST" ]; then
   fi
 
   # Clean excluded dirs
-  rm -rf "$DOIT_DST/.git" "$DOIT_DST/.tokensave" "$DOIT_DST/.claude/skills"
+  rm -rf "$DOIT_DST/.git" "$DOIT_DST/.tokensave" "$DOIT_DST/.claude/skills" "$DOIT_DST/skills"
 else
   mkdir -p "$SKILL_DIR"
   cp -a "$DOIT_DIR" "$DOIT_DST"
-  rm -rf "$DOIT_DST/.git" "$DOIT_DST/.tokensave" "$DOIT_DST/.claude/skills"
+  rm -rf "$DOIT_DST/.git" "$DOIT_DST/.tokensave" "$DOIT_DST/.claude/skills" "$DOIT_DST/skills"
   echo_success "doit installed"
 fi
 
