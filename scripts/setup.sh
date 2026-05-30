@@ -300,10 +300,16 @@ else
   echo "=========================================="
   echo ""
 
-# Context-Mode (Claude Code plugin — cannot auto-install via curl)
-  echo_info "context-mode is a Claude Code plugin"
-  echo_warn "Install manually: claude plugin marketplace add mksglu/context-mode"
-  echo "     claude plugin install context-mode@context-mode"
+# Context-Mode (Claude Code plugin)
+  if command -v ctx >/dev/null 2>&1; then
+    echo_success "context-mode already installed (CLI)"
+  elif grep -rl "context-mode" "$HOME/.claude/plugins/" > /dev/null 2>&1; then
+    echo_success "context-mode already installed (plugin)"
+  else
+    echo_info "context-mode is a Claude Code plugin"
+    echo_warn "Install manually: claude plugin marketplace add mksglu/context-mode"
+    echo "     claude plugin install context-mode@context-mode"
+  fi
 
   # RTK
   if command -v rtk >/dev/null 2>&1; then
