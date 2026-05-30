@@ -115,9 +115,14 @@ if [ -t 0 ] && [ -t 1 ]; then
   esac
 fi
 
-# Ask about Tavily API Key (interactive, skip if piped/non-tty)
-TAVILY_API_KEY=""
-if [ -t 0 ] && [ -t 1 ]; then
+# Ask about Tavily API Key (interactive, /dev/tty survives pipe installs)
+TAVILY_API_KEY="${TAVILY_API_KEY:-}"
+if [ -e /dev/tty ] && ! [ -t 0 ]; then
+  # stdin is a pipe (curl | bash), but /dev/tty gives real terminal
+  echo ""
+  echo -n "Tavily API Key (for web search, or press Enter to skip): "
+  read -r TAVILY_API_KEY < /dev/tty 2>/dev/null || true
+elif [ -t 0 ] && [ -t 1 ]; then
   read -r -p "Tavily API Key (for web search, or press Enter to skip): " TAVILY_API_KEY
 fi
 
@@ -318,7 +323,7 @@ else
     echo "     claude plugin install context-mode@context-mode"
   fi
 
-  # Tavily MCP (web search)
+# Tavily MCP (web search) - only if API key provided via env or interactive
   if [ -n "$TAVILY_API_KEY" ]; then
     echo_info "Installing Tavily MCP with your API key..."
     claude mcp add --transport http tavily "https://mcp.tavily.com/mcp/?tavilyApiKey=$TAVILY_API_KEY" 2>/dev/null || echo_warn "Failed to install Tavily MCP (install manually: claude mcp add --transport http tavily https://mcp.tavily.com/mcp/?tavilyApiKey=<your-key>)"
@@ -326,14 +331,6 @@ else
       echo_success "tavily MCP configured"
     else
       echo_warn "tavily MCP not detected after install"
-    fi
-  else
-    # Check if already configured
-    if claude mcp list 2>/dev/null | grep -q tavily; then
-      echo_success "tavily already configured (MCP)"
-    else
-      echo_info "tavily not configured (optional web search)"
-      echo_warn "Configure: claude mcp add --transport http tavily https://mcp.tavily.com/mcp/?tavilyApiKey=<your-key>"
     fi
   fi
 
