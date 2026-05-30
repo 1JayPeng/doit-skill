@@ -7,7 +7,7 @@ set -e
 SKILL_DIR="$HOME/.claude/skills"
 BUNDLED_SKILLS=("grill-me" "tdd" "diagnose" "prototype" "handoff" "improve-codebase-architecture")
 BUILTIN_SKILLS=()
-EXTERNAL_TOOLS=("context-mode" "rtk" "uv" "tokensave" "tavily" "caveman" "code-review")
+EXTERNAL_TOOLS=("context-mode" "rtk" "uv" "tokensave" "tavily" "caveman" "code-review" "mempalace")
 SHARED_FILES=("shared/review-simplify.md" "shared/e2e-verify.md" "shared/commit.md")
 SYMLINK_TARGETS=("review-simplify.md:shared/review-simplify.md" "commit.md:shared/commit.md")
 
@@ -83,7 +83,9 @@ for tool in "${EXTERNAL_TOOLS[@]}"; do
     case $tool in
 "context-mode")
             if command -v ctx >/dev/null 2>&1; then
-                echo "  ✅ context-mode installed"
+                echo "  ✅ context-mode installed (CLI)"
+            elif grep -rl "context-mode" "$HOME/.claude/plugins/" 2>/dev/null; then
+                echo "  ✅ context-mode installed (plugin)"
             else
                 echo "  ℹ️ context-mode not installed (recommended)"
                 echo "  💡 Install: claude plugin marketplace add mksglu/context-mode"
@@ -123,8 +125,12 @@ for tool in "${EXTERNAL_TOOLS[@]}"; do
             fi
             ;;
         "caveman")
-if [ -d "$SKILL_DIR/caveman" ]; then
-                echo "  ✅ caveman installed"
+            if [ -d "$SKILL_DIR/caveman" ]; then
+                echo "  ✅ caveman installed (skill)"
+            elif grep -rl "caveman" "$HOME/.claude/plugins/" 2>/dev/null; then
+                echo "  ✅ caveman installed (plugin)"
+            elif grep -rl "caveman" "$HOME/.claude/hooks/" 2>/dev/null; then
+                echo "  ✅ caveman installed (hooks)"
             else
                 echo "  ℹ️  caveman not installed (recommended)"
                 echo "  💡 Install: curl -fsSL https://raw.githubusercontent.com/JuliusBrussee/caveman/main/install.sh | bash"
@@ -132,10 +138,21 @@ if [ -d "$SKILL_DIR/caveman" ]; then
             ;;
         "code-review")
             if [ -d "$SKILL_DIR/code-review" ]; then
-                echo "  ✅ code-review installed"
+                echo "  ✅ code-review installed (skill)"
+            elif grep -rl "code-review" "$HOME/.claude/plugins/" 2>/dev/null; then
+                echo "  ✅ code-review installed (plugin)"
             else
                 echo "  ℹ️  code-review not installed (recommended)"
                 echo "  💡 Install: claude plugin install code-review"
+            fi
+            ;;
+        "mempalace")
+            if grep -rl "mempalace" "$HOME/.claude/plugins/" 2>/dev/null; then
+                echo "  ✅ mempalace installed (plugin)"
+            else
+                echo "  ℹ️  mempalace not installed (recommended)"
+                echo "  💡 Install: claude plugin marketplace add MemPalace/mempalace"
+                echo "     claude plugin install --scope user mempalace"
             fi
             ;;
     esac
