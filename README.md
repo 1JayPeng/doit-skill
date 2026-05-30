@@ -57,6 +57,7 @@ User request → Env Detection → Classify → Spec (grill + REQ) → Plan (cod
 - [Workflow Phases](#workflow-phases)
 - [Mandatory E2E Gate](#mandatory-e2e-gate)
 - [Dependencies](#dependencies)
+- [Tool Integration Guide](#tool-integration-guide)
 - [Structure](#structure)
 - [Adding Dependencies](#adding-dependencies)
 
@@ -144,16 +145,17 @@ A single `/doit` invocation may not complete the entire workflow — spec grilli
 
 | Phase | What | Tools Used |
 |-------|------|------------|
-| -1 | Detect project environment | Built-in |
-| 0 | Classify request (S/F/B) | Built-in |
-| 1 | Spec generation + grill | Tavily MCP, grill-me |
-| 2 | Plan with code graph | tokensave |
-| 3 | Execute TDD + Review+Simplify | RTK, uv, pytest |
-| 4 | E2E tests (mandatory) | Real env, HITL |
-| 5 | Review + merge dupes | code-review, tokensave, improve-codebase-architecture |
+| -1 | Detect project environment | Built-in, mempalace |
+| 0 | Classify request (R/S/F/B) | Built-in, caveman, mempalace |
+| 1 | Spec generation + grill | Tavily MCP, grill-me, mempalace |
+| 2 | Plan with code graph | tokensave, mempalace |
+| 3 | Execute TDD + Review+Simplify | RTK, uv, tokensave, context-mode, mempalace |
+| 4 | E2E tests (mandatory) | tokensave, context-mode |
+| 5 | Review + merge dupes | code-review, tokensave, mempalace |
 | 6 | Review + Simplify (mandatory) | tokensave |
-| 7 | E2E Verification Loop | Real env |
-| 8 | Git commit | git |
+| 7 | E2E Verification Loop | tokensave, context-mode |
+| 8 | Git commit + Push | git, mempalace |
+| 10 | Auto-Compact | RTK, context-mode, mempalace |
 
 ## Mandatory E2E Gate
 
@@ -219,13 +221,25 @@ doit uses a **bundled dependency model** — core skills ship inside `skills/`. 
 
 | Tool | Install | Used In |
 |------|---------|---------|
-| Context-Mode | `/plugin marketplace add mksglu/context-mode` | Phase 1-6 |
-| RTK | `curl -fsSL https://raw.githubusercontent.com/rtk-ai/rtk/refs/heads/master/install.sh | sh` | Phase 3 |
+| Context-Mode | `/plugin marketplace add mksglu/context-mode` | Phase 3-7, 10 |
+| RTK | `curl -fsSL https://raw.githubusercontent.com/rtk-ai/rtk/refs/heads/master/install.sh | sh` | All phases (auto-wrap) |
 | uv | `pip install uv` | Phase 3 |
-| tokensave | `cargo install tokensave && tokensave install --agent claude` | Phase 2, 3, 5, 6 |
+| tokensave | `cargo install tokensave && tokensave install --agent claude` | Phase 2-7 |
 | caveman | `curl -fsSL https://raw.githubusercontent.com/JuliusBrussee/caveman/main/install.sh | bash` | Phase 0+ |
 | code-review | `claude plugin install code-review` | Phase 5 |
+| MemPalace | `claude plugin install --scope user mempalace` | Phase -1, 0, 1, 2, 3, 5, 8, 10 |
 | Tavily MCP | Remote, API key only | Phase 1 |
+
+## Tool Integration Guide
+
+doit integrates **8 external tools** across 10 workflow phases, forming a three-layer memory architecture. For a comprehensive per-phase breakdown of every tool call, specific commands, and design decisions — see [tool-integration-guide.md](tool-integration-guide.md).
+
+**Three-layer memory:**
+- **TokenSave** — code graph (symbols, call edges, dependencies)
+- **Context-Mode** — session context (command output indexing, semantic search)
+- **MemPalace** — cross-session semantic memory (specs, decisions, implementation notes)
+
+**Token optimization:** RTK auto-wraps every Bash command via PreToolUse hook, saving 60-90% tokens across all phases.
 
 ## Structure
 
@@ -250,6 +264,9 @@ doit-skill/
 │   ├── e2e-verify.md        # E2E Verification Loop (used by Feature P7, Debug D5)
 │   └── commit.md            # Commit (used by Feature P8, Debug D6)
 ├── setup.md          # Install manifest
+├── tool-integration-guide.md  # Per-phase external tool usage guide
+├── mempalace.md      # MemPalace integration across all phases
+├── background-process.md      # Background process logging patterns
 ├── package.json      # Package metadata + dependencies
 ├── README.md         # This file (English)
 ├── README_ZH.md      # Chinese version
