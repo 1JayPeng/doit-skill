@@ -4,9 +4,9 @@
 This is the **doit-skill** development repository. It is a Claude Code skill
 for spec-driven TDD workflows. When making changes to doit-skill:
 
-1. **Install doit-skill** from this repository:
+1. **Install doit-skill** in your project (Claude Code loads from project-local `.claude/skills/`):
    ```bash
-   cp -r . ~/.claude/skills/doit
+   cp -r . .claude/skills/doit
    ```
 
 2. **Test changes** by running `/doit` in a project that uses doit.
@@ -66,7 +66,7 @@ commit, and push to remote branch.
 
 Before pushing changes:
 1. `./scripts/setup.sh --dry-run`
-2. `./scripts/setup.sh`
-3. `ls ~/.claude/skills/doit/`
-4. `ls ~/.claude/skills/grill-me/`
-5. `ls ~/.claude/skills/tdd/`
+2. `./scripts/setup.sh` (installs to `.claude/skills/` in current project)
+3. `ls .claude/skills/doit/`
+4. `ls .claude/skills/grill-me/`
+5. `ls .claude/skills/tdd/`

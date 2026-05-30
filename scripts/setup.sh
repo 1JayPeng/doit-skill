@@ -9,10 +9,13 @@
 set -e
 
 # Configuration
-SKILL_DIR="$HOME/.claude/skills"
+# Claude Code loads skills from project-local .claude/skills/ (not ~/.claude/skills/)
+SKILL_DIR=".claude/skills"
+GLOBAL_SKILL_DIR="$HOME/.claude/skills"
 REPO_URL="https://v6.gh-proxy.org/https://github.com/1JayPeng/doit-skill"
 DRY_RUN=false
 SKIP_OPTIONAL=false
+INSTALL_GLOBAL=false
 UPDATED_FILES=()
 
 # Hash function: portable across Linux/macOS
@@ -84,6 +87,7 @@ for arg in "$@"; do
   case $arg in
     --dry-run) DRY_RUN=true ;;
     --skip-optional) SKIP_OPTIONAL=true ;;
+    --global) INSTALL_GLOBAL=true; SKILL_DIR="$GLOBAL_SKILL_DIR" ;;
   esac
 done
 
@@ -133,6 +137,7 @@ _ask_tavily 2>/dev/null
 if [ "$DRY_RUN" = true ]; then
   echo_info "Dry run — showing what would be installed:"
   echo ""
+  echo "  Install location: $SKILL_DIR/"
   echo "  Required skills:"
   echo "    • doit-skill (core)"
   echo "    • grill-me (spec grilling)"
@@ -156,6 +161,7 @@ if [ "$DRY_RUN" = true ]; then
 
   echo "  Options (configurable at install):"
   echo "    • doc-capture    (persist reference docs, default: enabled)"
+  echo "    • --global       install to ~/.claude/skills/ instead of .claude/skills/"
 
   echo ""
   echo "=========================================="
@@ -234,7 +240,7 @@ else
   echo_success "doit installed"
 fi
 
-# No .claude-plugin/plugin.json needed — doit is a skill loaded from ~/.claude/skills/doit/
+# No .claude-plugin/plugin.json needed — doit is a skill loaded from .claude/skills/doit/
 # SKILL.md stays at the root of the doit directory (not in a nested skills/ subdirectory)
 # The plugin.json + nested skills/ structure was causing /doit to not be recognized
 
@@ -279,7 +285,7 @@ install_skill() {
     fi
   fi
 
-  # Skills are loaded from ~/.claude/skills/<name>/ with SKILL.md at root
+  # Skills are loaded from .claude/skills/<name>/ with SKILL.md at root
   # No .claude-plugin/plugin.json needed
   echo_success "$skill_name ready (SKILL.md at root)"
   return 0
@@ -382,7 +388,9 @@ else
 
 # Caveman (token-compact mode)
   if [ -d "$SKILL_DIR/caveman" ]; then
-    echo_success "caveman already installed (skill)"
+    echo_success "caveman already installed (project skill)"
+  elif [ -d "$HOME/.claude/skills/caveman" ]; then
+    echo_success "caveman found in global skills"
   elif grep -rl "caveman" "$HOME/.claude/plugins/" > /dev/null 2>&1; then
     echo_success "caveman already installed (plugin)"
   elif grep -rl "caveman" "$HOME/.claude/hooks/" > /dev/null 2>&1; then
@@ -394,7 +402,9 @@ else
 
   # Code Review
   if [ -d "$SKILL_DIR/code-review" ]; then
-    echo_success "code-review already installed (skill)"
+    echo_success "code-review already installed (project skill)"
+  elif [ -d "$HOME/.claude/skills/code-review" ]; then
+    echo_success "code-review found in global skills"
   elif grep -rl "code-review" "$HOME/.claude/plugins/" > /dev/null 2>&1; then
     echo_success "code-review already installed (plugin)"
   else
