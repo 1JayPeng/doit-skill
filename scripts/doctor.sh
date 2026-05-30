@@ -86,8 +86,8 @@ for tool in "${EXTERNAL_TOOLS[@]}"; do
                 echo "  ✅ context-mode installed"
             else
                 echo "  ℹ️ context-mode not installed (recommended)"
-                echo "  💡 Install: /plugin marketplace add mksglu/context-mode"
-                echo "  /plugin install context-mode@context-mode"
+                echo "  💡 Install: claude plugin marketplace add mksglu/context-mode"
+                echo "     claude plugin install context-mode@context-mode"
             fi
             ;;
         "rtk")

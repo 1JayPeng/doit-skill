@@ -221,7 +221,7 @@ doit uses a **bundled dependency model** — core skills ship inside `skills/`. 
 
 | Tool | Install | Used In |
 |------|---------|---------|
-| Context-Mode | `/plugin marketplace add mksglu/context-mode` | Phase 3-7, 10 |
+| Context-Mode | `claude plugin marketplace add mksglu/context-mode` | Phase 3-7, 10 |
 | RTK | `curl -fsSL https://raw.githubusercontent.com/rtk-ai/rtk/refs/heads/master/install.sh | sh` | All phases (auto-wrap) |
 | uv | `pip install uv` | Phase 3 |
 | tokensave | `cargo install tokensave && tokensave install --agent claude` | Phase 2-7 |

@@ -42,8 +42,8 @@ Context window management plugin. Keeps raw data in sandbox, auto-indexes output
 
 ```bash
 # Install (Claude Code v1.0.33+)
-/plugin marketplace add mksglu/context-mode
-/plugin install context-mode@context-mode
+claude plugin marketplace add mksglu/context-mode
+claude plugin install context-mode@context-mode
 
 # Verify
 /context-mode:ctx-doctor
@@ -86,7 +86,7 @@ doit uses a **bundled dependency model**. Core skills ship inside `skills/` and 
 
 | Tool | Install | Used In |
 |------|---------|---------|
-| Context-Mode | `/plugin marketplace add mksglu/context-mode` | Phase 1-6 |
+| Context-Mode | `claude plugin marketplace add mksglu/context-mode` | Phase 1-6 |
 | RTK | `curl -fsSL https://raw.githubusercontent.com/rtk-ai/rtk/refs/heads/master/install.sh | sh` | Phase 3 |
 | uv | `pip install uv` | Phase 3 |
 | TokenSave | `cargo install tokensave && tokensave install --agent claude` | Phase 2, 3, 5, 6 |

@@ -1,5 +1,21 @@
 # Request Classifier
 
+## Pre-Step — Sync with Remote (MANDATORY, before any type)
+
+Before doing anything else, check if the project has a git remote and sync:
+
+```bash
+# Check if current directory is a git repo with remote
+if git remote 2>/dev/null | grep -q .; then
+  git pull --rebase 2>/dev/null || git pull 2>/dev/null || true
+fi
+```
+
+**Why:** avoids working on stale code, prevents conflicts with parallel sessions or manual pushes.
+**Safety:** `--rebase` first (cleaner history), falls back to merge rebase fails. `|| true` so missing remote or network error doesn't block the workflow.
+
+**Apply to ALL classification types (R/S/F/B).** This runs before type detection.
+
 ## Type R — Resume (blank /doit)
 
 **Signs:**

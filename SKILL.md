@@ -51,12 +51,20 @@ Per-phase application:
 
 ## Phase 0 — Classify Request
 
-**First — enable caveman mode for the entire session.**
+**Step 0 — Sync with remote (MANDATORY, before anything else).** If the project has a git remote, pull latest:
+```bash
+if git remote 2>/dev/null | grep -q .; then
+  git pull --rebase 2>/dev/null || git pull 2>/dev/null || true
+fi
+```
+**Why:** avoids working on stale code, prevents conflicts. `|| true` so network errors don't block.
+
+**Step 1 — Enable caveman mode for the entire session.**
 ```
 Skill skill="caveman"
 ```
 
-Then auto-classify. Read [classifier.md](classifier.md). Four types:
+**Step 2 — Auto-classify.** Read [classifier.md](classifier.md). Four types:
 
 - **R (resume)** — `/doit` called with no args or blank args. Resume in-progress workflow. See classifier.md Type R.
 - **S (simple)** — single file, rename, quick fix. Execute directly. Skip phases 1-6.
