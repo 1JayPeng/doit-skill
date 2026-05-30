@@ -138,7 +138,7 @@ After Phase 9 completes, automatically trigger context compression to reduce tok
    - `mempalace_diary_write agent_name="doit" entry="<compact summary>" topic="compact"`
    - `mempalace_memories_filed_away` → verify auto-save checkpoint was saved
    - `mempalace_kg_timeline entity="<project>"` → log project timeline for future reference
-4. Run `/compact` command if available (Claude Code built-in)
+4. **MANDATORY: Run `/compact`** — execute the Claude Code built-in compaction command. Type `/compact` as a user message. Do NOT skip. Do NOT say "done" without compacting.
 
 **This phase always runs last.** It ensures the conversation context is compressed before the session ends, reducing token overhead for resumed conversations.
 
