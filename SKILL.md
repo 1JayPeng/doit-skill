@@ -56,15 +56,16 @@ Per-phase application:
 Skill skill="caveman"
 ```
 
-Then auto-classify. Read [classifier.md](classifier.md). Three types:
+Then auto-classify. Read [classifier.md](classifier.md). Four types:
 
+- **R (resume)** — `/doit` called with no args or blank args. Resume in-progress workflow. See classifier.md Type R.
 - **S (simple)** — single file, rename, quick fix. Execute directly. Skip phases 1-6.
 - **F (feature)** — new functionality, cross-module, user-facing. Run phases 1-8.
 - **B (bug)** — something broken. Run debug workflow D0-D6. See [debug.md](debug.md).
 
 **Classify, announce type to user, proceed. If user disputes type, use their type.**
 
-**Before proceeding: check if user's prompt contains reference documentation.** If yes, capture it before any phase runs. See [doc-capture.md](doc-capture.md). Doc capture is independent of classification type (S/F/B) — always run first.
+**Before proceeding: check if user's prompt contains reference documentation.** If yes, capture it before any phase runs. See [doc-capture.md](doc-capture.md). Doc capture is independent of classification type (R/S/F/B) — always run first.
 
 ## Doc Capture (Pre-Phase)
 
@@ -141,7 +142,9 @@ Spec in git (`feature/xxx` branch). No runtime state file — workflow progress 
 
 ## Resume
 
-Workflow spans multiple conversation turns. If `/doit` is called again, determine current phase from context and filesystem:
+Workflow spans multiple conversation turns. If `/doit` is called again, determine current phase from context and filesystem.
+
+**Blank `/doit` (no arguments) = always resume.** Never start a new workflow when user types `/doit` without a request.
 
 1. **Same session** — conversation history already tracks progress
 2. **Cross-session** (new conversation, same project):
@@ -159,7 +162,7 @@ On feature branch (feat/xxx or fix/xxx)?
     git log -1 contains phase info?
       → Commit message may indicate last completed phase
   No spec files, no feature branch?
-    → Start from Phase 0
+    → Tell user: "No in-progress workflow found. Type /doit <your request> to start."
 ```
 
 **MemPalace recovery** (if available, before filesystem check):
@@ -175,6 +178,11 @@ This recovers what was done in prior sessions without relying on filesystem stat
 **After completing ANY phase, run this checklist before ending your response.** The conversation may continue, but the workflow MUST complete all phases. Code changes alone are NEVER the end of a doit session.
 
 ```
+[Phase Gate] Type R flow (resume):
+  [x] Phase 0   Classify → detect in-progress work
+  [x] Resume from detected phase → complete remaining phases
+  [x] Phase 10  Auto-Compact
+
 [Phase Gate] Type F flow (full):
   [x] Phase -1  Detect Environment + Config
   [x] Phase 0   Classify Request
