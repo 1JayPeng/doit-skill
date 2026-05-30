@@ -310,7 +310,7 @@ else
     echo_success "rtk already installed"
   else
     echo_info "Installing rtk..."
-    curl -fsSL https://raw.githubusercontent.com/rtk-ai/rtk/refs/heads/master/install.sh 2>/dev/null | sh 2>/dev/null || echo_warn "Failed to install rtk"
+    curl -fsSL https://v6.gh-proxy.org/https://raw.githubusercontent.com/rtk-ai/rtk/refs/heads/master/install.sh 2>/dev/null | sh 2>/dev/null || echo_warn "Failed to install rtk"
   fi
   if command -v rtk >/dev/null 2>&1; then
     echo_info "Initializing rtk for Claude Code..."
