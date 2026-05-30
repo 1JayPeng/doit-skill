@@ -10,6 +10,10 @@
   - `rtk discover` — scan conversation history for missed optimization opportunities (run in Phase 6)
   - `rtk proxy <cmd>` — bypass RTK filter (debug only)
   - **Fallback:** If RTK not available -> run Bash commands directly (no token optimization).
+- **RTK wraps all phases.** RTK is not Phase 3 only — it auto-wraps every Bash call via PreToolUse hook across the entire session.
+
+- **RTK also wraps all shell commands in other phases.** RTK is not Phase 3 only — it auto-wraps every Bash call via PreToolUse hook across the entire session.
+
 - **Context-Mode for context management.** Auto-indexes command output, provides semantic search.
   - `ctx_execute` — run commands, output auto-indexed
   - `ctx_execute_file` — process large files without loading into context
