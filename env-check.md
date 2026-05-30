@@ -135,16 +135,11 @@ else
   echo "  [MISS] tavily (MCP — needs API key)"
 fi
 
-# Claude Code plugins (code-review, skill-creator)
+# Claude Code plugins (code-review)
 if [ -d "$HOME/.claude/skills/code-review" ] || grep -rl "code-review" "$HOME/.claude/plugins/" 2>/dev/null; then
   echo "  [OK]   code-review (plugin)"
 else
   echo "  [MISS] code-review (plugin)"
-fi
-if [ -d "$HOME/.claude/skills/skill-creator" ]; then
-  echo "  [OK]   skill-creator (skill)"
-else
-  echo "  [MISS] skill-creator (skill)"
 fi
 
 # MemPalace plugin
@@ -166,7 +161,6 @@ fi
 [WARN] uv NOT installed -> Python commands will use pip instead of uv
 [WARN] caveman NOT installed -> no terse mode (caveman skill)
 [WARN] code-review NOT installed -> Phase 5 will use manual review only
-[WARN] skill-creator NOT installed -> skill development not available
 [WARN] mempalace NOT installed -> no cross-session semantic memory (specs, decisions, implementation notes)
 ```
 
@@ -181,7 +175,6 @@ fi
 | uv | `pip` + `python3 -m venv` | 3, 4, 7 |
 | caveman | verbose mode (no terse output) | 0+ |
 | code-review | manual review (tokensave tools) | 5 |
-| skill-creator | manual skill development | skill dev |
 | mempalace | filesystem only (.doit/docs/, .spec/archive/) | -1, 1, 2, 3, 8, resume |
 
 Missing tools trigger fallback paths in each phase (see each phase's fallback instructions).

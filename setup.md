@@ -92,7 +92,6 @@ doit uses a **bundled dependency model**. Core skills ship inside `skills/` and 
 | TokenSave | `cargo install tokensave && tokensave install --agent claude` | Phase 2, 3, 5, 6 |
 | caveman | `curl -fsSL https://raw.githubusercontent.com/JuliusBrussee/caveman/main/install.sh | bash` | Phase 0+ |
 | code-review | `claude plugin install code-review` | Phase 5 |
-| skill-creator | `claude install anthropics/skills/skill-creator` | Skill dev |
 | Tavily MCP | Remote, API key only | Phase 1 |
 
 ### Adding Dependencies

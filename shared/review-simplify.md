@@ -27,9 +27,13 @@ Code quality scanning:
 - `tokensave_dead_code()` — symbols with no incoming edges (potentially unreachable)
 - `tokensave_unused_imports()` — unreferenced imports
 - `tokensave_complexity(path="<changed_dir>", limit=5)` — highest complexity functions
+- `tokensave_god_class(path="<changed_dir>", limit=5)` — classes with most members (too many responsibilities)
 - `tokensave_coupling(direction="fan_in", path="<changed_dir>")` — files depended on most
 - `tokensave_coupling(direction="fan_out", path="<changed_dir>")` — files with most dependencies
+- `tokensave_dependency_depth(limit=5)` — longest file-level dependency chains (fragile to upstream changes)
 - `tokensave_doc_coverage(path="<src_dir>")` — public symbols missing documentation
+- `tokensave_circular()` — circular dependencies between files
+- `tokensave_recursion(limit=5)` — recursive or mutually-recursive call cycles
 
 Discovery (when you need to find specific code):
 - `tokensave_search(query="<symbol name>")` — find specific symbols by name

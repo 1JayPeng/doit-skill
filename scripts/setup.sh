@@ -136,7 +136,6 @@ if [ "$DRY_RUN" = true ]; then
     echo "    • tokensave        (cargo install tokensave)"
     echo "    • caveman          (curl install script)"
     echo "    • code-review      (claude plugin install code-review)"
-    echo "    • skill-creator    (claude install anthropics/skills/skill-creator)"
     echo "    • mempalace        (claude plugin install --scope user mempalace)"
   fi
 
@@ -356,14 +355,6 @@ else
   else
     echo_info "Installing code-review..."
     claude plugin install code-review 2>/dev/null || echo_warn "Failed to install code-review (install manually: claude plugin install code-review)"
-  fi
-
-  # Skill Creator
-  if [ -d "$SKILL_DIR/skill-creator" ]; then
-    echo_success "skill-creator already installed"
-  else
-    echo_info "Installing skill-creator..."
-    claude install anthropics/skills/skill-creator 2>/dev/null || echo_warn "Failed to install skill-creator (install manually: claude install anthropics/skills/skill-creator)"
   fi
 
   # MemPalace
