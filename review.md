@@ -22,6 +22,9 @@ Run `code-review` skill. Focus:
 - `tokensave_complexity(path="<changed_dir>", limit=5)` — rank functions by complexity, find hotspots
 - `tokensave_circular()` — detect circular file dependencies
 - `tokensave_recursion()` — detect recursive/mutually-recursive call cycles
+- `tokensave_similar(symbol="<new_function_name>")` — find similarly named symbols (naming inconsistency = potential confusion)
+- `tokensave_signature_search(params="&mut self", returns="Result")` — find functions with matching signatures (potential duplicates)
+- `tokensave_diagnostics(scope="workspace")` — run type-checker (cargo check / tsc / pyright) before committing
 - **Fallback:** If TokenSave unavailable -> `git diff` + `git diff --stat` manually review.
 
 ### 2. Architecture Check

@@ -28,12 +28,19 @@ Phase 4 E2E tests cover: real entry points, real I/O, integration of all layers.
 
 ### Run E2E Tests
 
-**Primary:** Use Context-Mode to auto-index test output:
+**Primary (fast path — only affected tests):**
+```
+tokensave_affected_tests(files=[<changed_files>])
+tokensave_run_affected_tests(changed_paths=[<changed_files>])
+```
+If `affected_tests` returns all tests (no narrowing), fall back to full suite.
+
+**Fallback (full suite):**
 ```
 ctx_execute(language="shell", code="uv run pytest tests/e2e/ -v --tb=short")
 ctx_execute(language="shell", code="uv run python -m pytest tests/e2e/ -v --tb=short")
 ```
-- **Fallback:** If Context-Mode unavailable -> native Bash tool (output not indexed).
+- **Context-Mode unavailable:** native Bash tool (output not indexed).
 
 ### Detect Test Framework (before generating tests)
 
@@ -53,7 +60,10 @@ ctx_batch_execute(
 **tokensave** tools for understanding entry points:
 1. `tokensave_search(query="<entry_point_name>")` — find the entry point function
 2. `tokensave_node(node_id="<id>")` — get function signature for test generation
-3. `tokensave_test_map(file="<source_file>")` — check existing test coverage
+3. `tokensave_signature(qualified_name="<entry_point>")` — get function signature without body
+4. `tokensave_test_map(file="<source_file>")` — check existing test coverage
+5. `tokensave_config(key="dependencies", path="Cargo.toml")` — read project config without file reads (TOML/JSON)
+6. `tokensave_outline(file="<entry_point_file>")` — flat list of top-level symbols (quick file overview)
 - **Fallback:** If TokenSave unavailable -> `grep -rn "def " src/` + `Read` the file.
 
 ### Spec Alignment Check Tools

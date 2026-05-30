@@ -35,16 +35,22 @@ Before writing tests, understand the code you'll modify:
    - **Fallback:** If TokenSave unavailable -> `Agent Explore` with task description
 2. `tokensave_search` — find specific symbols by name
    - **Fallback:** If TokenSave unavailable -> `grep -rn` + `find`
-3. `tokensave_node` — function signature, full source from tests
+3. `tokensave_similar(symbol="<name>")` — find symbols with similar names (avoid naming inconsistency)
+4. `tokensave_node` — function signature, full source from tests
    - **Fallback:** If TokenSave unavailable -> `Read` the specific file
-4. `tokensave_callers` / `tokensave_callees` — call graph edges, blast radius
-5. `tokensave_impact` — what's affected by changing a symbol
-6. `tokensave_files` — understand project file structure
-7. `tokensave_test_map(node_id="<id>")` — find test coverage for symbol being modified
-8. `ctx_search` — look up previously indexed information from this session
-   - **Fallback:** If Context-Mode unavailable -> `grep` command output
-9. `mempalace_search query="<REQ description>" wing="<project>" limit=2` — recover cross-session context from prior implementations
-   - **Fallback:** If MemPalace unavailable -> skip (tokensave + context-mode cover session-level context)
+5. `tokensave_body(symbol="<name>")` — return full source body of a symbol (faster than node lookup)
+6. `tokensave_signature(qualified_name="<name>")` — get function signature without body (visibility, generics, params, return type)
+7. `tokensave_signature_search(params="&mut self", returns="Result")` — find functions by signature shape (refactoring: find similar patterns)
+8. `tokensave_callers` / `tokensave_callees` — call graph edges, blast radius
+9. `tokensave_impact` — what's affected by changing a symbol
+10. `tokensave_files` — understand project file structure
+11. `tokensave_test_map(node_id="<id>")` — find test coverage for symbol being modified
+12. `tokensave_affected_tests(files=[<changed_files>])` — find test files affected by changed source files
+13. `tokensave_diagnostics(scope="workspace")` — run type-checker (cargo check / tsc / pyright) before writing code
+14. `ctx_search` — look up previously indexed information from this session
+    - **Fallback:** If Context-Mode unavailable -> `grep` command output
+15. `mempalace_search query="<REQ description>" wing="<project>" limit=2` — recover cross-session context from prior implementations
+    - **Fallback:** If MemPalace unavailable -> skip (tokensave + context-mode cover session-level context)
 
 ### IMPLEMENT (edit primitives for code changes)
 
@@ -74,10 +80,11 @@ Merge duplicate code with existing code. Minimal change. No architectural restru
 ### REVIEW + SIMPLIFY (MANDATORY after each REQ)
 After RED->GREEN->REFACTOR completes, **before moving to next REQ**:
 1. **tokensave scan** — `tokensave_simplify_scan(files=[<changed_files>])` — auto-detect duplications, dead code, complexity
-2. **Read what you wrote** — read the full context of changes, not just the diff
-3. **Simplify** — remove dead imports, flatten unnecessary abstractions, combine redundant loops
-4. **Check documentation** — does README/CLAUDE.md need updating?
-5. **Verify** — tests still pass after simplifying
+2. **tokensave_similar** — `tokensave_similar(symbol="<new_function_name>")` — check if a similarly named symbol already exists (naming inconsistency)
+3. **Read what you wrote** — read the full context of changes, not just the diff
+4. **Simplify** — remove dead imports, flatten unnecessary abstractions, combine redundant loops
+5. **Check documentation** — does README/CLAUDE.md need updating?
+6. **Verify** — tests still pass after simplifying
 
 **Do not skip this.** Do not move to next REQ without reviewing current changes.
 
@@ -87,10 +94,17 @@ After RED->GREEN->REFACTOR completes, **before moving to next REQ**:
 
 ### Test Execution
 
-Use `ctx_execute` for running tests — output auto-indexed for search:
-- `ctx_execute` — run test commands, search results with `ctx_search`
+Run only affected tests when possible — skip full suite for small changes:
+
+**Primary (fast path):**
+- `tokensave_affected_tests(files=[<changed_files>])` — find test files affected by changed source files
+- `tokensave_run_affected_tests(changed_paths=[<changed_files>])` — run only affected tests (cargo test)
+- For non-Rust projects: use `ctx_execute` with affected test files
+
+**Fallback (full suite):**
+- `ctx_execute` — run all test commands, search results with `ctx_search`
 - `ctx_batch_execute` — run multiple test commands, search all output together
-- **Fallback:** If Context-Mode unavailable -> run tests via native Bash. Output printed to context (more tokens used).
+- **Context-Mode unavailable:** run tests via native Bash. Output printed to context (more tokens used).
 
 ### Spec Alignment Check (Interactive)
 

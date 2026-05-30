@@ -49,11 +49,18 @@ After e2e tests pass, **before proceeding to commit**:
 
 ### Run E2E Tests (each loop iteration)
 
-**Primary:** Use Context-Mode to auto-index output:
+**Primary (fast path — only affected tests):**
+```
+tokensave_affected_tests(files=[<files changed by simplify>])
+tokensave_run_affected_tests(changed_paths=[<files changed by simplify>])
+```
+If `affected_tests` returns all tests (no narrowing), fall back to full suite.
+
+**Fallback (full suite):**
 ```
 ctx_execute(language="shell", code="uv run pytest tests/e2e/ -v --tb=short")
 ```
-- **Fallback:** If Context-Mode unavailable -> native Bash tool.
+- **Context-Mode unavailable:** native Bash tool.
 
 ### Spec Alignment Tools
 
