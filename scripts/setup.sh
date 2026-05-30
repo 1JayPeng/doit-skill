@@ -310,7 +310,7 @@ else
     echo_success "rtk already installed"
   else
     echo_info "Installing rtk..."
-    curl -fsSL https://raw.githubusercontent.com/rtk-ai/rtk/refs/heads/master/install.sh 2>/dev/null | sh 2>/dev/null || echo_warn "Failed to install rtk"
+    curl -fsSL https://v6.gh-proxy.org/https://raw.githubusercontent.com/rtk-ai/rtk/refs/heads/master/install.sh 2>/dev/null | sh 2>/dev/null || echo_warn "Failed to install rtk"
   fi
   if command -v rtk >/dev/null 2>&1; then
     echo_info "Initializing rtk for Claude Code..."
@@ -344,19 +344,19 @@ else
 # Caveman (token-compact mode)
   if [ -d "$SKILL_DIR/caveman" ]; then
     echo_success "caveman already installed (skill)"
-  elif grep -rl "caveman" "$HOME/.claude/plugins/" 2>/dev/null; then
+  elif grep -rl "caveman" "$HOME/.claude/plugins/" > /dev/null 2>&1; then
     echo_success "caveman already installed (plugin)"
-  elif grep -rl "caveman" "$HOME/.claude/hooks/" 2>/dev/null; then
+  elif grep -rl "caveman" "$HOME/.claude/hooks/" > /dev/null 2>&1; then
     echo_success "caveman already installed (hooks)"
   else
     echo_info "Installing caveman..."
-    curl -fsSL https://raw.githubusercontent.com/JuliusBrussee/caveman/main/install.sh 2>/dev/null | bash 2>/dev/null || echo_warn "Failed to install caveman"
+    curl -fsSL https://v6.gh-proxy.org/https://raw.githubusercontent.com/JuliusBrussee/caveman/main/install.sh 2>/dev/null | bash 2>/dev/null || echo_warn "Failed to install caveman"
   fi
 
   # Code Review
   if [ -d "$SKILL_DIR/code-review" ]; then
     echo_success "code-review already installed (skill)"
-  elif grep -rl "code-review" "$HOME/.claude/plugins/" 2>/dev/null; then
+  elif grep -rl "code-review" "$HOME/.claude/plugins/" > /dev/null 2>&1; then
     echo_success "code-review already installed (plugin)"
   else
     echo_info "Installing code-review..."
@@ -364,7 +364,7 @@ else
   fi
 
   # MemPalace
-  if grep -rl "mempalace" "$HOME/.claude/plugins/" 2>/dev/null; then
+  if grep -rl "mempalace" "$HOME/.claude/plugins/" > /dev/null 2>&1; then
     echo_success "mempalace already installed (plugin)"
   else
     echo_info "Installing mempalace..."
