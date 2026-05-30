@@ -68,8 +68,13 @@ Staged changes conflict or cannot be committed.
 ## Session Recovery
 
 Session restart with existing branch:
-1. Read `.spec/current.md` from branch
-2. Check REQ status table
-3. Resume at first non-DONE REQ
+1. **MemPalace recovery** (if available): `mempalace_diary_read agent_name="doit" last_n=3` + `mempalace_search query="<project>" wing="<project>" limit=5`
+2. Read `.spec/current.md` from branch
+3. Check REQ status table
+4. Resume at first non-DONE REQ
 
 No spec, no branch -> start fresh from Phase 0.
+
+## MemPalace Unavailable
+
+If MemPalace tool calls error during any phase, skip silently. Filesystem (`.doit/docs/`, `.spec/archive/`) and tokensave code graph remain as the primary persistence layers. The workflow never blocks on a missing memory layer.

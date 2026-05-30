@@ -11,7 +11,16 @@ description: >
 
 # Do It
 
-Spec-driven TDD workflow. Every feature passes through 9 phases. Nothing ships without spec. Every change must pass Review + Simplify, E2E Verification, and git commit before proceeding.
+Spec-driven TDD workflow. Every feature passes through 10 phases. Nothing ships without spec. Every change must pass Review + Simplify, E2E Verification, and git commit before proceeding.
+
+## Memory Layer
+
+Three persistence layers work together:
+- **tokensave** — code graph (symbols, call edges, dependencies). See [plan.md](plan.md).
+- **context-mode** — session analytics (token usage, tool patterns). See [execute.md](execute.md).
+- **mempalace** — cross-session semantic memory (specs, decisions, implementation notes). See [mempalace.md](mempalace.md).
+
+If any layer is unavailable, the workflow degrades gracefully using the remaining layers.
 
 ## Prerequisites
 
@@ -108,13 +117,27 @@ Remove all intermediate workflow files. See [commit.md](shared/commit.md) step 8
 
 **Keep:** `.spec/archive/`, `.doit/config.yaml`, `.doit/docs/`
 
+## Phase 10 — Auto-Compact
+
+After Phase 9 completes, automatically trigger context compression to reduce token usage for the next session:
+
+1. Run `/compact` command if available (Claude Code built-in)
+2. If context-mode is active, also run `ctx stats` to log session token savings
+3. Write compact result to MemPalace diary if available: `mempalace_diary_write agent_name="doit" entry="<compact summary>" topic="compact"`
+
+**This phase always runs last.** It ensures the conversation context is compressed before the session ends, reducing token overhead for resumed conversations.
+
 ## Error Handling
 
-See [errors.md](errors.md). Spec fail = discard. Execute fail = re-grill. Review fail = retain on branch.
+See [errors.md](errors.md). Spec fail = discard. Execute fail = re-grill. Review fail = retain on branch. MemPalace unavailable = skip memory steps, filesystem remains primary.
 
 ## Persistence
 
-Spec in git (`feature/xxx` branch). No runtime state file — workflow progress tracked by git branch, commit history, and spec files.
+Spec in git (`feature/xxx` branch). No runtime state file — workflow progress tracked by git branch, commit history, spec files, and MemPalace (if available).
+
+**MemPalace layers** (see [mempalace.md](mempalace.md)): spec archive, implementation notes, knowledge graph facts, and agent diary entries survive session restarts. Complements filesystem state for cross-session resume.
+
+**Background process logs** (see [background-process.md](background-process.md)): long-running commands output to `.scratch/logs/` with clear exit signals for process state detection.
 
 ## Resume
 
@@ -139,6 +162,14 @@ On feature branch (feat/xxx or fix/xxx)?
     → Start from Phase 0
 ```
 
+**MemPalace recovery** (if available, before filesystem check):
+```
+mempalace_diary_read agent_name="doit" last_n=3
+mempalace_search query="<project> <feature>" wing="<project>" limit=5
+mempalace_kg_query entity="<project>"
+```
+This recovers what was done in prior sessions without relying on filesystem state alone. See [mempalace.md](mempalace.md) for full integration.
+
 ## Phase Gate Checklist — DO NOT SKIP
 
 **After completing ANY phase, run this checklist before ending your response.** The conversation may continue, but the workflow MUST complete all phases. Code changes alone are NEVER the end of a doit session.
@@ -156,22 +187,26 @@ On feature branch (feat/xxx or fix/xxx)?
   [x] Phase 7   E2E Verification Loop
   [x] Phase 8   Commit + Push
   [x] Phase 9   Cleanup intermediate files
+  [x] Phase 10  Auto-Compact
   [x] Doc Capture (if user prompt has docs)
 
 [Phase Gate] Type S flow (simple):
   [x] Phase 0   Classify
   [x] Execute directly
+  [x] Phase 10  Auto-Compact
   [x] Doc Capture (if user prompt has docs)
 
 [Phase Gate] Type B flow (bug):
   [x] Phase 0   Classify
   [x] D0-D6     Debug workflow (debug.md)
   [x] Phase 8   Commit + Push
+  [x] Phase 10  Auto-Compact
 ```
 
 **After Phase 3 completes:** always continue to Phase 4. Never stop at "tests pass, done."
 **After Phase 6 completes:** always continue to Phase 7. E2E verification after simplification.
 **After Phase 7 completes:** always continue to Phase 8. Every feature ships committed + pushed.
 **After Phase 8 completes:** always continue to Phase 9. Clean up intermediate files.
+**After Phase 9 completes:** always continue to Phase 10. Compact conversation context.
 
-**The only valid end state is Phase 9 clean.** If you're about to say "done" or "completed" and intermediate files are still present, you haven't finished.
+**The only valid end state is Phase 10 compact.** If you're about to say "done" or "completed" and context has not been compacted, you haven't finished.

@@ -146,6 +146,13 @@ if [ -d "$HOME/.claude/skills/skill-creator" ]; then
 else
   echo "  [MISS] skill-creator (skill)"
 fi
+
+# MemPalace plugin
+if grep -rl "mempalace" "$HOME/.claude/plugins/" 2>/dev/null; then
+  echo "  [OK]   mempalace (plugin)"
+else
+  echo "  [MISS] mempalace (plugin)"
+fi
 ```
 
 **If tools are missing, announce warnings — do not block the workflow:**
@@ -160,6 +167,7 @@ fi
 [WARN] caveman NOT installed -> no terse mode (caveman skill)
 [WARN] code-review NOT installed -> Phase 5 will use manual review only
 [WARN] skill-creator NOT installed -> skill development not available
+[WARN] mempalace NOT installed -> no cross-session semantic memory (specs, decisions, implementation notes)
 ```
 
 **Per-phase fallback summary (reference for all phases):**
@@ -174,6 +182,7 @@ fi
 | caveman | verbose mode (no terse output) | 0+ |
 | code-review | manual review (tokensave tools) | 5 |
 | skill-creator | manual skill development | skill dev |
+| mempalace | filesystem only (.doit/docs/, .spec/archive/) | -1, 1, 2, 3, 8, resume |
 
 Missing tools trigger fallback paths in each phase (see each phase's fallback instructions).
 

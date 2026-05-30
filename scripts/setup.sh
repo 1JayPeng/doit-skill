@@ -137,6 +137,7 @@ if [ "$DRY_RUN" = true ]; then
     echo "    • caveman          (curl install script)"
     echo "    • code-review      (claude plugin install code-review)"
     echo "    • skill-creator    (claude install anthropics/skills/skill-creator)"
+    echo "    • mempalace        (claude plugin install --scope user mempalace)"
   fi
 
   echo "  Options (configurable at install):"
@@ -363,6 +364,15 @@ else
   else
     echo_info "Installing skill-creator..."
     claude install anthropics/skills/skill-creator 2>/dev/null || echo_warn "Failed to install skill-creator (install manually: claude install anthropics/skills/skill-creator)"
+  fi
+
+  # MemPalace
+  if grep -rl "mempalace" "$HOME/.claude/plugins/" 2>/dev/null; then
+    echo_success "mempalace already installed (plugin)"
+  else
+    echo_info "Installing mempalace..."
+    claude plugin marketplace add MemPalace/mempalace 2>/dev/null || echo_warn "Failed to add mempalace marketplace"
+    claude plugin install --scope user mempalace 2>/dev/null || echo_warn "Failed to install mempalace (install manually: claude plugin install --scope user mempalace)"
   fi
 fi
 

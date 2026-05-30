@@ -160,4 +160,15 @@ This is the **final phase**. After push + cleanup, announce:
 - Summary of changes
 - Intermediate files cleaned
 
+**MemPalace persistence** (if available):
+```
+mempalace_kg_add subject="<project>" predicate="shipped" object="<feature>" valid_from="<today YYYY-MM-DD>"
+mempalace_diary_write agent_name="doit" entry="<commit-hash>: <feature summary>, <N> REQs, <N> files" topic="<feature>"
+```
+
+**Auto-compact** (Phase 10):
+After MemPalace filing, trigger context compression:
+1. Run `/compact` if available (Claude Code built-in)
+2. If context-mode active, run `ctx stats` to log session token savings
+
 **Doit session ends here. No additional confirmation needed.**

@@ -43,6 +43,8 @@ Before writing tests, understand the code you'll modify:
 7. `tokensave_test_map(node_id="<id>")` — find test coverage for symbol being modified
 8. `ctx_search` — look up previously indexed information from this session
    - **Fallback:** If Context-Mode unavailable -> `grep` command output
+9. `mempalace_search query="<REQ description>" wing="<project>" limit=2` — recover cross-session context from prior implementations
+   - **Fallback:** If MemPalace unavailable -> skip (tokensave + context-mode cover session-level context)
 
 ### IMPLEMENT (edit primitives for code changes)
 
@@ -106,7 +108,29 @@ Proceed to REQ-00(X+1)? (yes/no, or describe gap)
 
 ### State Tracking
 
-Update `.spec/current.md` status as REQs complete. Cross-session resume uses git branch, commit history, and spec REQ statuses (see SKILL.md Resume).
+Update `.spec/current.md` status as REQs complete. Cross-session resume uses git branch, commit history, spec REQ statuses, and MemPalace (if available).
+
+After each REQ completes, if MemPalace is active:
+```
+mempalace_add_drawer wing="<project>" room="implementation" content="REQ-00X: <what was done, key files changed>"
+```
+
+### Background Process Logging
+
+For long-running commands (test suites, builds, E2E servers), use the background process pattern from [background-process.md](background-process.md):
+
+```bash
+mkdir -p .scratch/logs
+(
+  echo "[START] $(date '+%Y-%m-%d %H:%M:%S') — cargo test --all"
+  cargo test --all
+  EXIT_CODE=$?
+  echo "[END] $(date '+%Y-%m-%d %H:%M:%S') — exit_code=$EXIT_CODE"
+  exit $EXIT_CODE
+) > .scratch/logs/test.log 2>&1 &
+```
+
+Check results by reading the log file's last line for exit code.
 
 ## Phase 3 End
 
