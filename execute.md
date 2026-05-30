@@ -4,10 +4,10 @@
 
 - **uv virtualenv for all Python code.** Create/activate with `uv venv` + `source .venv/bin/activate`. Every Python command runs through uv.
   - **Fallback:** If uv not available -> use `pip` + `python3 -m venv .venv` + `source .venv/bin/activate`.
-- **RTK for all shell commands.** RTK auto-wraps via PreToolUse hook. Use `rtk` prefix for manual calls.
-  - `rtk gain` — token savings analytics
-  - `rtk gain --history` — command history with savings
-  - `rtk discover` — missed optimization opportunities
+- **RTK for all shell commands.** RTK auto-wraps via PreToolUse hook. All shell commands in this phase go through RTK for 60-90% token savings.
+  - `rtk gain` — token savings analytics (run after Phase 3 completes)
+  - `rtk gain --history` — command history with per-command savings
+  - `rtk discover` — scan conversation history for missed optimization opportunities (run in Phase 6)
   - `rtk proxy <cmd>` — bypass RTK filter (debug only)
   - **Fallback:** If RTK not available -> run Bash commands directly (no token optimization).
 - **Context-Mode for context management.** Auto-indexes command output, provides semantic search.
@@ -50,6 +50,8 @@ Before writing tests, understand the code you'll modify:
 14. `ctx_search` — look up previously indexed information from this session
     - **Fallback:** If Context-Mode unavailable -> `grep` command output
 15. `mempalace_search query="<REQ description>" wing="<project>" limit=2` — recover cross-session context from prior implementations
+16. `mempalace_get_drawer drawer_id="<id from search>"` — fetch full content of a specific drawer (when search preview is insufficient)
+17. `mempalace_list_drawers wing="<project>" room="implementation" limit=5` — browse recent implementation notes
     - **Fallback:** If MemPalace unavailable -> skip (tokensave + context-mode cover session-level context)
 
 ### IMPLEMENT (edit primitives for code changes)

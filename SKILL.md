@@ -122,9 +122,15 @@ Remove all intermediate workflow files. See [commit.md](shared/commit.md) step 8
 
 After Phase 9 completes, automatically trigger context compression to reduce token usage for the next session:
 
-1. Run `/compact` command if available (Claude Code built-in)
-2. If context-mode is active, also run `ctx stats` to log session token savings
-3. Write compact result to MemPalace diary if available: `mempalace_diary_write agent_name="doit" entry="<compact summary>" topic="compact"`
+1. **RTK token report** (if available):
+   - `rtk gain` — show total session token savings
+   - `rtk gain --history` — per-command savings breakdown
+2. **Context-Mode stats** (if available): `ctx stats` — log session token savings
+3. **MemPalace diary** (if available):
+   - `mempalace_diary_write agent_name="doit" entry="<compact summary>" topic="compact"`
+   - `mempalace_memories_filed_away` → verify auto-save checkpoint was saved
+   - `mempalace_kg_timeline entity="<project>"` → log project timeline for future reference
+4. Run `/compact` command if available (Claude Code built-in)
 
 **This phase always runs last.** It ensures the conversation context is compressed before the session ends, reducing token overhead for resumed conversations.
 

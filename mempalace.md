@@ -14,6 +14,15 @@ mempalace_status
 
 Returns `{ total_drawers, wings, rooms, protocol, aaak_dialect }`. If it errors, MemPalace is not installed — skip all MemPalace steps.
 
+After confirming availability, run maintenance:
+```
+mempalace_reconnect → force reconnect to palace database (refreshes in-memory HNSW index)
+mempalace_sync project_dir="<project_root>" → dry-run: report stale drawers
+mempalace_sync project_dir="<project_root>" apply=true → actually delete stale drawers
+mempalace_get_taxonomy → full wing→room→drawer count tree (understand memory landscape)
+mempalace_list_wings → list all wings (projects) with drawer counts
+```
+
 ## Integration Points
 
 ### Phase -1: Environment Detection
@@ -23,22 +32,39 @@ After checking tokensave, check MemPalace:
 ```
 mempalace_status → available
 mempalace_hook_settings → configure silent_save: true, desktop_toast: false
+mempalace_get_taxonomy → full wing→room→drawer count tree (understand memory landscape)
+mempalace_kg_stats → knowledge graph overview (entities, triples, current_facts)
+mempalace_graph_stats → palace graph overview (nodes, tunnels, edges, connectivity)
 ```
 
 Write detection result to CLAUDE.md same section as tokensave.
 
+### Phase 0: Resume (blank /doit)
+
+When resuming, check MemPalace before filesystem:
+
+```
+mempalace_diary_read agent_name="doit" last_n=3
+mempalace_search query="<project> <feature>" wing="<project>" limit=5
+mempalace_kg_query entity="<project>"
+mempalace_kg_timeline entity="<project>" → chronological timeline of facts about this project
+mempalace_list_wings → list all wings (projects) with drawer counts
+```
+
 ### Phase 1: Spec Generation
-
-After writing `.spec/current.md`, file the spec to MemPalace:
-
-```
-mempalace_add_drawer wing="<project>" room="specs" content="<spec content>" source_file=".spec/current.md"
-```
 
 Before grilling, search for prior related specs to avoid repeating decisions:
 
 ```
 mempalace_search query="<user request keywords>" wing="<project>" limit=3
+mempalace_list_rooms wing="<project>" → see what rooms exist (specs, decisions, etc.)
+mempalace_list_drawers wing="<project>" room="specs" limit=5 → recent specs
+```
+
+After writing `.spec/current.md`, file the spec:
+
+```
+mempalace_add_drawer wing="<project>" room="specs" content="<spec content>" source_file=".spec/current.md"
 ```
 
 ### Phase 2: Plan
@@ -47,6 +73,7 @@ Search MemPalace for prior implementation context:
 
 ```
 mempalace_search query="<feature name> implementation" wing="<project>" limit=3
+mempalace_traverse start_room="<project>/specs" max_hops=2 → find connected ideas across rooms
 ```
 
 After producing the plan, store key decisions:
@@ -66,7 +93,15 @@ mempalace_search query="<REQ description>" wing="<project>" limit=2
 After completing each REQ, file the implementation summary:
 
 ```
-mempalace_add_drawer wing="<project>" room="implementation" content="REQ-001: <what was done, key files changed>"
+mempalace_add_drawer wing="<project>" room="implementation" content="REQ-00X: <what was done, key files changed>"
+```
+
+### Phase 4: E2E
+
+After E2E tests complete, file results:
+
+```
+mempalace_add_drawer wing="<project>" room="e2e" content="Phase 4 E2E: L0+L1 passed, L2+L3 HITL pending"
 ```
 
 ### Phase 5: Review
@@ -75,6 +110,16 @@ After code review completes, file the review findings:
 
 ```
 mempalace_add_drawer wing="<project>" room="reviews" content="<review summary: issues found, patterns to avoid>"
+```
+
+### Phase 6: Review + Simplify
+
+If simplification changes a prior decision, update the stored drawer:
+
+```
+mempalace_list_drawers wing="<project>" room="decisions" limit=10
+mempalace_get_drawer drawer_id="<id>" → fetch full content before updating
+mempalace_update_drawer drawer_id="<id>" content="<updated decision>"
 ```
 
 ### Phase 8: Commit + Knowledge Graph
@@ -99,15 +144,14 @@ Write a diary entry summarizing the workflow:
 mempalace_diary_write agent_name="doit" entry="Completed <feature>: <N> REQs, <N> files changed. Commit <short-hash>." topic="<feature>"
 ```
 
-### Resume (Cross-Session)
+### Phase 10: Auto-Compact
 
-When resuming a workflow across sessions, recover context:
+After compact, verify MemPalace auto-save worked:
 
-1. Search recent diary: `mempalace_diary_read agent_name="doit" last_n=3`
-2. Search project wing: `mempalace_search query="<project> <feature>" wing="<project>" limit=5`
-3. Check knowledge graph: `mempalace_kg_query entity="<project>"`
-
-This recovers what was done in prior sessions without relying on filesystem state alone.
+```
+mempalace_memories_filed_away → { filed: true, message_count: N, timestamp: "..." }
+mempalace_diary_write agent_name="doit" entry="<compact summary>" topic="compact"
+```
 
 ### Doc Capture Enhancement
 
@@ -131,17 +175,49 @@ When a feature spans multiple projects, create tunnels:
 mempalace_create_tunnel source_wing="project_a" source_room="api" target_wing="project_b" target_room="schema" label="API contract shared between projects"
 ```
 
+Explore cross-project connections:
+
+```
+mempalace_list_tunnels wing="<project>" → list all tunnels for this project
+mempalace_follow_tunnels wing="<project>" room="api" → follow tunnels from a room
+mempalace_find_tunnels wing_a="project_a" wing_b="project_b" → find rooms that bridge two wings
+```
+
+### Maintenance (Periodic)
+
+When the project has been restructured or files moved:
+
+```
+mempalace_sync project_dir="<project_root>" → dry-run: report stale drawers
+mempalace_sync project_dir="<project_root>" apply=true → actually delete stale drawers
+mempalace_reconnect → force reconnect after external scripts modified palace
+```
+
+### Debug Workflow (Type B)
+
+When diagnosing bugs, file diagnosis results:
+
+```
+mempalace_add_drawer wing="<project>" room="bugs" content="Bug: <description>, root cause: <X>, fix: <Y>"
+```
+
+When a bug is fixed, invalidate the prior knowledge graph fact:
+
+```
+mempalace_kg_invalidate subject="<project>" predicate="has_bug" object="<bug description>" ended="<today>"
+```
+
 ## Wing and Room Convention
 
-| Room | Content |
-|------|---------|
-| `specs` | Generated specs from Phase 1 |
-| `decisions` | Architecture decisions (ADRs) from Phase 2 |
-| `implementation` | Per-REQ implementation summaries from Phase 3 |
-| `reviews` | Code review findings from Phase 5 |
-| `reference-docs` | User-provided reference docs from Doc Capture |
-| `bugs` | Bug diagnosis results from debug workflow |
-| `e2e` | E2E test results and verification notes |
+| Room | Content | Which Phase Writes |
+|------|---------|-------------------|
+| `specs` | Generated specs from Phase 1 | Phase 1 |
+| `decisions` | Architecture decisions (ADRs) | Phase 2 |
+| `implementation` | Per-REQ implementation summaries | Phase 3 |
+| `e2e` | E2E test results and verification notes | Phase 4 |
+| `reviews` | Code review findings | Phase 5 |
+| `reference-docs` | User-provided reference docs | Doc Capture |
+| `bugs` | Bug diagnosis results | Debug D0 |
 
 Wing name = project root directory name (e.g., `my-project`, `doit-skill`).
 

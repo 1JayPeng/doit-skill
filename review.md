@@ -67,6 +67,17 @@ Re-read `.spec/current.md`. Every REQ must be DONE. Gaps -> flag, don't auto-fix
 - `ctx_search(queries=[<REQ descriptions>])` — look up previously indexed spec content
 - **Fallback:** Read `.spec/current.md` directly + `grep -rn` for keywords.
 
+**MemPalace** (if available): file review findings for cross-session reference:
+```
+mempalace_add_drawer wing="<project>" room="reviews" content="Review: <summary>, issues: <X>, patterns: <Y>"
+mempalace_kg_add subject="<project>" predicate="passed_review" object="<feature name>" valid_from="<today>"
+```
+
+### 5. RTK Token Report
+
+Run `rtk discover` to scan this session's commands for missed optimization opportunities.
+Run `rtk gain --history` to show per-command token savings history.
+
 ### 5. Phase 6 Next (MANDATORY)
 
 **After Phase 5 completes, you MUST run Phase 6 Review+Simplify.** See [review-simplify.md](review-simplify.md).

@@ -34,6 +34,12 @@ Use `diagnose` skill for root cause analysis if needed.
 
 **Cannot proceed without reproducing the bug.** If you can't reproduce, tell user. Don't guess.
 
+**MemPalace** (if available): file the bug diagnosis for cross-session reference:
+```
+mempalace_add_drawer wing="<project>" room="bugs" content="Bug: <description>, symptom: <X>, location: <file:line>"
+mempalace_kg_add subject="<project>" predicate="has_bug" object="<bug description>" valid_from="<today>"
+```
+
 Use `diagnose` skill for root cause analysis if needed.
 
 ## D1 — Regression Test (write BEFORE fix)
