@@ -343,7 +343,11 @@ else
 
 # Caveman (token-compact mode)
   if [ -d "$SKILL_DIR/caveman" ]; then
-    echo_success "caveman already installed"
+    echo_success "caveman already installed (skill)"
+  elif grep -rl "caveman" "$HOME/.claude/plugins/" 2>/dev/null; then
+    echo_success "caveman already installed (plugin)"
+  elif grep -rl "caveman" "$HOME/.claude/hooks/" 2>/dev/null; then
+    echo_success "caveman already installed (hooks)"
   else
     echo_info "Installing caveman..."
     curl -fsSL https://raw.githubusercontent.com/JuliusBrussee/caveman/main/install.sh 2>/dev/null | bash 2>/dev/null || echo_warn "Failed to install caveman"
@@ -351,7 +355,9 @@ else
 
   # Code Review
   if [ -d "$SKILL_DIR/code-review" ]; then
-    echo_success "code-review already installed"
+    echo_success "code-review already installed (skill)"
+  elif grep -rl "code-review" "$HOME/.claude/plugins/" 2>/dev/null; then
+    echo_success "code-review already installed (plugin)"
   else
     echo_info "Installing code-review..."
     claude plugin install code-review 2>/dev/null || echo_warn "Failed to install code-review (install manually: claude plugin install code-review)"
