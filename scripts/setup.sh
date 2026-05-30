@@ -311,10 +311,10 @@ else
   else
     echo_info "Installing rtk..."
     curl -fsSL https://raw.githubusercontent.com/rtk-ai/rtk/refs/heads/master/install.sh 2>/dev/null | sh 2>/dev/null || echo_warn "Failed to install rtk"
-    if command -v rtk >/dev/null 2>&1; then
-      echo_info "Initializing rtk for Claude Code..."
-      rtk init -g 2>/dev/null || true
-    fi
+  fi
+  if command -v rtk >/dev/null 2>&1; then
+    echo_info "Initializing rtk for Claude Code..."
+    rtk init -g 2>/dev/null || true
   fi
 
   # UV
