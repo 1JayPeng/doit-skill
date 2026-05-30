@@ -58,6 +58,21 @@ Before writing tests, understand the code you'll modify:
 17. `mempalace_list_drawers wing="<project>" room="implementation" limit=5` — browse recent implementation notes
     - **Fallback:** If MemPalace unavailable -> skip (tokensave + context-mode cover session-level context)
 
+### IMPLEMENT — Reuse Gate (MANDATORY before writing any code)
+
+**Before writing ANY code, check for existing reusable code.** This is the primary gate — don't defer to review/simplify.
+
+1. **tokensave_search** — search for functions/utilities that already do what you need:
+   - `tokensave_search(query="<functionality needed>")` — find existing implementations
+   - `tokensave_signature_search(params="<key param>", returns="<return type>")` — find functions by shape
+2. **tokensave_similar** — check if a similar function already exists:
+   - `tokensave_similar(symbol="<new_function_name>")` — find naming conflicts or near-duplicates
+3. **mempalace_search** — check cross-session memory for prior solutions:
+   - `mempalace_search query="<feature>" wing="<project>" limit=3` — find related implementations
+4. **Decision:** If existing code can be reused or extended → **reuse it**. Only write new code if nothing fits.
+
+**Rule: Write code ONCE. If it already exists, use it. If it's close, adapt it. Review/Simplify catches what this misses — but this gate should catch 90%.**
+
 ### IMPLEMENT (edit primitives for code changes)
 
 Use tokensave edit primitives instead of Read+Edit when modifying source files — they trigger in-place re-index so the graph never goes stale:
