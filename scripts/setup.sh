@@ -115,6 +115,12 @@ if [ -t 0 ] && [ -t 1 ]; then
   esac
 fi
 
+# Ask about Tavily API Key (interactive, skip if piped/non-tty)
+TAVILY_API_KEY=""
+if [ -t 0 ] && [ -t 1 ]; then
+  read -r -p "Tavily API Key (for web search, or press Enter to skip): " TAVILY_API_KEY
+fi
+
 # Handle dry-run
 if [ "$DRY_RUN" = true ]; then
   echo_info "Dry run — showing what would be installed:"
@@ -134,6 +140,7 @@ if [ "$DRY_RUN" = true ]; then
     echo "    • rtk              (curl install script)"
     echo "    • uv               (pip install uv)"
     echo "    • tokensave        (cargo install tokensave)"
+    echo "    • tavily           (claude mcp add --transport http tavily ...)"
     echo "    • caveman          (curl install script)"
     echo "    • code-review      (claude plugin install code-review)"
     echo "    • mempalace        (claude plugin install --scope user mempalace)"
@@ -309,6 +316,25 @@ else
     echo_info "context-mode is a Claude Code plugin"
     echo_warn "Install manually: claude plugin marketplace add mksglu/context-mode"
     echo "     claude plugin install context-mode@context-mode"
+  fi
+
+  # Tavily MCP (web search)
+  if [ -n "$TAVILY_API_KEY" ]; then
+    echo_info "Installing Tavily MCP with your API key..."
+    claude mcp add --transport http tavily "https://mcp.tavily.com/mcp/?tavilyApiKey=$TAVILY_API_KEY" 2>/dev/null || echo_warn "Failed to install Tavily MCP (install manually: claude mcp add --transport http tavily https://mcp.tavily.com/mcp/?tavilyApiKey=<your-key>)"
+    if claude mcp list 2>/dev/null | grep -q tavily; then
+      echo_success "tavily MCP configured"
+    else
+      echo_warn "tavily MCP not detected after install"
+    fi
+  else
+    # Check if already configured
+    if claude mcp list 2>/dev/null | grep -q tavily; then
+      echo_success "tavily already configured (MCP)"
+    else
+      echo_info "tavily not configured (optional web search)"
+      echo_warn "Configure: claude mcp add --transport http tavily https://mcp.tavily.com/mcp/?tavilyApiKey=<your-key>"
+    fi
   fi
 
   # RTK

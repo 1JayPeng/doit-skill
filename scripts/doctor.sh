@@ -117,11 +117,13 @@ for tool in "${EXTERNAL_TOOLS[@]}"; do
             fi
             ;;
         "tavily")
-            if grep -q "tavily" ~/.claude/settings.json 2>/dev/null || grep -q "tavily" ~/.claude/plugins/*.json 2>/dev/null; then
-                echo "  ✅ tavily configured"
+            if claude mcp list 2>/dev/null | grep -q tavily; then
+                echo "  ✅ tavily configured (MCP)"
+            elif grep -q "tavily" ~/.claude/settings.json 2>/dev/null; then
+                echo "  ✅ tavily configured (settings.json)"
             else
                 echo "  ℹ️  tavily not configured (optional)"
-                echo "  💡 Configure: Add Tavily MCP to ~/.claude/settings.json"
+                echo "  💡 Configure: claude mcp add --transport http tavily https://mcp.tavily.com/mcp/?tavilyApiKey=<your-key>"
             fi
             ;;
         "caveman")
