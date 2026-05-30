@@ -115,14 +115,9 @@ if [ -t 0 ] && [ -t 1 ]; then
   esac
 fi
 
-# Ask about Tavily API Key (interactive, /dev/tty survives pipe installs)
+# Ask about Tavily API Key (interactive only, pipe installs use TAVILY_API_KEY env var)
 TAVILY_API_KEY="${TAVILY_API_KEY:-}"
-if [ -e /dev/tty ] && ! [ -t 0 ]; then
-  # stdin is a pipe (curl | bash), but /dev/tty gives real terminal
-  echo ""
-  echo -n "Tavily API Key (for web search, or press Enter to skip): "
-  read -r TAVILY_API_KEY < /dev/tty 2>/dev/null || true
-elif [ -t 0 ] && [ -t 1 ]; then
+if [ -t 0 ] && [ -t 1 ]; then
   read -r -p "Tavily API Key (for web search, or press Enter to skip): " TAVILY_API_KEY
 fi
 
