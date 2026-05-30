@@ -111,6 +111,35 @@ Run each, paste output. I'll generate assertion.
 
 Compare e2e coverage against spec acceptance criteria. Missing -> flag to user.
 
+## Long-Running E2E Tasks
+
+E2E test suites often take >5 minutes (server startup, integration tests, multi-step workflows). Use tmux + monitor for auto-continuation:
+
+```bash
+tmux new-session -d -s "doit-e2e"
+tmux send-keys -t "doit-e2e" '(
+  echo "[START] $(date "+%Y-%m-%d %H:%M:%S") — E2E server startup"
+  uv run python -m run_server &
+  SERVER_PID=$!
+  sleep 5  # wait for server to start
+
+  echo "[START] $(date "+%Y-%m-%d %H:%M:%S") — E2E test suite"
+  uv run pytest tests/e2e/ -v --tb=short
+  EXIT_CODE=$?
+
+  kill $SERVER_PID 2>/dev/null || true
+
+  echo "[END] $(date "+%Y-%m-%d %H:%M:%S") — exit_code=$EXIT_CODE"
+  exit $EXIT_CODE
+) > .scratch/logs/e2e-full.log 2>&1' Enter
+
+Monitor "Watch E2E completion" \
+  "grep -q '\[END\]' .scratch/logs/e2e-full.log" \
+  --interval 30
+```
+
+When the monitor fires, Claude Code reads the log, checks the exit code, and proceeds to Phase 5 (Review) if successful. See [background-process.md](background-process.md) for full patterns.
+
 ### Spec Alignment Check (per REQ)
 
 **E2E tests are not just about code running — they verify output matches what the user asked for.**

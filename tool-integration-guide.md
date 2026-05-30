@@ -18,7 +18,25 @@ doit 工作流依赖三个互补的持久化层：
 
 ---
 
-## 二、外部工具总览
+## 二、后台长任务机制（Tmux + Monitor）
+
+doit 内置三种后台任务机制，按任务时长自动选择：
+
+| 层级 | 适用场景 | 机制 | 自动继续 |
+|------|---------|------|---------|
+| **Foreground** | <10s | 直接 Bash 执行 | 不需要 |
+| **Background** | 10s-5min | Shell `&` + 日志文件 + `[START]`/`[END]` 标记 | 不需要 |
+| **Tmux + Monitor** | >5min | 命名 tmux 会话 + Claude Code Monitor + 自动继续 | **是** |
+
+**Tmux + Monitor 工作流程：**
+1. 长任务在命名 tmux 会话中运行（如 `doit-build`）
+2. Claude Code 设置 Monitor，定期检查日志文件中的 `[END]` 标记
+3. Monitor 触发 → Claude Code 读取日志 → 检查退出码 → **自动进入下一阶段**
+4. 全程无需人工干预
+
+详见 [background-process.md](background-process.md)。
+
+## 三、外部工具总览
 
 | # | 工具 | 类型 | 安装方式 | 核心作用 |
 |---|------|------|----------|----------|
@@ -33,7 +51,7 @@ doit 工作流依赖三个互补的持久化层：
 
 ---
 
-## 三、按阶段详解
+## 四、按阶段详解
 
 ### Phase -1：环境检测
 
@@ -124,7 +142,7 @@ doit 工作流依赖三个互补的持久化层：
 
 ### Phase 3：执行（TDD 循环）
 
-**目的：** 每个 REQ 的 RED→GREEN→REFACTOR→REVIEW+SIMPLIFY 循环。
+**目的：** 每个 REQ 的 RED→GREEN→REFACTOR→REVIEW+SIMPLIFY 循环。长构建任务（>5min）使用 Tmux + Monitor 实现自动继续。
 
 **CONTEXT 步骤（写测试前）：**
 
@@ -158,6 +176,17 @@ doit 工作流依赖三个互补的持久化层：
 | **TokenSave** | `tokensave_insert_at` | 在锚点插入代码 |
 | **TokenSave** | `tokensave_ast_grep_rewrite` | 结构化代码重写 |
 
+**长任务执行（Tmux + Monitor）：**
+
+| 工具 | 具体调用 | 目的 |
+|------|---------|------|
+| **Tmux** | `tmux new-session -d -s "doit-build"` | 创建命名会话 |
+| **Tmux** | `tmux send-keys -t "doit-build" '...' Enter` | 发送长命令到 tmux |
+| **Monitor** | `Monitor "Watch build" "grep -q '\[END\]' .scratch/logs/build.log" --interval 30` | 监控完成标记 |
+| **Bash** | `tail -1 .scratch/logs/build.log` | Monitor 触发后读取退出码 |
+
+当 Monitor 触发时，Claude Code 自动读取日志、检查退出码、继续下一阶段。详见 [background-process.md](background-process.md)。
+
 **REVIEW+SIMPLIFY 步骤：**
 
 | 工具 | 具体调用 | 目的 |
@@ -187,7 +216,7 @@ doit 工作流依赖三个互补的持久化层：
 
 ### Phase 4：E2E 测试
 
-**目的：** 端到端测试，真实环境验证。
+**目的：** 端到端测试，真实环境验证。E2E 测试通常耗时较长（服务器启动 + 测试套件），适合 Tmux + Monitor。
 
 | 工具 | 具体调用 | 目的 |
 |------|---------|------|
@@ -204,6 +233,8 @@ doit 工作流依赖三个互补的持久化层：
 | **Context-Mode** | `ctx_search(queries=[<REQs>])` | 查找 spec REQ |
 | **Context-Mode** | `ctx_execute` | 运行测试命令 |
 | **MemPalace** | `mempalace_add_drawer wing="<project>" room="e2e"` | 存储 E2E 结果 |
+| **Tmux** | `tmux new-session -d -s "doit-e2e"` | E2E 服务器 + 测试在 tmux 中运行 |
+| **Monitor** | `Monitor "Watch E2E" "grep -q '\[END\]' .scratch/logs/e2e-full.log" --interval 30` | 监控 E2E 完成 |
 
 ---
 
@@ -293,7 +324,7 @@ doit 工作流依赖三个互补的持久化层：
 
 ### Phase 7：E2E 验证循环
 
-**目的：** 简化后重新运行 E2E 测试，确保输出匹配 spec。
+**目的：** 简化后重新运行 E2E 测试，确保输出匹配 spec。E2E 验证循环通常耗时较长，适合 Tmux + Monitor。
 
 | 工具 | 具体调用 | 目的 |
 |------|---------|------|
@@ -303,6 +334,8 @@ doit 工作流依赖三个互补的持久化层：
 | **TokenSave** | `tokensave_changelog(from_ref="...", to_ref="HEAD")` | 结构化 diff |
 | **Context-Mode** | `ctx_execute` | 运行测试命令 |
 | **Context-Mode** | `ctx_search(queries=[<REQs>])` | 查找 spec REQ |
+| **Tmux** | `tmux new-session -d -s "doit-e2e-verify"` | E2E 验证在 tmux 中运行 |
+| **Monitor** | `Monitor "Watch E2E verify" "grep -q '\[END\]' .scratch/logs/e2e-verify.log" --interval 30` | 监控验证完成 |
 
 ---
 
@@ -349,7 +382,7 @@ doit 工作流依赖三个互补的持久化层：
 
 ---
 
-## 四、工具协作时序图
+## 五、工具协作时序图
 
 ```
 Phase -1  环境检测
@@ -424,7 +457,7 @@ Phase 10  自动压缩
 
 ---
 
-## 五、关键设计决策
+## 六、关键设计决策
 
 ### 1. 为什么 TokenSave 管代码，MemPalace 管语义？
 
@@ -471,7 +504,7 @@ caveman 是**整个会话**的压缩通信模式，Phase 0 启用后一直生效
 
 ---
 
-## 六、降级策略总览
+## 七、降级策略总览
 
 | 工具 | 不可用时的降级 | 影响阶段 |
 |------|--------------|---------|

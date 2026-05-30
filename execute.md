@@ -135,10 +135,16 @@ After each REQ completes, if MemPalace is active:
 mempalace_add_drawer wing="<project>" room="implementation" content="REQ-00X: <what was done, key files changed>"
 ```
 
-### Background Process Logging
+### Background Process Management
 
-For long-running commands (test suites, builds, E2E servers), use the background process pattern from [background-process.md](background-process.md):
+For long-running commands, use the three-tier approach from [background-process.md](background-process.md):
 
+**Tier 1 — Foreground** (<10s):
+```bash
+cargo check
+```
+
+**Tier 2 — Background with log file** (10s-5min):
 ```bash
 mkdir -p .scratch/logs
 (
@@ -150,7 +156,23 @@ mkdir -p .scratch/logs
 ) > .scratch/logs/test.log 2>&1 &
 ```
 
-Check results by reading the log file's last line for exit code.
+**Tier 3 — Tmux + Monitor** (>5min, auto-continuation):
+```bash
+tmux new-session -d -s "doit-build"
+tmux send-keys -t "doit-build" '(
+  echo "[START] $(date "+%Y-%m-%d %H:%M:%S") — cargo build --release"
+  cargo build --release
+  EXIT_CODE=$?
+  echo "[END] $(date "+%Y-%m-%d %H:%M:%S") — exit_code=$EXIT_CODE"
+  exit $EXIT_CODE
+) > .scratch/logs/build.log 2>&1' Enter
+
+Monitor "Watch build completion" \
+  "grep -q '\[END\]' .scratch/logs/build.log" \
+  --interval 30
+```
+
+When the monitor fires, Claude Code reads the log, checks the exit code, and **automatically continues to the next phase** without human intervention. See [background-process.md](background-process.md) for full patterns including multi-phase pipelines.
 
 ## Phase 3 End
 

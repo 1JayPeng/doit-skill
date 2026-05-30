@@ -144,7 +144,7 @@ Spec in git (`feature/xxx` branch). No runtime state file — workflow progress 
 
 **MemPalace layers** (see [mempalace.md](mempalace.md)): spec archive, implementation notes, knowledge graph facts, and agent diary entries survive session restarts. Complements filesystem state for cross-session resume.
 
-**Background process logs** (see [background-process.md](background-process.md)): long-running commands output to `.scratch/logs/` with clear exit signals for process state detection.
+**Background process logs** (see [background-process.md](background-process.md)): long-running commands output to `.scratch/logs/` with clear exit signals for process state detection. Three tiers: foreground (<10s), background with log file (10s-5min), tmux + monitor (>5min, auto-continuation).
 
 ## Resume
 
