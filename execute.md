@@ -4,12 +4,16 @@
 
 - **uv virtualenv for all Python code.** Create/activate with `uv venv` + `source .venv/bin/activate`. Every Python command runs through uv.
   - **Fallback:** If uv not available -> use `pip` + `python3 -m venv .venv` + `source .venv/bin/activate`.
-- **RTK for all shell commands.** RTK auto-wraps via PreToolUse hook. Use `rtk` prefix for manual calls.
-  - `rtk gain` — token savings analytics
-  - `rtk gain --history` — command history with savings
-  - `rtk discover` — missed optimization opportunities
+- **RTK for all shell commands.** RTK auto-wraps via PreToolUse hook. All shell commands in this phase go through RTK for 60-90% token savings.
+  - `rtk gain` — token savings analytics (run after Phase 3 completes)
+  - `rtk gain --history` — command history with per-command savings
+  - `rtk discover` — scan conversation history for missed optimization opportunities (run in Phase 6)
   - `rtk proxy <cmd>` — bypass RTK filter (debug only)
   - **Fallback:** If RTK not available -> run Bash commands directly (no token optimization).
+- **RTK wraps all phases.** RTK is not Phase 3 only — it auto-wraps every Bash call via PreToolUse hook across the entire session.
+
+- **RTK also wraps all shell commands in other phases.** RTK is not Phase 3 only — it auto-wraps every Bash call via PreToolUse hook across the entire session.
+
 - **Context-Mode for context management.** Auto-indexes command output, provides semantic search.
   - `ctx_execute` — run commands, output auto-indexed
   - `ctx_execute_file` — process large files without loading into context
@@ -35,14 +39,24 @@ Before writing tests, understand the code you'll modify:
    - **Fallback:** If TokenSave unavailable -> `Agent Explore` with task description
 2. `tokensave_search` — find specific symbols by name
    - **Fallback:** If TokenSave unavailable -> `grep -rn` + `find`
-3. `tokensave_node` — function signature, full source from tests
+3. `tokensave_similar(symbol="<name>")` — find symbols with similar names (avoid naming inconsistency)
+4. `tokensave_node` — function signature, full source from tests
    - **Fallback:** If TokenSave unavailable -> `Read` the specific file
-4. `tokensave_callers` / `tokensave_callees` — call graph edges, blast radius
-5. `tokensave_impact` — what's affected by changing a symbol
-6. `tokensave_files` — understand project file structure
-7. `tokensave_test_map(node_id="<id>")` — find test coverage for symbol being modified
-8. `ctx_search` — look up previously indexed information from this session
-   - **Fallback:** If Context-Mode unavailable -> `grep` command output
+5. `tokensave_body(symbol="<name>")` — return full source body of a symbol (faster than node lookup)
+6. `tokensave_signature(qualified_name="<name>")` — get function signature without body (visibility, generics, params, return type)
+7. `tokensave_signature_search(params="&mut self", returns="Result")` — find functions by signature shape (refactoring: find similar patterns)
+8. `tokensave_callers` / `tokensave_callees` — call graph edges, blast radius
+9. `tokensave_impact` — what's affected by changing a symbol
+10. `tokensave_files` — understand project file structure
+11. `tokensave_test_map(node_id="<id>")` — find test coverage for symbol being modified
+12. `tokensave_affected_tests(files=[<changed_files>])` — find test files affected by changed source files
+13. `tokensave_diagnostics(scope="workspace")` — run type-checker (cargo check / tsc / pyright) before writing code
+14. `ctx_search` — look up previously indexed information from this session
+    - **Fallback:** If Context-Mode unavailable -> `grep` command output
+15. `mempalace_search query="<REQ description>" wing="<project>" limit=2` — recover cross-session context from prior implementations
+16. `mempalace_get_drawer drawer_id="<id from search>"` — fetch full content of a specific drawer (when search preview is insufficient)
+17. `mempalace_list_drawers wing="<project>" room="implementation" limit=5` — browse recent implementation notes
+    - **Fallback:** If MemPalace unavailable -> skip (tokensave + context-mode cover session-level context)
 
 ### IMPLEMENT (edit primitives for code changes)
 
@@ -72,10 +86,11 @@ Merge duplicate code with existing code. Minimal change. No architectural restru
 ### REVIEW + SIMPLIFY (MANDATORY after each REQ)
 After RED->GREEN->REFACTOR completes, **before moving to next REQ**:
 1. **tokensave scan** — `tokensave_simplify_scan(files=[<changed_files>])` — auto-detect duplications, dead code, complexity
-2. **Read what you wrote** — read the full context of changes, not just the diff
-3. **Simplify** — remove dead imports, flatten unnecessary abstractions, combine redundant loops
-4. **Check documentation** — does README/CLAUDE.md need updating?
-5. **Verify** — tests still pass after simplifying
+2. **tokensave_similar** — `tokensave_similar(symbol="<new_function_name>")` — check if a similarly named symbol already exists (naming inconsistency)
+3. **Read what you wrote** — read the full context of changes, not just the diff
+4. **Simplify** — remove dead imports, flatten unnecessary abstractions, combine redundant loops
+5. **Check documentation** — does README/CLAUDE.md need updating?
+6. **Verify** — tests still pass after simplifying
 
 **Do not skip this.** Do not move to next REQ without reviewing current changes.
 
@@ -85,10 +100,17 @@ After RED->GREEN->REFACTOR completes, **before moving to next REQ**:
 
 ### Test Execution
 
-Use `ctx_execute` for running tests — output auto-indexed for search:
-- `ctx_execute` — run test commands, search results with `ctx_search`
+Run only affected tests when possible — skip full suite for small changes:
+
+**Primary (fast path):**
+- `tokensave_affected_tests(files=[<changed_files>])` — find test files affected by changed source files
+- `tokensave_run_affected_tests(changed_paths=[<changed_files>])` — run only affected tests (cargo test)
+- For non-Rust projects: use `ctx_execute` with affected test files
+
+**Fallback (full suite):**
+- `ctx_execute` — run all test commands, search results with `ctx_search`
 - `ctx_batch_execute` — run multiple test commands, search all output together
-- **Fallback:** If Context-Mode unavailable -> run tests via native Bash. Output printed to context (more tokens used).
+- **Context-Mode unavailable:** run tests via native Bash. Output printed to context (more tokens used).
 
 ### Spec Alignment Check (Interactive)
 
@@ -106,7 +128,51 @@ Proceed to REQ-00(X+1)? (yes/no, or describe gap)
 
 ### State Tracking
 
-Update `.spec/current.md` status as REQs complete. Save runtime state to `.scratch/workflow-state.json`. Workflow state includes current phase so `/doit` can resume mid-session.
+Update `.spec/current.md` status as REQs complete. Cross-session resume uses git branch, commit history, spec REQ statuses, and MemPalace (if available).
+
+After each REQ completes, if MemPalace is active:
+```
+mempalace_add_drawer wing="<project>" room="implementation" content="REQ-00X: <what was done, key files changed>"
+```
+
+### Background Process Management
+
+For long-running commands, use the three-tier approach from [background-process.md](background-process.md):
+
+**Tier 1 — Foreground** (<10s):
+```bash
+cargo check
+```
+
+**Tier 2 — Background with log file** (10s-5min):
+```bash
+mkdir -p .scratch/logs
+(
+  echo "[START] $(date '+%Y-%m-%d %H:%M:%S') — cargo test --all"
+  cargo test --all
+  EXIT_CODE=$?
+  echo "[END] $(date '+%Y-%m-%d %H:%M:%S') — exit_code=$EXIT_CODE"
+  exit $EXIT_CODE
+) > .scratch/logs/test.log 2>&1 &
+```
+
+**Tier 3 — Tmux + Monitor** (>5min, auto-continuation):
+```bash
+tmux new-session -d -s "doit-build"
+tmux send-keys -t "doit-build" '(
+  echo "[START] $(date "+%Y-%m-%d %H:%M:%S") — cargo build --release"
+  cargo build --release
+  EXIT_CODE=$?
+  echo "[END] $(date "+%Y-%m-%d %H:%M:%S") — exit_code=$EXIT_CODE"
+  exit $EXIT_CODE
+) > .scratch/logs/build.log 2>&1' Enter
+
+Monitor "Watch build completion" \
+  "grep -q '\[END\]' .scratch/logs/build.log" \
+  --interval 30
+```
+
+When the monitor fires, Claude Code reads the log, checks the exit code, and **automatically continues to the next phase** without human intervention. See [background-process.md](background-process.md) for full patterns including multi-phase pipelines.
 
 ## Phase 3 End
 

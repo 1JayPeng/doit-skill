@@ -106,22 +106,9 @@ Status: completed
 Status: done
 ```
 
-### 6. Update Workflow State
-
-Save to `.scratch/workflow-state.json`:
-```json
-{
-  "phase": "committed",
-  "e2e": "passed",
-  "e2e_verify": "passed",
-  "e2e_verify_iterations": N,
-  "review": "passed"
-}
-```
-
 ## Push to Remote
 
-### 7. Auto-Push
+### 6. Auto-Push
 
 **Do NOT ask user. Push directly.** The workflow specifies commit + push — execute both.
 
@@ -142,7 +129,7 @@ git push -u origin HEAD
 
 **`none`** — commit only, skip push.
 
-### 8. Cleanup Intermediate Files
+### 7. Cleanup Intermediate Files
 
 **After successful push, remove all workflow intermediate files.** The feature is committed + pushed. These files are no longer needed and clutter the working directory.
 
@@ -150,14 +137,11 @@ git push -u origin HEAD
 # Remove current spec (already archived in Phase 5 step 6)
 rm -f .spec/current.md
 
-# Remove runtime state (workflow complete, no resume needed)
-rm -f .scratch/workflow-state.json
-
 # Remove doc-capture temp file
 rm -f .spec/doc-capture.md
 
 # Remove any other scratch artifacts
-rm -rf .scratch/  # if empty after removing state
+rm -rf .scratch/  # if empty
 ```
 
 **What to keep:**
@@ -175,5 +159,16 @@ This is the **final phase**. After push + cleanup, announce:
 - Commit hash
 - Summary of changes
 - Intermediate files cleaned
+
+**MemPalace persistence** (if available):
+```
+mempalace_kg_add subject="<project>" predicate="shipped" object="<feature>" valid_from="<today YYYY-MM-DD>"
+mempalace_diary_write agent_name="doit" entry="<commit-hash>: <feature summary>, <N> REQs, <N> files" topic="<feature>"
+```
+
+**Auto-compact** (Phase 10):
+After MemPalace filing, trigger context compression:
+1. Run `/compact` if available (Claude Code built-in)
+2. If context-mode active, run `ctx stats` to log session token savings
 
 **Doit session ends here. No additional confirmation needed.**

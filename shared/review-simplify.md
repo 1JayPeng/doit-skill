@@ -27,9 +27,16 @@ Code quality scanning:
 - `tokensave_dead_code()` — symbols with no incoming edges (potentially unreachable)
 - `tokensave_unused_imports()` — unreferenced imports
 - `tokensave_complexity(path="<changed_dir>", limit=5)` — highest complexity functions
+- `tokensave_god_class(path="<changed_dir>", limit=5)` — classes with most members (too many responsibilities)
 - `tokensave_coupling(direction="fan_in", path="<changed_dir>")` — files depended on most
 - `tokensave_coupling(direction="fan_out", path="<changed_dir>")` — files with most dependencies
+- `tokensave_dependency_depth(limit=5)` — longest file-level dependency chains (fragile to upstream changes)
 - `tokensave_doc_coverage(path="<src_dir>")` — public symbols missing documentation
+- `tokensave_circular()` — circular dependencies between files
+- `tokensave_recursion(limit=5)` — recursive or mutually-recursive call cycles
+- `tokensave_similar(symbol="<new_function_name>")` — find similarly named symbols (naming inconsistency)
+- `tokensave_signature_search(params="&mut self", returns="Result")` — find functions with matching signatures (potential duplicates)
+- `tokensave_diagnostics(scope="workspace")` — run type-checker (cargo check / tsc / pyright) before committing
 
 Discovery (when you need to find specific code):
 - `tokensave_search(query="<symbol name>")` — find specific symbols by name
@@ -69,6 +76,11 @@ Apply these simplifications **without changing behavior**:
 3. **Flatten unnecessary abstractions** — three identical lines > a 10-line helper
 4. **Combine related operations** — two sequential loops over same data = one loop
 5. **Shorten variable names** — `configuration` → `config`, `tempResult` → `result`
+
+**tokensave tools for structural refactoring:**
+- `tokensave_constructors(struct="<name>")` — find all struct literal sites (when adding/removing fields, update all construction sites)
+- `tokensave_field_sites(field="<name>")` — find all read/write sites of a field (when renaming/removing fields)
+- `tokensave_ast_grep_rewrite` — structural code rewrite via ast-grep CLI (batch renaming, pattern replacement)
 
 **Simplify boundary**: stop when you're just renaming for the sake of it. "Does this reduce code I have to read?" is the test.
 

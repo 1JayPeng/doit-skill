@@ -11,10 +11,15 @@
 Use **TokenSave** for code intelligence (discovery + call graph + code quality):
 1. `tokensave_context` — get focused context for the feature/task (PRIMARY)
 2. `tokensave_search` — find specific symbols by name from spec
-3. `tokensave_impact` — analyze impact radius of specific symbols
-4. `tokensave_files` — understand project file structure
-5. `tokensave_coupling` — fan-in/fan-out analysis for module dependencies
-6. `tokensave_health` — composite quality signal, identifies structural risks
+3. `tokensave_similar(symbol="<name>")` — find symbols with similar names (avoid naming inconsistency)
+4. `tokensave_impact` — analyze impact radius of specific symbols
+5. `tokensave_files` — understand project file structure
+6. `tokensave_coupling` — fan-in/fan-out analysis for module dependencies
+7. `tokensave_health` — composite quality signal, identifies structural risks
+8. `tokensave_status` — aggregate statistics (node/edge/file counts, DB size)
+9. `tokensave_config(key="dependencies", path="Cargo.toml")` — read project config without file reads (TOML/JSON)
+10. `tokensave_outline(file="<key_file>")` — flat list of top-level symbols (quick file overview)
+11. `tokensave_module_api(path="<src_dir>")` — public API surface (what's exposed to consumers)
 
 - **Fallback:** If TokenSave not installed -> use `Agent Explore` for codebase exploration.
 
@@ -23,12 +28,24 @@ Use **TokenSave** for code intelligence (discovery + call graph + code quality):
 - `tokensave_hotspots` — most connected symbols (highest call count)
 - `tokensave_diff_context` — semantic context for changed files
 - `tokensave_dsm` — design structure matrix, reveals hidden coupling
+- `tokensave_body(symbol="<name>")` — return full source body of a symbol (faster than node lookup)
+- `tokensave_signature(qualified_name="<name>")` — get function signature without body
+- `tokensave_signature_search(params="&mut self", returns="Result")` — find functions by signature shape
+
+**MemPalace tools for plan (if available):**
+- `mempalace_search query="<feature name> implementation" wing="<project>" limit=3` — find prior implementation context
+- `mempalace_traverse start_room="<project>/specs" max_hops=2` — find connected ideas across rooms
+- `mempalace_kg_stats` — knowledge graph overview (how many facts about this project)
+- `mempalace_graph_stats` — palace graph overview (cross-project connectivity)
 
 **Type system analysis (when task involves interfaces, traits, classes):**
 - `tokensave_type_hierarchy(node_id="<id>")` — full type hierarchy tree for traits/interfaces/classes
 - `tokensave_rank(edge_kind="implements", direction="incoming")` — most implemented interface (high coupling)
 - `tokensave_distribution(path="<dir>")` — node kind breakdown per file/directory
 - `tokensave_largest(node_kind="class", limit=5)` — largest classes (potential god classes)
+- `tokensave_impls(trait="<name>")` — list all impl blocks for a trait (find all implementors)
+- `tokensave_derives(qualified_name="<type>")` — list #[derive(...)] macros (synthesized methods)
+- `tokensave_inheritance_depth(limit=5)` — deepest class/interface hierarchies
 
 **Porting tasks (when porting code between languages/modules):**
 - `tokensave_port_status(source_dir="<src>", target_dir="<tgt>")` — compare symbols, track progress

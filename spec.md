@@ -67,3 +67,25 @@ git checkout -b feature/[short-name]
 ```
 
 Copy spec to branch (it stays in git).
+
+### Step 6: File to MemPalace (if available)
+
+If MemPalace is active, file the spec for cross-session recovery:
+
+```
+# Browse existing specs to understand what rooms exist
+mempalace_list_rooms wing="<project>"
+
+# Search for related prior specs to avoid repeating decisions
+mempalace_search query="<feature keywords>" wing="<project>" limit=3
+
+# File the new spec
+mempalace_add_drawer wing="<project>" room="specs" content="<full spec content>" source_file=".spec/current.md"
+```
+
+If scope changes during grill, update the existing drawer instead of creating a duplicate:
+```
+mempalace_update_drawer drawer_id="<id from prior search>" content="<updated spec content>"
+```
+
+If MemPalace is unavailable, skip silently. Filesystem (`.spec/current.md`) is the primary source of truth.

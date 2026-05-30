@@ -7,7 +7,7 @@ set -e
 SKILL_DIR="$HOME/.claude/skills"
 BUNDLED_SKILLS=("grill-me" "tdd" "diagnose" "prototype" "handoff" "improve-codebase-architecture")
 BUILTIN_SKILLS=()
-EXTERNAL_TOOLS=("context-mode" "rtk" "uv" "tokensave" "tavily" "caveman" "code-review" "skill-creator")
+EXTERNAL_TOOLS=("context-mode" "rtk" "uv" "tokensave" "tavily" "caveman" "code-review")
 SHARED_FILES=("shared/review-simplify.md" "shared/e2e-verify.md" "shared/commit.md")
 SYMLINK_TARGETS=("review-simplify.md:shared/review-simplify.md" "commit.md:shared/commit.md")
 
@@ -136,14 +136,6 @@ if [ -d "$SKILL_DIR/caveman" ]; then
             else
                 echo "  ℹ️  code-review not installed (recommended)"
                 echo "  💡 Install: claude plugin install code-review"
-            fi
-            ;;
-        "skill-creator")
-            if [ -d "$SKILL_DIR/skill-creator" ]; then
-                echo "  ✅ skill-creator installed"
-            else
-                echo "  ℹ️  skill-creator not installed (optional)"
-                echo "  💡 Install: claude install anthropics/skills/skill-creator"
             fi
             ;;
     esac

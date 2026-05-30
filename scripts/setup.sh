@@ -136,7 +136,7 @@ if [ "$DRY_RUN" = true ]; then
     echo "    • tokensave        (cargo install tokensave)"
     echo "    • caveman          (curl install script)"
     echo "    • code-review      (claude plugin install code-review)"
-    echo "    • skill-creator    (claude install anthropics/skills/skill-creator)"
+    echo "    • mempalace        (claude plugin install --scope user mempalace)"
   fi
 
   echo "  Options (configurable at install):"
@@ -311,10 +311,10 @@ else
   else
     echo_info "Installing rtk..."
     curl -fsSL https://raw.githubusercontent.com/rtk-ai/rtk/refs/heads/master/install.sh 2>/dev/null | sh 2>/dev/null || echo_warn "Failed to install rtk"
-    if command -v rtk >/dev/null 2>&1; then
-      echo_info "Initializing rtk for Claude Code..."
-      rtk init -g 2>/dev/null || true
-    fi
+  fi
+  if command -v rtk >/dev/null 2>&1; then
+    echo_info "Initializing rtk for Claude Code..."
+    rtk init -g 2>/dev/null || true
   fi
 
   # UV
@@ -357,12 +357,13 @@ else
     claude plugin install code-review 2>/dev/null || echo_warn "Failed to install code-review (install manually: claude plugin install code-review)"
   fi
 
-  # Skill Creator
-  if [ -d "$SKILL_DIR/skill-creator" ]; then
-    echo_success "skill-creator already installed"
+  # MemPalace
+  if grep -rl "mempalace" "$HOME/.claude/plugins/" 2>/dev/null; then
+    echo_success "mempalace already installed (plugin)"
   else
-    echo_info "Installing skill-creator..."
-    claude install anthropics/skills/skill-creator 2>/dev/null || echo_warn "Failed to install skill-creator (install manually: claude install anthropics/skills/skill-creator)"
+    echo_info "Installing mempalace..."
+    claude plugin marketplace add MemPalace/mempalace 2>/dev/null || echo_warn "Failed to add mempalace marketplace"
+    claude plugin install --scope user mempalace 2>/dev/null || echo_warn "Failed to install mempalace (install manually: claude plugin install --scope user mempalace)"
   fi
 fi
 

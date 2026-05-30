@@ -22,6 +22,9 @@ Run `code-review` skill. Focus:
 - `tokensave_complexity(path="<changed_dir>", limit=5)` — rank functions by complexity, find hotspots
 - `tokensave_circular()` — detect circular file dependencies
 - `tokensave_recursion()` — detect recursive/mutually-recursive call cycles
+- `tokensave_similar(symbol="<new_function_name>")` — find similarly named symbols (naming inconsistency = potential confusion)
+- `tokensave_signature_search(params="&mut self", returns="Result")` — find functions with matching signatures (potential duplicates)
+- `tokensave_diagnostics(scope="workspace")` — run type-checker (cargo check / tsc / pyright) before committing
 - **Fallback:** If TokenSave unavailable -> `git diff` + `git diff --stat` manually review.
 
 ### 2. Architecture Check
@@ -63,6 +66,17 @@ Re-read `.spec/current.md`. Every REQ must be DONE. Gaps -> flag, don't auto-fix
 - `tokensave_context(task="<REQ description>")` — get relevant code context for the REQ
 - `ctx_search(queries=[<REQ descriptions>])` — look up previously indexed spec content
 - **Fallback:** Read `.spec/current.md` directly + `grep -rn` for keywords.
+
+**MemPalace** (if available): file review findings for cross-session reference:
+```
+mempalace_add_drawer wing="<project>" room="reviews" content="Review: <summary>, issues: <X>, patterns: <Y>"
+mempalace_kg_add subject="<project>" predicate="passed_review" object="<feature name>" valid_from="<today>"
+```
+
+### 5. RTK Token Report
+
+Run `rtk discover` to scan this session's commands for missed optimization opportunities.
+Run `rtk gain --history` to show per-command token savings history.
 
 ### 5. Phase 6 Next (MANDATORY)
 

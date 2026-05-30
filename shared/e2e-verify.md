@@ -49,11 +49,18 @@ After e2e tests pass, **before proceeding to commit**:
 
 ### Run E2E Tests (each loop iteration)
 
-**Primary:** Use Context-Mode to auto-index output:
+**Primary (fast path — only affected tests):**
+```
+tokensave_affected_tests(files=[<files changed by simplify>])
+tokensave_run_affected_tests(changed_paths=[<files changed by simplify>])
+```
+If `affected_tests` returns all tests (no narrowing), fall back to full suite.
+
+**Fallback (full suite):**
 ```
 ctx_execute(language="shell", code="uv run pytest tests/e2e/ -v --tb=short")
 ```
-- **Fallback:** If Context-Mode unavailable -> native Bash tool.
+- **Context-Mode unavailable:** native Bash tool.
 
 ### Spec Alignment Tools
 
@@ -74,15 +81,3 @@ Compare actual output against spec:
 - **Debug narrowly** — the regression is a specific simplify change. Find it, fix it or revert it.
 - **Loop limit** — if e2e fails more than 3 times, escalate to user: "simplify broke more than it helped. Roll back Review+Simplify and proceed with original code."
 - **Each loop iteration logs** what broke, what the spec says, and what fix was applied.
-
-## State Persistence
-
-When e2e verification loop passes:
-```json
-{
-  "phase": "e2e-verify",
-  "e2e_verify": "passed",
-  "spec_alignment": "passed",
-  "loop_iterations": N
-}
-```

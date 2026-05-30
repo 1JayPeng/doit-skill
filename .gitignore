@@ -30,3 +30,7 @@ doit-pack/
 settings.local.json
 package-lock.json
 .tokensave
+
+# MemPalace per-project files (issue #185)
+mempalace.yaml
+entities.json

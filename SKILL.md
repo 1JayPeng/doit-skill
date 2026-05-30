@@ -11,7 +11,16 @@ description: >
 
 # Do It
 
-Spec-driven TDD workflow. Every feature passes through 9 phases. Nothing ships without spec. Every change must pass Review + Simplify, E2E Verification, and git commit before proceeding.
+Spec-driven TDD workflow. Every feature passes through 10 phases. Nothing ships without spec. Every change must pass Review + Simplify, E2E Verification, and git commit before proceeding.
+
+## Memory Layer
+
+Three persistence layers work together:
+- **tokensave** — code graph (symbols, call edges, dependencies). See [plan.md](plan.md).
+- **context-mode** — session analytics (token usage, tool patterns). See [execute.md](execute.md).
+- **mempalace** — cross-session semantic memory (specs, decisions, implementation notes). See [mempalace.md](mempalace.md).
+
+If any layer is unavailable, the workflow degrades gracefully using the remaining layers.
 
 ## Prerequisites
 
@@ -23,6 +32,23 @@ See [setup.md](setup.md) for full tool/skill install manifest.
 
 Also init `.doit/config.yaml` if not present (default config for doc-capture, commit branch strategy). See [env-check.md](env-check.md) step 8 and [doit-config.md](doit-config.md).
 
+## Principles
+
+Four principles guide every phase. See [principles.md](principles.md).
+
+| Principle | What it prevents |
+|-----------|------------------|
+| **Think Before Coding** | wrong assumptions, hidden confusion, missing trade-offs |
+| **Brevity First** | over-engineering, bloated abstractions |
+| **Surgical Edits** | unrelated edits, touching code that shouldn't be touched |
+| **Goal-Driven Execution** | vague success criteria, constant clarification |
+
+Per-phase application:
+- **Phase 1 (Spec)** — think before coding: grill ideas, challenge assumptions, present alternatives
+- **Phase 3 (Execute)** — goal-driven (testable verification per REQ), brevity first (minimal code per REQ)
+- **Phase 5-6 (Review + Simplify)** — surgical edits (only touch what's necessary), brevity first (remove unnecessary abstractions)
+- **Debug (D2 Fix)** — surgical edits (minimum change for regression test pass)
+
 ## Phase 0 — Classify Request
 
 **First — enable caveman mode for the entire session.**
@@ -30,15 +56,16 @@ Also init `.doit/config.yaml` if not present (default config for doc-capture, co
 Skill skill="caveman"
 ```
 
-Then auto-classify. Read [classifier.md](classifier.md). Three types:
+Then auto-classify. Read [classifier.md](classifier.md). Four types:
 
+- **R (resume)** — `/doit` called with no args or blank args. Resume in-progress workflow. See classifier.md Type R.
 - **S (simple)** — single file, rename, quick fix. Execute directly. Skip phases 1-6.
 - **F (feature)** — new functionality, cross-module, user-facing. Run phases 1-8.
 - **B (bug)** — something broken. Run debug workflow D0-D6. See [debug.md](debug.md).
 
 **Classify, announce type to user, proceed. If user disputes type, use their type.**
 
-**Before proceeding: check if user's prompt contains reference documentation.** If yes, capture it before any phase runs. See [doc-capture.md](doc-capture.md). Doc capture is independent of classification type (S/F/B) — always run first.
+**Before proceeding: check if user's prompt contains reference documentation.** If yes, capture it before any phase runs. See [doc-capture.md](doc-capture.md). Doc capture is independent of classification type (R/S/F/B) — always run first.
 
 ## Doc Capture (Pre-Phase)
 
@@ -86,29 +113,82 @@ Stage changed files, commit with meaningful message matching project's commit st
 Remove all intermediate workflow files. See [commit.md](shared/commit.md) step 8.
 
 - `.spec/current.md` — remove (archived in Phase 5)
-- `.scratch/workflow-state.json` — remove (workflow complete)
 - `.spec/doc-capture.md` — remove (temp file)
 - `.scratch/` directory — remove if empty
 
 **Keep:** `.spec/archive/`, `.doit/config.yaml`, `.doit/docs/`
 
+## Phase 10 — Auto-Compact
+
+After Phase 9 completes, automatically trigger context compression to reduce token usage for the next session:
+
+1. **RTK token report** (if available):
+   - `rtk gain` — show total session token savings
+   - `rtk gain --history` — per-command savings breakdown
+2. **Context-Mode stats** (if available): `ctx stats` — log session token savings
+3. **MemPalace diary** (if available):
+   - `mempalace_diary_write agent_name="doit" entry="<compact summary>" topic="compact"`
+   - `mempalace_memories_filed_away` → verify auto-save checkpoint was saved
+   - `mempalace_kg_timeline entity="<project>"` → log project timeline for future reference
+4. Run `/compact` command if available (Claude Code built-in)
+
+**This phase always runs last.** It ensures the conversation context is compressed before the session ends, reducing token overhead for resumed conversations.
+
 ## Error Handling
 
-See [errors.md](errors.md). Spec fail = discard. Execute fail = re-grill. Review fail = retain on branch.
+See [errors.md](errors.md). Spec fail = discard. Execute fail = re-grill. Review fail = retain on branch. MemPalace unavailable = skip memory steps, filesystem remains primary.
 
 ## Persistence
 
-Spec in git (`feature/xxx` branch). Runtime state in `.scratch/workflow-state.json`. Phase 8 commits all changes and pushes to remote branch.
+Spec in git (`feature/xxx` branch). No runtime state file — workflow progress tracked by git branch, commit history, spec files, and MemPalace (if available).
+
+**MemPalace layers** (see [mempalace.md](mempalace.md)): spec archive, implementation notes, knowledge graph facts, and agent diary entries survive session restarts. Complements filesystem state for cross-session resume.
+
+**Background process logs** (see [background-process.md](background-process.md)): long-running commands output to `.scratch/logs/` with clear exit signals for process state detection. Three tiers: foreground (<10s), background with log file (10s-5min), tmux + monitor (>5min, auto-continuation).
 
 ## Resume
 
-Workflow spans multiple conversation turns. If `/doit` is called again mid-session, check `.scratch/workflow-state.json` and resume from current phase. Do not restart from Phase 0.
+Workflow spans multiple conversation turns. If `/doit` is called again, determine current phase from context and filesystem.
+
+**Blank `/doit` (no arguments) = always resume.** Never start a new workflow when user types `/doit` without a request.
+
+1. **Same session** — conversation history already tracks progress
+2. **Cross-session** (new conversation, same project):
+
+```
+On feature branch (feat/xxx or fix/xxx)?
+  → Work in progress, inspect further:
+
+  .spec/current.md exists?
+    → Spec written (Phase 1+), check REQ-xxx statuses for execution progress
+    .spec/archive/ has files?
+      → Phase 5+ completed
+    git diff --stat shows uncommitted changes?
+      → Middle of a phase
+    git log -1 contains phase info?
+      → Commit message may indicate last completed phase
+  No spec files, no feature branch?
+    → Tell user: "No in-progress workflow found. Type /doit <your request> to start."
+```
+
+**MemPalace recovery** (if available, before filesystem check):
+```
+mempalace_diary_read agent_name="doit" last_n=3
+mempalace_search query="<project> <feature>" wing="<project>" limit=5
+mempalace_kg_query entity="<project>"
+```
+This recovers what was done in prior sessions without relying on filesystem state alone. See [mempalace.md](mempalace.md) for full integration.
 
 ## Phase Gate Checklist — DO NOT SKIP
 
 **After completing ANY phase, run this checklist before ending your response.** The conversation may continue, but the workflow MUST complete all phases. Code changes alone are NEVER the end of a doit session.
 
 ```
+[Phase Gate] Type R flow (resume):
+  [x] Phase 0   Classify → detect in-progress work
+  [x] Resume from detected phase → complete remaining phases
+  [x] Phase 10  Auto-Compact
+
 [Phase Gate] Type F flow (full):
   [x] Phase -1  Detect Environment + Config
   [x] Phase 0   Classify Request
@@ -121,22 +201,26 @@ Workflow spans multiple conversation turns. If `/doit` is called again mid-sessi
   [x] Phase 7   E2E Verification Loop
   [x] Phase 8   Commit + Push
   [x] Phase 9   Cleanup intermediate files
+  [x] Phase 10  Auto-Compact
   [x] Doc Capture (if user prompt has docs)
 
 [Phase Gate] Type S flow (simple):
   [x] Phase 0   Classify
   [x] Execute directly
+  [x] Phase 10  Auto-Compact
   [x] Doc Capture (if user prompt has docs)
 
 [Phase Gate] Type B flow (bug):
   [x] Phase 0   Classify
   [x] D0-D6     Debug workflow (debug.md)
   [x] Phase 8   Commit + Push
+  [x] Phase 10  Auto-Compact
 ```
 
 **After Phase 3 completes:** always continue to Phase 4. Never stop at "tests pass, done."
 **After Phase 6 completes:** always continue to Phase 7. E2E verification after simplification.
 **After Phase 7 completes:** always continue to Phase 8. Every feature ships committed + pushed.
 **After Phase 8 completes:** always continue to Phase 9. Clean up intermediate files.
+**After Phase 9 completes:** always continue to Phase 10. Compact conversation context.
 
-**The only valid end state is Phase 9 clean.** If you're about to say "done" or "completed" and intermediate files are still present, you haven't finished.
+**The only valid end state is Phase 10 compact.** If you're about to say "done" or "completed" and context has not been compacted, you haven't finished.

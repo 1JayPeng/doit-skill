@@ -69,9 +69,9 @@ Remote MCP. Streamable HTTP transport — no install needed.
 
 ## Skills Dependency Model
 
-doit-pack uses a **bundled dependency model**. Core skills ship inside `skills/` and are installed automatically. Optional skills require separate installation.
+doit uses a **bundled dependency model**. Core skills ship inside `skills/` and are installed automatically. Optional skills require separate installation.
 
-### Bundled Skills (ship with doit-pack)
+### Bundled Skills (ship with doit)
 
 | Skill | Purpose | Used In |
 |-------|---------|---------|
@@ -92,7 +92,6 @@ doit-pack uses a **bundled dependency model**. Core skills ship inside `skills/`
 | TokenSave | `cargo install tokensave && tokensave install --agent claude` | Phase 2, 3, 5, 6 |
 | caveman | `curl -fsSL https://raw.githubusercontent.com/JuliusBrussee/caveman/main/install.sh | bash` | Phase 0+ |
 | code-review | `claude plugin install code-review` | Phase 5 |
-| skill-creator | `claude install anthropics/skills/skill-creator` | Skill dev |
 | Tavily MCP | Remote, API key only | Phase 1 |
 
 ### Adding Dependencies

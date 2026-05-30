@@ -113,7 +113,7 @@ for skill in doit grill-me tdd diagnose prototype handoff improve-codebase-archi
 done
 
 # External tools
-for tool in rtk uv tokensave; do
+for tool in rtk uv tokensave caveman; do
   if command -v "$tool" >/dev/null 2>&1; then
     echo "  [OK]   $tool ($(command -v $tool))"
   else
@@ -134,6 +134,20 @@ if grep -rl "tavily" "$HOME/.claude/settings.json" "$HOME/.claude/plugins/" "$HO
 else
   echo "  [MISS] tavily (MCP — needs API key)"
 fi
+
+# Claude Code plugins (code-review)
+if [ -d "$HOME/.claude/skills/code-review" ] || grep -rl "code-review" "$HOME/.claude/plugins/" 2>/dev/null; then
+  echo "  [OK]   code-review (plugin)"
+else
+  echo "  [MISS] code-review (plugin)"
+fi
+
+# MemPalace plugin
+if grep -rl "mempalace" "$HOME/.claude/plugins/" 2>/dev/null; then
+  echo "  [OK]   mempalace (plugin)"
+else
+  echo "  [MISS] mempalace (plugin)"
+fi
 ```
 
 **If tools are missing, announce warnings — do not block the workflow:**
@@ -145,6 +159,9 @@ fi
 [WARN] tokensave NOT installed -> Phase 5-6 will use git diff for review (no code graph)
 [WARN] rtk NOT installed -> shell commands run without token optimization
 [WARN] uv NOT installed -> Python commands will use pip instead of uv
+[WARN] caveman NOT installed -> no terse mode (caveman skill)
+[WARN] code-review NOT installed -> Phase 5 will use manual review only
+[WARN] mempalace NOT installed -> no cross-session semantic memory (specs, decisions, implementation notes)
 ```
 
 **Per-phase fallback summary (reference for all phases):**
@@ -156,6 +173,9 @@ fi
 | tavily MCP | `WebSearch` (built-in) | 1 |
 | rtk | Bash (no token opt) | all |
 | uv | `pip` + `python3 -m venv` | 3, 4, 7 |
+| caveman | verbose mode (no terse output) | 0+ |
+| code-review | manual review (tokensave tools) | 5 |
+| mempalace | filesystem only (.doit/docs/, .spec/archive/) | -1, 1, 2, 3, 8, resume |
 
 Missing tools trigger fallback paths in each phase (see each phase's fallback instructions).
 

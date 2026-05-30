@@ -28,12 +28,19 @@ Phase 4 E2E tests cover: real entry points, real I/O, integration of all layers.
 
 ### Run E2E Tests
 
-**Primary:** Use Context-Mode to auto-index test output:
+**Primary (fast path — only affected tests):**
+```
+tokensave_affected_tests(files=[<changed_files>])
+tokensave_run_affected_tests(changed_paths=[<changed_files>])
+```
+If `affected_tests` returns all tests (no narrowing), fall back to full suite.
+
+**Fallback (full suite):**
 ```
 ctx_execute(language="shell", code="uv run pytest tests/e2e/ -v --tb=short")
 ctx_execute(language="shell", code="uv run python -m pytest tests/e2e/ -v --tb=short")
 ```
-- **Fallback:** If Context-Mode unavailable -> native Bash tool (output not indexed).
+- **Context-Mode unavailable:** native Bash tool (output not indexed).
 
 ### Detect Test Framework (before generating tests)
 
@@ -53,7 +60,10 @@ ctx_batch_execute(
 **tokensave** tools for understanding entry points:
 1. `tokensave_search(query="<entry_point_name>")` — find the entry point function
 2. `tokensave_node(node_id="<id>")` — get function signature for test generation
-3. `tokensave_test_map(file="<source_file>")` — check existing test coverage
+3. `tokensave_signature(qualified_name="<entry_point>")` — get function signature without body
+4. `tokensave_test_map(file="<source_file>")` — check existing test coverage
+5. `tokensave_config(key="dependencies", path="Cargo.toml")` — read project config without file reads (TOML/JSON)
+6. `tokensave_outline(file="<entry_point_file>")` — flat list of top-level symbols (quick file overview)
 - **Fallback:** If TokenSave unavailable -> `grep -rn "def " src/` + `Read` the file.
 
 ### Spec Alignment Check Tools
@@ -101,6 +111,35 @@ Run each, paste output. I'll generate assertion.
 
 Compare e2e coverage against spec acceptance criteria. Missing -> flag to user.
 
+## Long-Running E2E Tasks
+
+E2E test suites often take >5 minutes (server startup, integration tests, multi-step workflows). Use tmux + monitor for auto-continuation:
+
+```bash
+tmux new-session -d -s "doit-e2e"
+tmux send-keys -t "doit-e2e" '(
+  echo "[START] $(date "+%Y-%m-%d %H:%M:%S") — E2E server startup"
+  uv run python -m run_server &
+  SERVER_PID=$!
+  sleep 5  # wait for server to start
+
+  echo "[START] $(date "+%Y-%m-%d %H:%M:%S") — E2E test suite"
+  uv run pytest tests/e2e/ -v --tb=short
+  EXIT_CODE=$?
+
+  kill $SERVER_PID 2>/dev/null || true
+
+  echo "[END] $(date "+%Y-%m-%d %H:%M:%S") — exit_code=$EXIT_CODE"
+  exit $EXIT_CODE
+) > .scratch/logs/e2e-full.log 2>&1' Enter
+
+Monitor "Watch E2E completion" \
+  "grep -q '\[END\]' .scratch/logs/e2e-full.log" \
+  --interval 30
+```
+
+When the monitor fires, Claude Code reads the log, checks the exit code, and proceeds to Phase 5 (Review) if successful. See [background-process.md](background-process.md) for full patterns.
+
 ### Spec Alignment Check (per REQ)
 
 **E2E tests are not just about code running — they verify output matches what the user asked for.**
@@ -126,14 +165,9 @@ REQ-002: "unauthorized access returns 403"
 
 **Key: compare output against spec, not against test assertion.** The test assertion might have been changed to match wrong output (AI lying to itself). Always read the spec as the ground truth.
 
-## State Persistence
+## Phase 5 Pre-flight Gate
 
-After Phase 4 completes (all L0+L1 tests run):
-Write to `.scratch/workflow-state.json`:
-```json
-{ "phase": "e2e", "e2e": "passed", "l0_entry_points": N, "l1_boundary_values": M }
-```
-If tests failed: `"e2e": "failed"`. This is what Phase 5 pre-flight gate checks.
+Phase 5 must not start until Phase 4 produces `e2e: passed`. Verify: all L0+L1 e2e tests passed.
 
 ## E2E Verification Loop (Phase 7 / D5)
 

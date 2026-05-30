@@ -80,12 +80,29 @@ If section exists, append new entries (deduplicate by filename).
 
 If CLAUDE.md doesn't exist, create it with just the reference docs section.
 
-### 5. Announce to User
+### 5. File to MemPalace (if available)
+
+If MemPalace is active, also file the doc for cross-project semantic search:
+
+```
+mempalace_check_duplicate content="<doc content>" threshold=0.87
+```
+
+If not a duplicate:
+
+```
+mempalace_add_drawer wing="<project>" room="reference-docs" content="<doc content>" source_file="<original source>"
+```
+
+If MemPalace is unavailable or content is a duplicate, skip silently. Filesystem (`.doit/docs/`) remains the primary source of truth.
+
+### 6. Announce to User
 
 ```
 [DOC-CAPTURE] Saved to .doit/docs/api-endpoints.md
 [DOC-CAPTURE] Indexed by tokensave
 [DOC-CAPTURE] Updated CLAUDE.md Reference Docs section
+[DOC-CAPTURE] Filed to mempalace (if available)
 ```
 
 ### 6. Skip if User Says So
