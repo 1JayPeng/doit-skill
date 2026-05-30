@@ -105,6 +105,107 @@ When the monitor fires:
 
 4. **Continue workflow** — execute the next phase automatically.
 
+### Progress Reporting (User Visibility)
+
+Long-running tasks should give users a sense of control. Add `[PROGRESS]` markers to the task log, and report progress when monitor checks but task isn't complete yet.
+
+**In the task script, emit progress markers:**
+
+```bash
+tmux send-keys -t "$TMUX_SESSION" '(
+  echo "[START] $(date "+%Y-%m-%d %H:%M:%S") — cargo build --release"
+
+  echo "[PROGRESS] 0% — Starting build..."
+  cargo build --release 2>&1 | while IFS= read -r line; do
+    echo "$line"
+  done
+  EXIT_CODE=$?
+
+  echo "[PROGRESS] 100% — Build complete, exit_code=$EXIT_CODE"
+  echo "[END] $(date "+%Y-%m-%d %H:%M:%S") — exit_code=$EXIT_CODE"
+  exit $EXIT_CODE
+) > .scratch/logs/build.log 2>&1' Enter
+```
+
+**For tasks without natural progress (e.g., compiler, test runner), use elapsed time:**
+
+```bash
+tmux send-keys -t "$TMUX_SESSION" '(
+  START_TIME=$(date +%s)
+  echo "[START] $(date "+%Y-%m-%d %H:%M:%S") — cargo test --all"
+
+  # Progress reporter runs in background
+  (
+    while true; do
+      ELAPSED=$(( $(date +%s) - START_TIME ))
+      if [ $ELAPSED -eq 60 ]; then
+        echo "[PROGRESS] 1min elapsed — tests still running..."
+      elif [ $ELAPSED -eq 180 ]; then
+        echo "[PROGRESS] 3min elapsed — tests still running..."
+      elif [ $ELAPSED -eq 300 ]; then
+        echo "[PROGRESS] 5min elapsed — tests still running..."
+      fi
+      sleep 30
+    done
+  ) &
+  PROGRESS_PID=$!
+
+  cargo test --all
+  EXIT_CODE=$?
+
+  kill $PROGRESS_PID 2>/dev/null || true
+
+  TOTAL_ELAPSED=$(( $(date +%s) - START_TIME ))
+  echo "[PROGRESS] Complete in $TOTAL_ELAPSED seconds"
+  echo "[END] $(date "+%Y-%m-%d %H:%M:%S") — exit_code=$EXIT_CODE"
+  exit $EXIT_CODE
+) > .scratch/logs/test.log 2>&1' Enter
+```
+
+**When Claude Code monitor checks and task is NOT yet complete, report progress:**
+
+```bash
+# Monitor check script — reports progress if still running
+if grep -q '\[END\]' .scratch/logs/<name>.log; then
+  # Task complete — handle normally
+  tail -1 .scratch/logs/<name>.log
+else
+  # Task still running — report latest progress
+  LATEST_PROGRESS=$(grep '\[PROGRESS\]' .scratch/logs/<name>.log | tail -1)
+  if [ -n "$LATEST_PROGRESS" ]; then
+    echo "Still running: $LATEST_PROGRESS"
+  fi
+fi
+```
+
+**Progress reporting to user — keep it brief:**
+
+When monitor fires but task still running, show user:
+```
+⏳ <task-name> still running...
+  Latest: "[PROGRESS] 3min elapsed — tests still running..."
+  Started: 14:32:05
+```
+
+When task completes, show:
+```
+✅ <task-name> complete!
+  Duration: 4m 23s
+  Exit: 0 (success)
+  → Proceeding to Phase N
+```
+
+**Progress marker convention:**
+
+| Marker | When to use |
+|--------|-------------|
+| `[PROGRESS] 0%` | Task just started |
+| `[PROGRESS] Xmin elapsed` | Time-based checkpoint (every 1-3 min) |
+| `[PROGRESS] Step N/M` | Multi-step task (e.g., "Step 2/4 — compiling tests") |
+| `[PROGRESS] 100%` | Task finishing, before `[END]` |
+
+**Rule: Only report progress if user can see it.** If the monitor interval is short (<30s), don't report every check — only on first check after a new `[PROGRESS]` marker appears. Avoid spam.
+
 ### Complete Example: Phase 3 Execute (Long Build)
 
 ```bash
@@ -198,6 +299,7 @@ Monitor "Watch pipeline completion" \
 | Marker | Meaning |
 |--------|---------|
 | `[START]` | Phase started with timestamp |
+| `[PROGRESS]` | Intermediate progress update (for user visibility) |
 | `[END] exit_code=0` | Success |
 | `[END] exit_code=N` | Failure (N != 0) |
 | `[TIMEOUT]` | Exceeded estimated runtime |
