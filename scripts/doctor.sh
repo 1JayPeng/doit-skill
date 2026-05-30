@@ -84,7 +84,7 @@ for tool in "${EXTERNAL_TOOLS[@]}"; do
 "context-mode")
             if command -v ctx >/dev/null 2>&1; then
                 echo "  ✅ context-mode installed (CLI)"
-            elif grep -rl "context-mode" "$HOME/.claude/plugins/" 2>/dev/null; then
+            elif grep -rl "context-mode" "$HOME/.claude/plugins/" > /dev/null 2>&1; then
                 echo "  ✅ context-mode installed (plugin)"
             else
                 echo "  ℹ️ context-mode not installed (recommended)"
@@ -127,9 +127,9 @@ for tool in "${EXTERNAL_TOOLS[@]}"; do
         "caveman")
             if [ -d "$SKILL_DIR/caveman" ]; then
                 echo "  ✅ caveman installed (skill)"
-            elif grep -rl "caveman" "$HOME/.claude/plugins/" 2>/dev/null; then
+            elif grep -rl "caveman" "$HOME/.claude/plugins/" > /dev/null 2>&1; then
                 echo "  ✅ caveman installed (plugin)"
-            elif grep -rl "caveman" "$HOME/.claude/hooks/" 2>/dev/null; then
+            elif grep -rl "caveman" "$HOME/.claude/hooks/" > /dev/null 2>&1; then
                 echo "  ✅ caveman installed (hooks)"
             else
                 echo "  ℹ️  caveman not installed (recommended)"
@@ -139,7 +139,7 @@ for tool in "${EXTERNAL_TOOLS[@]}"; do
         "code-review")
             if [ -d "$SKILL_DIR/code-review" ]; then
                 echo "  ✅ code-review installed (skill)"
-            elif grep -rl "code-review" "$HOME/.claude/plugins/" 2>/dev/null; then
+            elif grep -rl "code-review" "$HOME/.claude/plugins/" > /dev/null 2>&1; then
                 echo "  ✅ code-review installed (plugin)"
             else
                 echo "  ℹ️  code-review not installed (recommended)"
@@ -147,7 +147,7 @@ for tool in "${EXTERNAL_TOOLS[@]}"; do
             fi
             ;;
         "mempalace")
-            if grep -rl "mempalace" "$HOME/.claude/plugins/" 2>/dev/null; then
+            if grep -rl "mempalace" "$HOME/.claude/plugins/" > /dev/null 2>&1; then
                 echo "  ✅ mempalace installed (plugin)"
             else
                 echo "  ℹ️  mempalace not installed (recommended)"
