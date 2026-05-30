@@ -234,6 +234,10 @@ else
   echo_success "doit installed"
 fi
 
+# No .claude-plugin/plugin.json needed — doit is a skill loaded from ~/.claude/skills/doit/
+# SKILL.md stays at the root of the doit directory (not in a nested skills/ subdirectory)
+# The plugin.json + nested skills/ structure was causing /doit to not be recognized
+
 # Verify symlinks
 for lnk in review-simplify.md commit.md; do
   if [ -L "$DOIT_DST/$lnk" ]; then
@@ -264,18 +268,21 @@ install_skill() {
     else
       echo_success "$skill_name already installed at $skill_path"
     fi
-    return 0
+  else
+    # Check if skill is in doit-skill skills/ directory
+    if [ -d "$DOIT_DIR/skills/$skill_name" ]; then
+      cp -r "$DOIT_DIR/skills/$skill_name" "$skill_path"
+      echo_success "$skill_name installed"
+    else
+      echo_error "$skill_name not found in repository"
+      return 1
+    fi
   fi
 
-  # Check if skill is in doit-skill skills/ directory
-  if [ -d "$DOIT_DIR/skills/$skill_name" ]; then
-    cp -r "$DOIT_DIR/skills/$skill_name" "$skill_path"
-    echo_success "$skill_name installed"
-    return 0
-  fi
-
-  echo_error "$skill_name not found in repository"
-  return 1
+  # Skills are loaded from ~/.claude/skills/<name>/ with SKILL.md at root
+  # No .claude-plugin/plugin.json needed
+  echo_success "$skill_name ready (SKILL.md at root)"
+  return 0
 }
 
 # Install bundled skills
