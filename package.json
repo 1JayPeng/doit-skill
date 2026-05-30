@@ -34,7 +34,7 @@
     "tools": {
       "rtk": "curl -fsSL https://raw.githubusercontent.com/rtk-ai/rtk/refs/heads/master/install.sh | sh",
       "uv": "pip install uv",
-            "context-mode": "/plugin marketplace add mksglu/context-mode && /plugin install context-mode@context-mode",
+            "context-mode": "claude plugin marketplace add mksglu/context-mode && claude plugin install context-mode@context-mode",
       "caveman": "curl -fsSL https://raw.githubusercontent.com/JuliusBrussee/caveman/main/install.sh | bash",
       "code-review": "claude plugin install code-review",
       "tokensave": "cargo install tokensave && tokensave install --agent claude",

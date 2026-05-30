@@ -130,7 +130,7 @@ if [ "$DRY_RUN" = true ]; then
   echo ""
   if [ "$SKIP_OPTIONAL" = false ]; then
     echo "  External tools (installed by default):"
-    echo "    • context-mode     (/plugin marketplace add mksglu/context-mode)"
+    echo "    • context-mode     (claude plugin marketplace add mksglu/context-mode)"
     echo "    • rtk              (curl install script)"
     echo "    • uv               (pip install uv)"
     echo "    • tokensave        (cargo install tokensave)"
@@ -302,8 +302,8 @@ else
 
 # Context-Mode (Claude Code plugin — cannot auto-install via curl)
   echo_info "context-mode is a Claude Code plugin"
-  echo_warn "Install manually: /plugin marketplace add mksglu/context-mode"
-  echo "  /plugin install context-mode@context-mode"
+  echo_warn "Install manually: claude plugin marketplace add mksglu/context-mode"
+  echo "     claude plugin install context-mode@context-mode"
 
   # RTK
   if command -v rtk >/dev/null 2>&1; then

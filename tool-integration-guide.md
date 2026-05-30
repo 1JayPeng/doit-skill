@@ -42,7 +42,7 @@ doit 内置三种后台任务机制，按任务时长自动选择：
 |---|------|------|----------|----------|
 | 1 | **TokenSave** | MCP 服务器 | `cargo install tokensave` | 代码图：符号搜索、调用关系、影响分析、代码编辑 |
 | 2 | **MemPalace** | Claude Plugin | `claude plugin install --scope user mempalace` | 跨会话语义记忆：spec/决策/实现笔记的长期存储 |
-| 3 | **Context-Mode** | Claude Plugin | `/plugin marketplace add mksglu/context-mode` | 上下文管理：命令输出自动索引 + 语义搜索 |
+| 3 | **Context-Mode** | Claude Plugin | `claude plugin marketplace add mksglu/context-mode` | 上下文管理：命令输出自动索引 + 语义搜索 |
 | 4 | **RTK** | 全局 CLI | `curl ... \| sh` | Token 优化代理：所有 shell 命令节省 60-90% token |
 | 5 | **uv** | 全局 CLI | `pip install uv` | Python 虚拟环境管理：创建 venv + 运行命令 |
 | 6 | **caveman** | Skill | `curl ... \| bash` | 压缩通信模式：减少 75% token，砍掉废话保留技术内容 |
