@@ -4,7 +4,15 @@
 
 set -e
 
-SKILL_DIR="$HOME/.claude/skills"
+# Detect skill directory: project-local .claude/skills/ takes precedence over global ~/.claude/skills/
+# SKILL_DIR env var can override (used by setup.sh when running from temp clone)
+if [ -z "$SKILL_DIR" ]; then
+  if [ -d ".claude/skills" ]; then
+    SKILL_DIR=".claude/skills"
+  else
+    SKILL_DIR="$HOME/.claude/skills"
+  fi
+fi
 BUNDLED_SKILLS=("grill-me" "tdd" "diagnose" "prototype" "handoff" "improve-codebase-architecture")
 BUILTIN_SKILLS=()
 EXTERNAL_TOOLS=("context-mode" "rtk" "uv" "tokensave" "tavily" "caveman" "code-review" "mempalace")
@@ -13,6 +21,7 @@ SYMLINK_TARGETS=("review-simplify.md:shared/review-simplify.md" "commit.md:share
 
 echo "=========================================="
 echo "  doit-skill Doctor"
+echo "  Skills dir: $SKILL_DIR"
 echo "=========================================="
 echo ""
 

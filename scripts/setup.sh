@@ -429,7 +429,7 @@ echo "=========================================="
 echo ""
 
 if [ -f "$DOIT_DIR/scripts/doctor.sh" ]; then
-  bash "$DOIT_DIR/scripts/doctor.sh"
+  SKILL_DIR="$(cd "$SKILL_DIR" 2>/dev/null && pwd || echo "$SKILL_DIR")" bash "$DOIT_DIR/scripts/doctor.sh"
 else
   echo_warn "doctor.sh not found, skipping dependency check"
 fi
