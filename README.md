@@ -13,7 +13,7 @@ Spec-driven, TDD-based development workflow for [Claude&nbsp;Code](https://githu
 - **Review + Simplify** — Every change passes a mandatory review that removes duplication, dead code, and over-engineering. Ships lean code.
 - **Git commit** — Phase 8 commits with meaningful messages, updates spec status. Feature branch ready for PR.
 - **Resume mid-session** — Workflow spans multiple conversation turns. Type `/doit` again to pick up where you left off.
-- **Env detection** — Phase -1 auto-detects project runtime, virtual env, package manager. Writes to CLAUDE.md so future sessions start correct.
+- **Comprehensive env detection** — Phase -1 scans all virtual env types (conda/uv/venv/poetry/asdf/mise/nvm/...), version pins (.python-version/.node-version/.tool-versions/...), lock files (uv.lock/poetry.lock/package-lock.json/...), Docker/K8s, and system info. 24h cache, multi-env conflict detection. Writes to CLAUDE.md so future sessions start correct.
 
 ## How It Works
 

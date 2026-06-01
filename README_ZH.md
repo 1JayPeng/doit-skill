@@ -13,7 +13,7 @@
 - **审查 + 简化** — 每次变更必须通过审查，去除重复代码、死代码和过度设计。保持代码精简。
 - **Git 提交** — Phase 8 使用有意义的提交信息，更新规格状态。功能分支准备就绪。
 - **断点续传** — 工作流程跨越多次对话。再次输入 `/doit` 从上次中断处恢复。
-- **环境检测** — Phase -1 自动检测项目运行时、虚拟环境、包管理器。写入 CLAUDE.md 确保后续会话正确启动。
+- **全面环境检测** — Phase -1 扫描所有虚拟环境类型 (conda/uv/venv/poetry/asdf/mise/nvm/...)、版本文件 (.python-version/.node-version/.tool-versions/...)、锁定文件 (uv.lock/poetry.lock/package-lock.json/...)、Docker/K8s 和系统信息。24h 缓存，多环境冲突检测。写入 CLAUDE.md 确保后续会话正确启动。
 
 ## 工作原理
 
