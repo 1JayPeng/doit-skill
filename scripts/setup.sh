@@ -152,6 +152,7 @@ if [ "$DRY_RUN" = true ]; then
     echo "    • context-mode     (claude plugin marketplace add mksglu/context-mode)"
     echo "    • rtk              (curl install script)"
     echo "    • uv               (pip install uv)"
+    echo "    • rust               (rustup, Tsinghua mirror)"
     echo "    • tokensave        (cargo install tokensave)"
     echo "    • tavily           (claude mcp add --transport http tavily ...)"
     echo "    • caveman          (curl install script)"
@@ -368,6 +369,79 @@ else
   else
     echo_info "Installing uv..."
     pip install uv 2>/dev/null || pip3 install uv 2>/dev/null || echo_warn "Failed to install uv"
+  fi
+
+  # Rust (required by tokensave)
+  if command -v cargo >/dev/null 2>&1; then
+    echo_success "rust/cargo already installed"
+  else
+    echo_info "Installing Rust via rustup (Tsinghua mirror)..."
+    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs 2>/dev/null \
+      | RUSTUP_DIST_SERVER=https://mirrors.tuna.tsinghua.edu.cn/rustup \
+        RUSTUP_UPDATE_ROOT=https://mirrors.tuna.tsinghua.edu.cn/rustup/rustup \
+        sh -s -- -y 2>/dev/null \
+      || echo_warn "Failed to install Rust via rustup"
+
+    # Source cargo env for current shell
+    if [ -f "$HOME/.cargo/env" ]; then
+      source "$HOME/.cargo/env" 2>/dev/null || true
+    fi
+
+    if command -v cargo >/dev/null 2>&1; then
+      echo_success "Rust installed"
+
+      # Configure cargo mirror (USTC) for faster crate downloads
+      echo_info "Configuring cargo mirror (USTC)..."
+      mkdir -p "$HOME/.cargo"
+      cat > "$HOME/.cargo/config.toml" <<'CARGO_EOF'
+[source.crates-io]
+replace-with = 'ustc'
+[source.ustc]
+registry = "sparse+https://mirrors.ustc.edu.cn/crates.io-index/"
+CARGO_EOF
+      echo_success "cargo mirror configured (USTC)"
+
+      # Persist rustup mirror in .bashrc for new shells
+      grep -q "RUSTUP_DIST_SERVER" "$HOME/.bashrc" 2>/dev/null || {
+        echo 'export RUSTUP_DIST_SERVER=https://mirrors.tuna.tsinghua.edu.cn/rustup' >> "$HOME/.bashrc"
+        echo 'export RUSTUP_UPDATE_ROOT=https://mirrors.tuna.tsinghua.edu.cn/rustup/rustup' >> "$HOME/.bashrc"
+      }
+    fi
+  fi
+
+  # Rust (required by TokenSave)
+  if command -v cargo >/dev/null 2>&1; then
+    echo_success "rust/cargo already installed"
+  else
+    echo_info "Installing Rust via rustup (Tsinghua mirror)..."
+    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs 2>/dev/null \
+      | RUSTUP_DIST_SERVER=https://mirrors.tuna.tsinghua.edu.cn/rustup \
+        RUSTUP_UPDATE_ROOT=https://mirrors.tuna.tsinghua.edu.cn/rustup/rustup \
+        sh -s -- -y 2>/dev/null \
+      || echo_warn "Failed to install Rust via rustup"
+    if [ -f "$HOME/.cargo/env" ]; then
+      source "$HOME/.cargo/env"
+    fi
+    if command -v cargo >/dev/null 2>&1; then
+      echo_success "Rust installed"
+    else
+      echo_warn "Rust installation failed — tokensave will be skipped"
+    fi
+  fi
+
+  # Cargo mirror (USTC) — speeds up cargo install in China
+  if [ -f "$HOME/.cargo/config.toml" ] && grep -q "ustc" "$HOME/.cargo/config.toml" 2>/dev/null; then
+    echo_success "cargo mirror already configured (USTC)"
+  else
+    echo_info "Configuring cargo mirror (USTC)..."
+    mkdir -p "$HOME/.cargo"
+    cat > "$HOME/.cargo/config.toml" <<'CARGO_EOF'
+[source.crates-io]
+replace-with = 'ustc'
+[source.ustc]
+registry = "sparse+https://mirrors.ustc.edu.cn/crates.io-index/"
+CARGO_EOF
+    echo_success "cargo mirror configured (USTC)"
   fi
 
   # TokenSave

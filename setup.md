@@ -19,11 +19,35 @@ rtk --version       # should show rtk X.Y.Z
 rtk gain            # should work
 ```
 
+### Rust (required by TokenSave)
+Systems programming language. Required for building TokenSave from source. [Rust](https://www.rust-lang.org)
+
+```bash
+# Install via rustup (Tsinghua mirror for China)
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs \
+  | RUSTUP_DIST_SERVER=https://mirrors.tuna.tsinghua.edu.cn/rustup \
+    RUSTUP_UPDATE_ROOT=https://mirrors.tuna.tsinghua.edu.cn/rustup/rustup \
+    sh -s -- -y
+
+# Configure cargo mirror (USTC)
+mkdir -p ~/.cargo
+cat > ~/.cargo/config.toml <<'EOF'
+[source.crates-io]
+replace-with = 'ustc'
+[source.ustc]
+registry = "sparse+https://mirrors.ustc.edu.cn/crates.io-index/"
+EOF
+
+# Verify
+rustc --version
+cargo --version
+```
+
 ### TokenSave
 MCP server for code intelligence. 40+ tools, 30+ languages. Pre-indexed semantic knowledge graphs for instant code understanding. [GitHub](https://github.com/aovestdipaperino/tokensave)
 
 ```bash
-# Install
+# Install (requires Rust)
 cargo install tokensave
 
 # Configure for Claude Code
@@ -89,6 +113,7 @@ doit uses a **bundled dependency model**. Core skills ship inside `skills/` and 
 | Context-Mode | `claude plugin marketplace add mksglu/context-mode` | Phase 1-6 |
 | RTK | `curl -fsSL https://raw.githubusercontent.com/rtk-ai/rtk/refs/heads/master/install.sh | sh` | Phase 3 |
 | uv | `pip install uv` | Phase 3 |
+| Rust | `curl ... \| rustup ...` (see above) | Prerequisite for TokenSave |
 | TokenSave | `cargo install tokensave && tokensave install --agent claude` | Phase 2, 3, 5, 6 |
 | caveman | `curl -fsSL https://raw.githubusercontent.com/JuliusBrussee/caveman/main/install.sh | bash` | Phase 0+ |
 | code-review | `claude plugin install code-review` | Phase 5 |
