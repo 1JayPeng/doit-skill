@@ -304,6 +304,27 @@ Include all detected layers that are relevant:
 
 **If CLAUDE.md doesn't exist:** create one with just the Environment section.
 
+### 8b. Inject Skill Load Rules into CLAUDE.md
+
+Ensure CLAUDE.md includes instructions to load caveman when doit runs. Check:
+
+```bash
+grep -i "skill load\|caveman.*doit\|load.*caveman" CLAUDE.md 2>/dev/null
+```
+
+If no match found, append after `## Environment` section:
+
+```markdown
+## Skill Load Rules
+
+When the user invokes `/doit` (doit-skill), automatically load the caveman skill first:
+- Call `Skill skill="caveman"` to enable terse mode for the entire session
+- This runs before Phase 0 classification
+- Caveman stays active until user explicitly disables it
+```
+
+**If CLAUDE.md already has a Skill Load Rules section:** skip. No overwrite.
+
 ### 9. Inject Background Task Rules into CLAUDE.md
 
 Always inject this section after `## Environment`. If the project already has a similar "background task" section, skip. Check:
@@ -327,7 +348,26 @@ Before running any background command (via `run_in_background`), apply these rul
 
 **If config already has a Background Task Rules section:** skip. No overwrite.
 
-### 10. Check External Tool Availability
+### 10. Inject Skill Loading Rules into CLAUDE.md
+
+Write or update `## Skill Loading` section in CLAUDE.md. This ensures caveman loads even if the agent skips SKILL.md Step 1. Check first:
+
+```bash
+grep -i "## skill loading\|## 技能加载" CLAUDE.md 2>/dev/null
+```
+
+If no match found, inject after `## Environment` section (or append if Environment section doesn't exist):
+
+```markdown
+## Skill Loading
+
+When the doit skill is invoked, automatically load these skills:
+- **caveman** — terse response mode. Load via `Skill skill="caveman"` tool call. If unavailable, proceed in verbose mode.
+```
+
+**If CLAUDE.md already has a Skill Loading section:** skip. No overwrite.
+
+### 11. Check External Tool Availability
 
 Run this detection script to verify all doit-skill external tools are available:
 
@@ -410,7 +450,7 @@ fi
 
 Missing tools trigger fallback paths in each phase (see each phase's fallback instructions).
 
-### 11. Announce Detected Environment
+### 12. Announce Detected Environment
 
 ```
 [ENV] Python 3.12 via uv (.venv)
@@ -434,7 +474,7 @@ Or if written:
 [ENV] CLAUDE.md: wrote Environment section
 ```
 
-### 12. Save Cache (REQ-007)
+### 13. Save Cache (REQ-007)
 
 After successful scan and CLAUDE.md update, save cache:
 
@@ -463,7 +503,7 @@ print('[ENV] Cache saved to .doit/env-cache.json (24h TTL)')
 " 2>/dev/null || echo "[ENV] Cache save skipped (python3 not available)"
 ```
 
-### 13. Init .doit/config.yaml
+### 14. Init .doit/config.yaml
 
 Check if `.doit/config.yaml` exists:
 
@@ -489,7 +529,7 @@ If `enabled` is false (user declined at install), write `doc-capture.enabled: fa
 
 **If config already exists:** skip. No overwrite.
 
-### 14. Cannot Determine Environment
+### 15. Cannot Determine Environment
 
 **If detection finds nothing, or multiple conflicting signals:** stop and ask the user.
 

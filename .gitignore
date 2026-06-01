@@ -20,7 +20,10 @@ node_modules/
 .opencode.json
 .python-version
 
-# Skill-specific (not bundled)
+# Skill installation (installed skills are project-local)
+# .claude/skills/ is loaded by Claude Code — don't gitignore it
+# But exclude the doit-skill dev repo's test install:
+# (This repo's skills are at root, .claude/skills/ is for testing)
 .claude/skills/
 
 # Skill installation
