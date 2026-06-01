@@ -115,7 +115,7 @@ doit uses a **bundled dependency model**. Core skills ship inside `skills/` and 
 | uv | `pip install uv` | Phase 3 |
 | Rust | `curl ... \| rustup ...` (see above) | Prerequisite for TokenSave |
 | TokenSave | `cargo install tokensave && tokensave install --agent claude` | Phase 2, 3, 5, 6 |
-| caveman | `curl -fsSL https://raw.githubusercontent.com/JuliusBrussee/caveman/main/install.sh | bash` | Phase 0+ |
+| caveman | `claude plugin marketplace add JuliusBrussee/caveman && claude plugin install caveman@caveman` (curl fallback) | Phase 0+ |
 | code-review | `claude plugin install code-review` | Phase 5 |
 | Tavily MCP | Remote, API key only | Phase 1 |
 

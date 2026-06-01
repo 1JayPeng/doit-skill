@@ -8,6 +8,8 @@ Trigger after all REQs DONE + Phase 4 initial e2e tests pass.
 
 ### 1. Code Review
 
+**Caveman review (optional, recommended):** If caveman skill available, run `/caveman-review` for caveman-style code review. This provides terse, direct feedback on code quality.
+
 Run `code-review` skill. Focus:
 - Duplicate logic -> extract shared function
 - Dead code -> remove

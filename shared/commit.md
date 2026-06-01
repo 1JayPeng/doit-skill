@@ -77,6 +77,8 @@ Exclude:
 
 ### 4. Commit Message
 
+**Caveman commit (optional, recommended):** If caveman skill available, run `/caveman-commit` to generate a caveman-style commit message. Falls back to manual message below.
+
 Write a commit message that strictly follows the project's commit style learned in Step 2.
 
 Format:

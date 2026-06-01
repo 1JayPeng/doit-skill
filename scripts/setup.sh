@@ -171,7 +171,7 @@ if [ "$DRY_RUN" = true ]; then
     echo "    • rust               (rustup, Tsinghua mirror)"
     echo "    • tokensave        (cargo install tokensave)"
     echo "    • tavily           (claude mcp add --transport http tavily ...)"
-    echo "    • caveman          (curl install script)"
+    echo "    • caveman          (claude plugin marketplace add JuliusBrussee/caveman)"
     echo "    • code-review      (claude plugin install code-review)"
     echo "    • mempalace        (claude plugin install --scope user mempalace)"
   fi
@@ -486,8 +486,14 @@ CARGO_EOF
   elif grep -rl "caveman" "$HOME/.claude/hooks/" > /dev/null 2>&1; then
     echo_success "caveman already installed (hooks)"
   else
-    echo_info "Installing caveman..."
-    curl -fsSL https://v6.gh-proxy.org/https://raw.githubusercontent.com/JuliusBrussee/caveman/main/install.sh 2>/dev/null | bash 2>/dev/null || echo_warn "Failed to install caveman"
+    echo_info "Installing caveman (marketplace -> plugin -> curl fallback)..."
+    if claude plugin marketplace add JuliusBrussee/caveman 2>/dev/null && \
+       claude plugin install caveman@caveman 2>/dev/null; then
+      echo_success "caveman installed (claude plugin)"
+    else
+      echo_warn "claude plugin install failed, trying curl fallback..."
+      curl -fsSL https://v6.gh-proxy.org/https://raw.githubusercontent.com/JuliusBrussee/caveman/main/install.sh 2>/dev/null | bash 2>/dev/null || echo_warn "Failed to install caveman"
+    fi
   fi
 
   # Code Review

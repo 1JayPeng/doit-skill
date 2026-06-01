@@ -101,6 +101,7 @@ End-to-end tests in real env. See [e2e.md](e2e.md). L0+L1 auto, L2+L3 HITL. Run 
 ## Phase 5 — Review
 
 Feature-level review. Merge duplicate logic. Minimal refactor. See [review.md](review.md).
+If caveman skill available, run `/caveman-review` for caveman-style code review before tokensave analysis.
 
 ## Phase 6 — Review + Simplify
 
@@ -113,6 +114,7 @@ Re-run e2e tests after Review + Simplify. Compare actual output against spec REQ
 ## Phase 8 — Commit + Push
 
 Stage changed files, commit with meaningful message matching project's commit style, update spec status, and push to remote. See [commit.md](commit.md).
+If caveman skill available, run `/caveman-commit` for caveman-style commit message generation.
 
 **Auto-push (no confirmation needed):** read `.doit/config.yaml` commit.branch:
 - `branch` (default) — create `feat/...` or `fix/...` branch and push
@@ -141,7 +143,8 @@ After Phase 9 completes, automatically trigger context compression to reduce tok
    - `mempalace_diary_write agent_name="doit" entry="<compact summary>" topic="compact"`
    - `mempalace_memories_filed_away` → verify auto-save checkpoint was saved
    - `mempalace_kg_timeline entity="<project>"` → log project timeline for future reference
-4. **MANDATORY: Run `/compact`** — execute the Claude Code built-in compaction command. Type `/compact` as a user message. Do NOT skip. Do NOT say "done" without compacting.
+4. **Caveman compress** (if available): Run `/caveman:compress CLAUDE.md` to compress CLAUDE.md using caveman's built-in compression skill. Falls back to step 5 if caveman unavailable.
+5. **MANDATORY: Run `/compact`** — execute the Claude Code built-in compaction command. Type `/compact` as a user message. Do NOT skip. Do NOT say "done" without compacting.
 
 **This phase always runs last.** It ensures the conversation context is compressed before the session ends, reducing token overhead for resumed conversations.
 
