@@ -119,7 +119,21 @@ if [ -t 0 ] && [ -t 1 ]; then
   esac
 fi
 
-# Ask about Tavily API Key (interactive + pipe installs via /dev/tty)
+# Check if Tavily is already configured (script doubles as update, don't re-ask)
+tavily_already_configured=false
+if claude mcp list 2>/dev/null | grep -q tavily; then
+  tavily_already_configured=true
+  echo_success "tavily MCP already configured"
+elif [ -f .env ] && grep -q 'TAVILY_API_KEY' .env 2>/dev/null; then
+  tavily_already_configured=true
+  echo_success "tavily API key found in .env"
+  TAVILY_API_KEY=$(grep 'TAVILY_API_KEY' .env | cut -d'=' -f2- | tr -d '"' | tr -d "'")
+elif grep -q 'tavily' ~/.claude/settings.json 2>/dev/null; then
+  tavily_already_configured=true
+  echo_success "tavily configured in settings.json"
+fi
+
+# Ask about Tavily API Key only if not already configured
 TAVILY_API_KEY="${TAVILY_API_KEY:-}"
 _ask_tavily() {
   if [ -t 0 ] && [ -t 1 ]; then
@@ -131,7 +145,9 @@ _ask_tavily() {
     read -r TAVILY_API_KEY < /dev/tty || true
   fi
 }
-_ask_tavily 2>/dev/null
+if [ "$tavily_already_configured" = false ]; then
+  _ask_tavily 2>/dev/null
+fi
 
 # Handle dry-run
 if [ "$DRY_RUN" = true ]; then
