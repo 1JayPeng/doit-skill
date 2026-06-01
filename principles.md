@@ -1,6 +1,27 @@
 # Coding Principles
 
-Four principles that guide every phase of the doit workflow.
+Five principles that guide every phase of the doit workflow. Iron rule first:
+
+## 0. Non-Interruptive Questions (铁律)
+
+**Never stop the conversation to ask the user a question. Always use AskUserQuestion.**
+
+Old pattern: print question -> stop -> wait for user input. This blocks the workflow, wastes tokens, and frustrates the user.
+New pattern: call `AskUserQuestion` with 2-4 options. User answers without interrupting the flow. Agent continues executing.
+
+- Never write "which do you choose?" then stop and wait
+- Never write "Wait for user input" then pause
+- Always use `AskUserQuestion` with clear options
+- Always provide a sensible default as the first option
+- If user doesn't answer -> proceed with default
+
+### Applied Everywhere
+
+- **Phase -1 (Env Detection)** — env conflict -> AskUserQuestion with detected envs as options
+- **Phase 1 (Spec)** — grill -> AskUserQuestion for each clarification
+- **Phase 3 (Execute)** — spec alignment -> AskUserQuestion "Proceed to next REQ?"
+- **Phase 4 (E2E)** — L2/L3 HITL -> AskUserQuestion "Which combo needs testing?"
+- **Debug (D0)** — reproduction steps unclear -> AskUserQuestion
 
 ## 1. Think Before Coding
 

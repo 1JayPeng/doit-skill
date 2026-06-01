@@ -1,4 +1,10 @@
-<!-- CLAUDE.md for doit-skill development -->
+## 语言规则
+
+**始终使用中文回答。** 中文 caveman 模式：简洁、无废话、保留技术术语。
+- 技术术语保持原文（如 function, API, token）
+- 短句、碎片化表达 OK
+- 不用英文客套话
+
 ## Project: doit-skill
 
 This is the **doit-skill** development repository. It is a Claude Code skill

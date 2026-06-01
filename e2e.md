@@ -98,14 +98,26 @@ run_entry("login", ["--user", "", "--pass", "abc123"])  # empty user
 
 ## L2/L3 HITL
 
-Present untested combinations to user:
-```
-L2 HITL: These param combos need manual testing:
-  1. --flag-a + --flag-b (conflict expected?)
-  2. --mode=debug + --verbose (redundant?)
+**铁律: Use AskUserQuestion, never stop and wait.**
 
-Run each, paste output. I'll generate assertion.
+Present untested combinations to user via AskUserQuestion:
 ```
+AskUserQuestion:
+  question: "Which param combos need manual e2e testing?"
+  header: "E2E L2"
+  options:
+    - label: "Skip L2/L3 (Recommended)"
+      description: "L0+L1 coverage is sufficient"
+    - label: "Test --flag-a + --flag-b"
+      description: "Conflict expected?"
+    - label: "Test --mode=debug + --verbose"
+      description: "Redundant?"
+    - label: "Test all combos"
+      description: "Run all L2/L3 combos"
+```
+
+If user selects a combo -> run it, capture output, generate assertion.
+If user doesn't answer -> skip L2/L3, proceed with L0+L1.
 
 ## E2E + Spec Cross-Check
 

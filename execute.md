@@ -127,19 +127,30 @@ Run only affected tests when possible — skip full suite for small changes:
 - `ctx_batch_execute` — run multiple test commands, search all output together
 - **Context-Mode unavailable:** run tests via native Bash. Output printed to context (more tokens used).
 
-### Spec Alignment Check (Interactive)
+### Spec Alignment Check (Non-Interruptive)
 
-After each REQ completes:
+After each REQ completes, present alignment report:
 ```
 REQ-00X DONE. Spec says: "user can do X". Current coverage:
   [x] user can do X with valid input
   [ ] user can do X with edge case Y
-Proceed to REQ-00(X+1)? (yes/no, or describe gap)
 ```
 
-**Wait for user. After user confirms "yes":**
-- More REQs remaining → go to REQ-00(X+1)
-- This was the last REQ → proceed to Phase 4 (E2E)
+**铁律: Use AskUserQuestion, never stop and wait.**
+
+```
+AskUserQuestion:
+  question: "REQ-00X complete. Proceed to next REQ?"
+  header: "REQ-00X"
+  options:
+    - label: "Yes, continue (Recommended)"
+      description: "Proceed to REQ-00(X+1)"
+    - label: "Gap found"
+      description: "Describe gap between spec and implementation"
+```
+
+**If user selects "Yes" or doesn't answer:** proceed to next REQ or Phase 4 (E2E) if last REQ.
+**If user describes gap:** fix it, then continue.
 
 ### State Tracking
 

@@ -28,13 +28,27 @@ See [setup.md](setup.md) for full tool/skill install manifest.
 
 ## Phase -1 — Detect Environment + Config
 
-**Absolute first step. Before anything else.** First check `.doit/env-cache.json` — if same branch and <24h old, skip full scan. Otherwise scan: all virtual env types (conda/uv/venv/poetry/asdf/mise/nvm/...), version pin files (`.python-version`/`.node-version`/`.tool-versions`/...), lock files (`uv.lock`/`poetry.lock`/`package-lock.json`/...), Docker/K8s (`Dockerfile`/`docker-compose`/...), and system info (OS/arch/shell/hooks). Write results to CLAUDE.md `## Environment` section. Multiple envs detected → stop and ask user. Cannot determine → ask user, do not guess.
+**Absolute first step. Before anything else.** First check `.doit/env-cache.json` — if same branch and <24h old, skip full scan. Otherwise scan: all virtual env types (conda/uv/venv/poetry/asdf/mise/nvm/...), version pin files (`.python-version`/`.node-version`/`.tool-versions`/...), lock files (`uv.lock`/`poetry.lock`/`package-lock.json`/...), Docker/K8s (`Dockerfile`/`docker-compose`/...), and system info (OS/arch/shell/hooks). Write results to CLAUDE.md `## Environment` section. Multiple envs detected → AskUserQuestion. Cannot determine → AskUserQuestion. Never stop and wait.
 
 Also init `.doit/config.yaml` if not present (default config for doc-capture, commit branch strategy). See [env-check.md](env-check.md) and [doit-config.md](doit-config.md).
+**Multiple envs detected -> AskUserQuestion. Cannot determine -> AskUserQuestion. Never stop and wait.**
+
+## 铁律 — Non-Interruptive Questions
+
+**永远不要停止对话来问用户问题。始终使用 AskUserQuestion 工具。**
+
+旧模式：打印问题 -> 停止 -> 等用户输入。这阻塞工作流、浪费 token、让用户烦躁。
+新模式：调用 `AskUserQuestion`，用户无需中断即可回答。Agent 继续执行。
+
+- 绝不写"你选哪个？"然后停下来等
+- 绝不写"Wait for user input"然后暂停
+- 始终用 `AskUserQuestion` + 2-4 个选项
+- 始终提供合理默认值作为第一个选项
+- 用户不回答 -> 用默认值继续
 
 ## Principles
 
-Four principles guide every phase. See [principles.md](principles.md).
+Five principles guide every phase. See [principles.md](principles.md).
 
 | Principle | What it prevents |
 |-----------|------------------|

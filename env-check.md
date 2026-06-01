@@ -254,23 +254,21 @@ Based on all detection results, determine primary environment:
 2. If virtual env exists for that language -> use it
 3. If lock file exists -> determine package manager from lock file name
 
-**Conflict detection:** If multiple environments detected that could be primary, stop and ask:
+**Conflict detection:** If multiple environments detected that could be primary, use `AskUserQuestion`:
 
 ```
-Multiple environments detected. Which should I use?
-
-  Python:
-    [1] uv (uv.lock found, .venv exists)
-    [2] conda (CONDA_PREFIX=/opt/conda, environment.yml found)
-    [3] poetry (poetry.lock found)
-
-  Node.js (also detected, secondary):
-    npm (package-lock.json)
-
-Which is your PRIMARY environment? (type number)
+AskUserQuestion:
+  question: "Multiple environments detected. Which is your PRIMARY environment?"
+  options:
+    - label: "uv (uv.lock, .venv)"
+      description: "uv package manager with .venv virtual env"
+    - label: "conda (CONDA_PREFIX=/opt/conda)"
+      description: "Conda environment with environment.yml"
+    - label: "poetry (poetry.lock)"
+      description: "Poetry with poetry.lock"
 ```
 
-**Wait for user input. Do not guess.**
+**铁律: Use AskUserQuestion, never stop and wait.** If user doesn't answer, pick the option with the strongest signal (lock file + venv > lock file alone > config file alone).
 
 ### 8. Write to CLAUDE.md (REQ-006)
 
@@ -531,19 +529,20 @@ If `enabled` is false (user declined at install), write `doc-capture.enabled: fa
 
 ### 15. Cannot Determine Environment
 
-**If detection finds nothing, or multiple conflicting signals:** stop and ask the user.
+**If detection finds nothing, or multiple conflicting signals:** use `AskUserQuestion`:
 
 ```
-Cannot determine project environment. Found:
-  - pyproject.toml (Python?) but no virtual env
-  - package.json (Node?) but node not installed
-  - conda env list empty
-
-Which environment should I use for this project?
-  1. Python with uv (create new .venv)
-  2. Node.js (which package manager?)
-  3. Conda (which environment name?)
-  4. Other (please specify)
+AskUserQuestion:
+  question: "Cannot determine project environment. What should I use?"
+  options:
+    - label: "Python with uv (Recommended)"
+      description: "Create new .venv with uv"
+    - label: "Node.js"
+      description: "Use npm/yarn/pnpm"
+    - label: "Conda"
+      description: "Use conda environment"
+    - label: "Other"
+      description: "Specify manually"
 ```
 
-**Wait for user input. Do not guess.**
+**铁律: Use AskUserQuestion, never stop and wait.** If user doesn't answer, use the first option with the strongest file signal (pyproject.toml > package.json > environment.yml).

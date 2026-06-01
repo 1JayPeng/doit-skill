@@ -29,6 +29,60 @@ Search for:
 
 Use `grill-me` skill to pressure-test the idea. Find holes, contradictions, scope creep. Resolve each before proceeding.
 
+**铁律: Grill questions via AskUserQuestion, never stop and wait.**
+
+When the grill reveals ambiguity, present it as AskUserQuestion:
+```
+AskUserQuestion:
+  question: "Grill found ambiguity: Should X handle Y case?"
+  header: "Grill"
+  options:
+    - label: "Yes, include Y (Recommended)"
+      description: "Handle Y as part of this feature"
+    - label: "No, out of scope"
+      description: "Defer Y to future work"
+    - label: "Depends, clarify"
+      description: "Need more context"
+```
+
+If user doesn't answer -> use the recommended default and continue. Grill should not block the workflow.
+
+**铁律: Grill questions via AskUserQuestion, never stop and wait.**
+
+When the grill reveals ambiguity, present it as AskUserQuestion:
+```
+AskUserQuestion:
+  question: "Grill found ambiguity: Should X handle Y case?"
+  header: "Grill"
+  options:
+    - label: "Yes, include Y (Recommended)"
+      description: "Handle Y as part of this feature"
+    - label: "No, out of scope"
+      description: "Defer Y to future work"
+    - label: "Depends, clarify"
+      description: "Need more context"
+```
+
+If user doesn't answer -> use the recommended default and continue. Grill should not block the workflow.
+
+**铁律: Grill questions via AskUserQuestion, never stop and wait.**
+
+When the grill reveals ambiguity, present it as AskUserQuestion:
+```
+AskUserQuestion:
+  question: "Grill found ambiguity: Should X handle Y case?"
+  header: "Grill"
+  options:
+    - label: "Yes, include Y (Recommended)"
+      description: "Handle Y as part of this feature"
+    - label: "No, out of scope"
+      description: "Defer Y to future work"
+    - label: "Depends, clarify"
+      description: "Need more context"
+```
+
+If user doesn't answer -> use the recommended default and continue. Grill should not block the workflow.
+
 ### Step 3: Split to Acceptance Criteria
 
 Break grill output into REQ-N items. Each REQ:
