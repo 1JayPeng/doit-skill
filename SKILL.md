@@ -28,9 +28,9 @@ See [setup.md](setup.md) for full tool/skill install manifest.
 
 ## Phase -1 — Detect Environment + Config
 
-**Absolute first step. Before anything else.** Detect the project's runtime, virtual env, and package manager. Write to CLAUDE.md if not already documented. Cannot determine → ask user, do not guess.
+**Absolute first step. Before anything else.** First check `.doit/env-cache.json` — if same branch and <24h old, skip full scan. Otherwise scan: all virtual env types (conda/uv/venv/poetry/asdf/mise/nvm/...), version pin files (`.python-version`/`.node-version`/`.tool-versions`/...), lock files (`uv.lock`/`poetry.lock`/`package-lock.json`/...), Docker/K8s (`Dockerfile`/`docker-compose`/...), and system info (OS/arch/shell/hooks). Write results to CLAUDE.md `## Environment` section. Multiple envs detected → stop and ask user. Cannot determine → ask user, do not guess.
 
-Also init `.doit/config.yaml` if not present (default config for doc-capture, commit branch strategy). See [env-check.md](env-check.md) step 8 and [doit-config.md](doit-config.md).
+Also init `.doit/config.yaml` if not present (default config for doc-capture, commit branch strategy). See [env-check.md](env-check.md) and [doit-config.md](doit-config.md).
 
 ## Principles
 

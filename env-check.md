@@ -1,79 +1,310 @@
 # Environment Detection (Phase -1)
 
-**Runs before anything else.** Detect what language/runtime this project uses and how to run it correctly.
+**Runs before anything else.** Detect what language/runtime this project uses, how to run it correctly, and persist to CLAUDE.md.
+
+## Cache Check (Before Scanning)
+
+Before running full scan, check if cached results are still valid:
+
+```bash
+# Check env cache
+if [ -f .doit/env-cache.json ]; then
+  cached_branch=$(python3 -c "import json; d=json.load(open('.doit/env-cache.json')); print(d.get('branch',''))" 2>/dev/null)
+  current_branch=$(git branch --show-current 2>/dev/null || echo "unknown")
+  cached_ts=$(python3 -c "import json; d=json.load(open('.doit/env-cache.json')); print(d.get('timestamp',''))" 2>/dev/null)
+
+  if [ "$cached_branch" = "$current_branch" ] && [ -n "$cached_ts" ]; then
+    age_hours=$(( ( $(date +%s) - $(date -d "$cached_ts" +%s 2>/dev/null || echo 0) ) / 3600 ))
+    if [ "$age_hours" -lt 24 ]; then
+      echo "[ENV] Cache hit (${age_hours}h old, branch: ${current_branch}). Skipping full scan."
+      # Cache valid -> skip Steps 1-8 (detection), go directly to Step 9 (Background Rules)
+      # Then Step 10 (Tool Availability), Step 11 (Announce)
+      # Do NOT run Steps 12 (Save Cache) again - cache is still fresh
+      goto_step_9
+    fi
+  fi
+fi
+```
+
+**Cache invalidation triggers:**
+- Branch changed (git branch switch)
+- Cache older than 24 hours
+- `.doit/env-cache.json` deleted
+- User explicitly requests re-scan
+
+**If cache valid:** skip Steps 1-8, proceed to Step 9 (Background Rules).
+**If cache invalid or missing:** proceed to full scan (Steps 1-14).
 
 ## Detection Steps
 
 ### 1. Detect Project Type
 
-Run this detection script:
+```bash
+echo "=== Package Files ==="
+ls -1 pyproject.toml setup.py setup.cfg package.json requirements.txt go.mod Cargo.toml Gemfile tsconfig.json Rakefile mix.exs package-lock.json yarn.lock pnpm-lock.yaml uv.lock Pipfile Makefile Dockerfile docker-compose.yml .python-version .node-version .go-version .ruby-version .tool-versions .volta.json 2>/dev/null | head -30
+```
+
+### 2. Scan Virtual Environments (REQ-001)
 
 ```bash
-# Detect project type and environment in one call
-echo "=== Package Files ==="
-ls -1 pyproject.toml setup.py setup.cfg package.json requirements.txt go.mod Cargo.toml Gemfile tsconfig.json Rakefile mix.exs package-lock.json yarn.lock pnpm-lock.yaml uv.lock Pipfile Makefile Dockerfile docker-compose.yml .python-version 2>/dev/null | head -20
+echo "=== Virtual Environments ==="
 
-echo "=== Python Environment ==="
+# Python
+echo "-- Python --"
+ls -d .venv venv env .env __env__ 2>/dev/null
+[ -f .venv/bin/activate ] && echo "FOUND: .venv (standard venv)" || true
+[ -f venv/bin/activate ] && echo "FOUND: venv (standard venv)" || true
+[ -f uv.lock ] && echo "FOUND: uv.lock -> uv package manager" || true
+[ -f Pipfile ] && echo "FOUND: Pipfile -> pipenv" || true
+[ -f poetry.lock ] && echo "FOUND: poetry.lock -> poetry" || true
+
+# Conda
+echo "-- Conda --"
+command -v conda 2>/dev/null && echo "CONDA: available" || true
+[ -f environment.yml ] && echo "FOUND: environment.yml -> conda env" || true
+[ -f env.yml ] && echo "FOUND: env.yml -> conda env" || true
+echo "CONDA_DEFAULT_ENV=$CONDA_DEFAULT_ENV"
+echo "CONDA_PREFIX=$CONDA_PREFIX"
+
+# Node.js
+echo "-- Node.js --"
+[ -d .nvm ] && echo "FOUND: .nvm (local nvm)" || true
+command -v nvm 2>/dev/null && echo "NVM: available" || true
+command -v fnm 2>/dev/null && echo "FNM: available" || true
+command -f volta 2>/dev/null && echo "VOLTA: available" || true
+
+# Ruby
+echo "-- Ruby --"
+command -v rvm 2>/dev/null && echo "RVM: available" || true
+command -v rbenv 2>/dev/null && echo "RBENV: available" || true
+
+# Go
+echo "-- Go --"
+command -v goenv 2>/dev/null && echo "GOENV: available" || true
+
+# Universal version managers
+echo "-- Universal --"
+command -v asdf 2>/dev/null && echo "ASDF: available" || true
+command -v mise 2>/dev/null && echo "MISE: available" || true
+[ -f .tool-versions ] && echo "FOUND: .tool-versions -> asdf/mise" || true
+[ -f .mise.toml ] && echo "FOUND: .mise.toml -> mise config" || true
+
+# Flutter
+echo "-- Flutter --"
+command -v fvm 2>/dev/null && echo "FVM: available" || true
+[ -f .fvm/fvm_config.json ] && echo "FOUND: .fvm -> Flutter Version Management" || true
+
+# Rust
+echo "-- Rust --"
+command -v rustup 2>/dev/null && echo "RUSTUP: available" || true
+[ -f rust-toolchain.toml ] && echo "FOUND: rust-toolchain.toml -> rustup toolchain" || true
+[ -f rust-toolchain ] && echo "FOUND: rust-toolchain -> rustup toolchain" || true
+```
+
+### 3. Scan Version Pin Files (REQ-002)
+
+```bash
+echo "=== Version Pins ==="
+
+# Python
+[ -f .python-version ] && echo "PYTHON: $(cat .python-version)" || true
+grep -m1 "requires-python" pyproject.toml 2>/dev/null && echo "  (from pyproject.toml)" || true
+
+# Node.js
+[ -f .nvmrc ] && echo "NODE: $(cat .nvmrc)" || true
+[ -f .node-version ] && echo "NODE: $(cat .node-version)" || true
+grep -m1 '"node"' package.json 2>/dev/null && echo "  (from package.json engines)" || true
+
+# Go
+grep -m1 "^go " go.mod 2>/dev/null && echo "  (from go.mod)" || true
+
+# Ruby
+[ -f .ruby-version ] && echo "RUBY: $(cat .ruby-version)" || true
+
+# Rust
+grep -m1 "rust-version" Cargo.toml 2>/dev/null && echo "  (from Cargo.toml)" || true
+
+# Volta
+[ -f .volta.json ] && cat .volta.json 2>/dev/null | head -10 || true
+
+# asdf/mise
+[ -f .tool-versions ] && cat .tool-versions 2>/dev/null || true
+```
+
+### 4. Scan Lock/Dependency Files (REQ-003)
+
+```bash
+echo "=== Lock Files ==="
+
+# Python
+[ -f uv.lock ] && echo "FOUND: uv.lock ($(wc -l < uv.lock) lines)" || true
+[ -f poetry.lock ] && echo "FOUND: poetry.lock ($(wc -l < poetry.lock) lines)" || true
+[ -f Pipfile.lock ] && echo "FOUND: Pipfile.lock" || true
+[ -f requirements.txt ] && echo "FOUND: requirements.txt ($(wc -l < requirements.txt) lines)" || true
+[ -d constraints ] && echo "FOUND: constraints/ (pip-compile)" || true
+[ -f requirements/*.txt ] && echo "FOUND: requirements/*.txt" || true
+
+# Node.js
+[ -f package-lock.json ] && echo "FOUND: package-lock.json (npm)" || true
+[ -f yarn.lock ] && echo "FOUND: yarn.lock" || true
+[ -f pnpm-lock.yaml ] && echo "FOUND: pnpm-lock.yaml" || true
+
+# Rust
+[ -f Cargo.lock ] && echo "FOUND: Cargo.lock" || true
+
+# Ruby
+[ -f Gemfile.lock ] && echo "FOUND: Gemfile.lock" || true
+
+# Go
+[ -f go.sum ] && echo "FOUND: go.sum" || true
+
+# Java
+[ -f gradle.lockfile ] && echo "FOUND: gradle.lockfile" || true
+[ -f build.gradle ] && echo "FOUND: build.gradle" || true
+[ -f build.gradle.kts ] && echo "FOUND: build.gradle.kts" || true
+[ -f pom.xml ] && echo "FOUND: pom.xml (Maven)" || true
+[ -f mvn-dependency-tree.txt ] && echo "FOUND: mvn-dependency-tree.txt" || true
+```
+
+### 5. Scan Docker/K8s (REQ-004)
+
+```bash
+echo "=== Container ==="
+
+# Docker
+[ -f Dockerfile ] && echo "FOUND: Dockerfile" || true
+[ -f Dockerfile.* ] && echo "FOUND: Dockerfile.* (multi-stage)" || true
+ls -1 docker-compose*.yml docker-compose*.yaml 2>/dev/null && echo "  (compose files)" || true
+[ -f .dockerignore ] && echo "FOUND: .dockerignore" || true
+[ -d docker ] && echo "FOUND: docker/ directory" || true
+
+# K8s
+[ -f k8s.yml ] && echo "FOUND: k8s.yml" || true
+[ -f kubernetes.yml ] && echo "FOUND: kubernetes.yml" || true
+[ -d k8s ] && echo "FOUND: k8s/ directory" || true
+[ -d kubernetes ] && echo "FOUND: kubernetes/ directory" || true
+[ -f Chart.yaml ] && echo "FOUND: Chart.yaml (Helm)" || true
+[ -f values.yaml ] && echo "FOUND: values.yaml (Helm)" || true
+
+# Local clusters
+command -v kind 2>/dev/null && echo "KIND: available" || true
+command -v minikube 2>/dev/null && echo "MINIKUBE: available" || true
+command -v k3s 2>/dev/null && echo "K3S: available" || true
+command -v docker 2>/dev/null && echo "DOCKER: $(docker --version 2>/dev/null)" || true
+command -v podman 2>/dev/null && echo "PODMAN: $(podman --version 2>/dev/null)" || true
+```
+
+### 6. Scan System Info (REQ-005)
+
+```bash
+echo "=== System ==="
+
+# OS
+uname -a 2>/dev/null | head -1
+cat /etc/os-release 2>/dev/null | head -3
+
+# Runtime
+echo "=== Runtime ==="
 command -v python3 python 2>/dev/null
 python3 -c "import sys; print(f'{sys.executable} ({sys.version})')" 2>/dev/null
-
-echo "=== Virtual Env ==="
-ls -d .venv venv env .env __env__ 2>/dev/null
-[ -f .venv/bin/activate ] && echo "FOUND: .venv" || true
-[ -f venv/bin/activate ] && echo "FOUND: venv" || true
-[ -f uv.lock ] && echo "FOUND: uv.lock" || true
-[ -f .python-version ] && cat .python-version
-
-echo "=== Conda ==="
-command -v conda 2>/dev/null
-conda env list 2>/dev/null | head -10
-
-echo "=== Node ==="
 command -v node npm yarn pnpm bun 2>/dev/null
 node --version 2>/dev/null
-cat package.json | grep -E '"(engines|type|main)"' 2>/dev/null
+command -v go 2>/dev/null && go version 2>/dev/null
+command -v rustc cargo 2>/dev/null && rustc --version 2>/dev/null
+command -v ruby 2>/dev/null && ruby --version 2>/dev/null
+command -v java 2>/dev/null && java --version 2>/dev/null
+command -v gcc g++ 2>/dev/null && gcc --version 2>/dev/null | head -1
+command -v swift 2>/dev/null && swift --version 2>/dev/null | head -1
 
-echo "=== Shell/Env ==="
+# Arch
+uname -m 2>/dev/null
+
+# Shell
+echo "SHELL=$SHELL"
+echo "BASH_VERSION=$BASH_VERSION"
+echo "ZSH_VERSION=$ZSH_VERSION"
+
+# Virtual env vars
 echo "VIRTUAL_ENV=$VIRTUAL_ENV"
 echo "CONDA_DEFAULT_ENV=$CONDA_DEFAULT_ENV"
 echo "CONDA_PREFIX=$CONDA_PREFIX"
 echo "NODE_ENV=$NODE_ENV"
+echo "PATH_DIRS=$(echo \$PATH | tr ':' '\n' | head -10)"
+
+# Git hooks
+[ -d .git/hooks ] && ls .git/hooks/ 2>/dev/null | grep -v '.sample' || true
+command -v pre-commit 2>/dev/null && echo "PRE-COMMIT: available" || true
+[ -f .pre-commit-config.yaml ] && echo "FOUND: .pre-commit-config.yaml" || true
+
+# Editor config
+[ -f .editorconfig ] && echo "FOUND: .editorconfig" || true
+[ -f .clang-format ] && echo "FOUND: .clang-format" || true
+[ -f .prettierrc ] && echo "FOUND: .prettierrc" || true
+[ -f .eslintrc* ] && echo "FOUND: .eslintrc*" || true
+[ -d .vscode ] && echo "FOUND: .vscode/ (VS Code settings)" || true
+[ -d .idea ] && echo "FOUND: .idea/ (IntelliJ settings)" || true
 ```
 
-### 2. Determine Active Runtime
+### 7. Determine Active Runtime + Conflict Detection (REQ-008)
 
-Based on detection results, determine:
-- **Language**: Python / Node.js / Go / Rust / ...
-- **Package manager**: pip / uv / npm / yarn / pnpm / ...
-- **Virtual env**: .venv / venv / conda env name / none
-- **Runtime**: python3 / uv run / node / ...
+Based on all detection results, determine primary environment:
 
-### 3. Verify CLAUDE.md
+**Priority resolution (when no conflict):**
+1. If only one language detected -> use it
+2. If virtual env exists for that language -> use it
+3. If lock file exists -> determine package manager from lock file name
 
-Check if the project's root `CLAUDE.md` already documents the environment:
+**Conflict detection:** If multiple environments detected that could be primary, stop and ask:
+
+```
+Multiple environments detected. Which should I use?
+
+  Python:
+    [1] uv (uv.lock found, .venv exists)
+    [2] conda (CONDA_PREFIX=/opt/conda, environment.yml found)
+    [3] poetry (poetry.lock found)
+
+  Node.js (also detected, secondary):
+    npm (package-lock.json)
+
+Which is your PRIMARY environment? (type number)
+```
+
+**Wait for user input. Do not guess.**
+
+### 8. Write to CLAUDE.md (REQ-006)
+
+Check if CLAUDE.md already has environment section:
 
 ```bash
-grep -i "environment\|venv\|virtual\|python\|node\|activate\|runtime\|conda" CLAUDE.md 2>/dev/null
+grep -i "## environment\|## 环境" CLAUDE.md 2>/dev/null
 ```
 
-**If CLAUDE.md already has correct environment info:** skip to next step.
-**If CLAUDE.md is missing or has wrong environment info:** write the detected environment.
-
-### 4. Write to CLAUDE.md
-
-If `CLAUDE.md` exists but doesn't mention environment, add an `## Environment` section:
+**If CLAUDE.md already has correct environment section AND cache valid:** skip.
+**If missing or stale:** write/update the section:
 
 ```markdown
 ## Environment
 
-- Language: Python 3.x
-- Virtual env: .venv (activate with `source .venv/bin/activate`)
-- Run commands through: uv run
+- **Language:** Python 3.12 (`.python-version`)
+- **Package manager:** uv (`uv.lock` present)
+- **Virtual env:** `.venv` (activate with `source .venv/bin/activate`)
+- **Run commands:** `uv run <command>`
+- **Docker:** `Dockerfile`, `docker-compose.yml` present
+- **Detected:** 2026-06-01T12:00:00Z, branch: `master`
 ```
 
-If `CLAUDE.md` doesn't exist at the project root, create one with just the environment section.
+Include all detected layers that are relevant:
+- Primary language + version source
+- Package manager + lock file
+- Virtual env type + activation
+- Docker/K8s if present
+- Secondary languages if detected
+- Detection timestamp + branch (for cache reference)
 
-### 4.5. Inject Background Task Rules into CLAUDE.md
+**If CLAUDE.md doesn't exist:** create one with just the Environment section.
+
+### 9. Inject Background Task Rules into CLAUDE.md
 
 Always inject this section after `## Environment`. If the project already has a similar "background task" section, skip. Check:
 
@@ -96,7 +327,7 @@ Before running any background command (via `run_in_background`), apply these rul
 
 **If config already has a Background Task Rules section:** skip. No overwrite.
 
-### 5. Check External Tool Availability
+### 10. Check External Tool Availability
 
 Run this detection script to verify all doit-skill external tools are available:
 
@@ -179,31 +410,20 @@ fi
 
 Missing tools trigger fallback paths in each phase (see each phase's fallback instructions).
 
-### 6. Cannot Determine Environment
-
-**If detection finds nothing, or multiple conflicting signals:** stop and ask the user.
-
-```
-Cannot determine project environment. Found:
-  - pyproject.toml (Python?) but no virtual env
-  - package.json (Node?) but node not installed
-  - conda env list empty
-
-Which environment should I use for this project?
-  1. Python with uv (create new .venv)
-  2. Node.js (which package manager?)
-  3. Conda (which environment name?)
-  4. Other (please specify)
-```
-
-**Wait for user input. Do not guess.**
-
-### 7. Announce Detected Environment
+### 11. Announce Detected Environment
 
 ```
 [ENV] Python 3.12 via uv (.venv)
 [ENV] Run commands: uv run <command>
-[ENV] CLAUDE.md: already has environment section, skipping
+[ENV] CLAUDE.md: wrote Environment section
+[ENV] Cache saved to .doit/env-cache.json (24h TTL)
+```
+
+Or if cache was used:
+
+```
+[ENV] Cache hit (12h old, branch: master)
+[ENV] Python 3.12 via uv (.venv) - from cached scan
 ```
 
 Or if written:
@@ -214,7 +434,36 @@ Or if written:
 [ENV] CLAUDE.md: wrote Environment section
 ```
 
-### 8. Init .doit/config.yaml
+### 12. Save Cache (REQ-007)
+
+After successful scan and CLAUDE.md update, save cache:
+
+```bash
+mkdir -p .doit
+
+# Ensure cache file is gitignored (local-only, never committed)
+if ! grep -q "env-cache.json" .gitignore 2>/dev/null; then
+  echo ".doit/env-cache.json" >> .gitignore
+  echo "[ENV] Added .doit/env-cache.json to .gitignore"
+fi
+
+# Write cache
+python3 -c "
+import json, datetime
+cache = {
+    'branch': '$(git branch --show-current 2>/dev/null || echo unknown)',
+    'timestamp': datetime.datetime.now(datetime.timezone.utc).isoformat(),
+    'language': '<detected language>',
+    'package_manager': '<detected manager>',
+    'virtual_env': '<detected env>',
+}
+with open('.doit/env-cache.json', 'w') as f:
+    json.dump(cache, f, indent=2)
+print('[ENV] Cache saved to .doit/env-cache.json (24h TTL)')
+" 2>/dev/null || echo "[ENV] Cache save skipped (python3 not available)"
+```
+
+### 13. Init .doit/config.yaml
 
 Check if `.doit/config.yaml` exists:
 
@@ -239,3 +488,22 @@ fi
 If `enabled` is false (user declined at install), write `doc-capture.enabled: false` instead.
 
 **If config already exists:** skip. No overwrite.
+
+### 14. Cannot Determine Environment
+
+**If detection finds nothing, or multiple conflicting signals:** stop and ask the user.
+
+```
+Cannot determine project environment. Found:
+  - pyproject.toml (Python?) but no virtual env
+  - package.json (Node?) but node not installed
+  - conda env list empty
+
+Which environment should I use for this project?
+  1. Python with uv (create new .venv)
+  2. Node.js (which package manager?)
+  3. Conda (which environment name?)
+  4. Other (please specify)
+```
+
+**Wait for user input. Do not guess.**
