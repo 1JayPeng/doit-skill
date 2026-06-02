@@ -164,6 +164,7 @@ mempalace_add_drawer wing="<project>" room="implementation" content="REQ-00X: <w
 ### Background Process Management (铁律)
 
 **铁律: 长时间任务必须后台执行 + 轮询。不允许空等。** See [principles.md](principles.md) Principle 0.5.
+**铁律: 所有代码变更必须提交并推送。没有例外。** See [principles.md](principles.md) Principle 1.
 
 For long-running commands, use the three-tier approach from [background-process.md](background-process.md):
 

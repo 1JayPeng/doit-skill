@@ -45,13 +45,43 @@ Also init `.doit/config.yaml` if not present (default config for doc-capture, co
 - 始终提供合理默认值作为第一个选项
 - 用户不回答 -> 用默认值继续
 
+## 铁律 — Background Execution
+
+**永远不要空等长时间任务。始终使用后台执行 + 轮询机制。**
+
+旧模式：运行 `cargo build --release` -> 干等 5min -> 结果。这阻塞工作流、浪费 token、让用户盯着冻结的 agent。
+新模式：后台启动 -> 继续做其他工作 -> 通知时检查结果。
+
+- **<10s** → 直接 Bash（前台 OK）
+- **10s–5min** → `Bash run_in_background=true` 或 shell `&` + log 文件 + `[START]`/`[END]` 标记
+- **>5min** → tmux 命名 session + Monitor + 自动继续，或 `ScheduleWakeup` 定期轮询
+- **始终设置完成信号** — `[END]` 标记、Monitor 检查或 ScheduleWakeup 回调
+- **绝不说"waiting for X..."然后沉默** — 要么轮询，要么做其他工作
+
+See [background-process.md](background-process.md) for full three-tier patterns.
+
+## 铁律 — Commit + Push Mandatory
+
+**所有代码变更必须提交并推送。没有例外。**
+
+旧模式：实现功能 -> "完成" -> 无提交。会话结束工作丢失，无 git 历史，无 PR 记录。
+新模式：实现 -> 有意义信息提交 -> 推送到远程 -> "完成"。
+
+- **Phase 3, 4, 5, 6, 7 后必须提交** — 中间提交保证安全
+- **Phase 8 最终提交** — 符合项目提交风格的信息
+- **必须推送到远程** — `branch`（默认）、`current` 或 `none`（仅用户明确要求不推送）
+- **绝不"完成"却不提交** — 未提交的工作等于丢失的工作
+- **绝不跳过推送** — 本地提交不防会话丢失
+
 ## Principles
 
-Five principles guide every phase. See [principles.md](principles.md).
+Seven principles guide every phase. Three iron rules. See [principles.md](principles.md).
 
 | Principle | What it prevents |
 |-----------|------------------|
 | **Non-Interruptive Questions (铁律)** | blocking workflow, wasted tokens, user frustration |
+| **Background Execution (铁律)** | idle waiting, frozen agent, dead conversation time |
+| **Commit + Push Mandatory (铁律)** | lost work, no git history, no PR trail |
 | **Think Before Coding** | wrong assumptions, hidden confusion, missing trade-offs |
 | **Brevity First** | over-engineering, bloated abstractions |
 | **Surgical Edits** | unrelated edits, touching code that shouldn't be touched |
@@ -60,6 +90,8 @@ Five principles guide every phase. See [principles.md](principles.md).
 Per-phase application:
 - **Phase 1 (Spec)** — think before coding: grill ideas, challenge assumptions, present alternatives
 - **Phase 3 (Execute)** — goal-driven (testable verification per REQ), brevity first (minimal code per REQ)
+- **Phase 3-8** — background execution: all >10s commands run in background with polling
+- **Phase 3-8** — commit + push: every code change committed and pushed
 - **Phase 5-6 (Review + Simplify)** — surgical edits (only touch what's necessary), brevity first (remove unnecessary abstractions)
 - **Debug (D2 Fix)** — surgical edits (minimum change for regression test pass)
 

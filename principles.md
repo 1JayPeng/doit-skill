@@ -1,6 +1,6 @@
 # Coding Principles
 
-Six principles that guide every phase of the doit workflow. Two iron rules first:
+Seven principles that guide every phase of the doit workflow. Three iron rules first:
 
 ## 0. Non-Interruptive Questions (铁律)
 
@@ -51,7 +51,31 @@ This is not a suggestion. It is an iron rule. If a command takes longer than a c
 
 See [background-process.md](background-process.md) for full three-tier patterns.
 
-## 1. Think Before Coding
+## 1. Commit + Push Mandatory (铁律)
+
+**Every code change MUST be committed and pushed. No exceptions.**
+
+Old pattern: implement feature -> "done" -> no commit. Work lost on session end, no git history, no PR trail.
+New pattern: implement -> commit with meaningful message -> push to remote -> "done".
+
+- **Always commit after Phase 3, 4, 5, 6, 7** — intermediate commits for safety
+- **Final commit after Phase 8** — meaningful message matching project's commit style
+- **Push to remote** — `branch` (default), `current`, or `none` (only if user explicitly requests no push)
+- **Never say "done" without committing** — uncommitted work is lost work
+- **Never skip push** — local commits don't protect against session loss
+
+This is not optional. Code without commit is just text in a buffer. Code without push is local only. Both are fragile.
+
+### Applied Everywhere
+
+- **Phase 3 (Execute)** — commit after each REQ completes (intermediate safety)
+- **Phase 8 (Commit + Push)** — final commit with full message, push to remote
+- **Debug (D6)** — commit fix + regression test, push to remote
+- **Any code change** — commit before compacting context
+
+See [commit.md](commit.md) for commit message conventions and push strategies.
+
+## 2. Think Before Coding
 
 **Don't assume. Don't hide confusion. Present trade-offs.**
 
@@ -68,7 +92,7 @@ LLMs often pick an interpretation silently and execute. This principle forces ex
 - **Phase 2 (Plan)** — explore multiple implementation paths, pick simplest that satisfies all REQs
 - **Phase 0 (Classify)** — if request type is unclear, ask user, don't guess
 
-## 2. Brevity First
+## 3. Brevity First
 
 **Solve the problem with the least code. Don't over-speculate.**
 
@@ -88,7 +112,7 @@ Counter the tendency toward over-engineering:
 - **Phase 6 (Review + Simplify)** — merge redundant code, remove dead imports, flatten unnecessary abstractions
 - **Phase 5 (Review)** — eliminate duplication across the codebase
 
-## 3. Surgical Edits
+## 4. Surgical Edits
 
 **Only touch what must be touched. Only clean up messes you created.**
 
@@ -112,7 +136,7 @@ When your changes create orphan code:
 - **Phase 6 (Review + Simplify)** — cleanup limited to code introduced in this workflow run
 - **Debug (D2 Fix)** — minimum change to make regression test pass, no unrelated fixes
 
-## 4. Goal-Driven Execution
+## 5. Goal-Driven Execution
 
 **Define success criteria. Loop verify until achieved.**
 
