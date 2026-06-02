@@ -73,13 +73,14 @@ fi
 ```
 **Why:** avoids working on stale code, prevents conflicts. `|| true` so network errors don't block.
 
-**Step 1 — Enable caveman mode for the entire session.** Call the Skill tool to load caveman. This is a Tool call, not a code comment:
+**Step 1 — Load doit + caveman skills for the entire session.** Call the Skill tool to load both. These are Tool calls, not code comments:
 
 ```
+Skill skill="doit"
 Skill skill="caveman"
 ```
 
-If caveman skill is not found, announce `[WARN] caveman not installed -> verbose mode` and continue. CLAUDE.md `## Skill Loading` section (written by Phase -1) also enforces this, so even if this step is skipped, the CLAUDE.md instruction should trigger caveman load.
+If caveman skill is not found, announce `[WARN] caveman not installed -> verbose mode` and continue. CLAUDE.md `## Skill Loading` section (written by Phase -1) also enforces this, so even if this step is skipped, the CLAUDE.md instruction should trigger skill load.
 
 **Step 2 — Auto-classify.** Read [classifier.md](classifier.md). Four types:
 

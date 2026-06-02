@@ -359,7 +359,10 @@ If no match found, inject after `## Environment` section (or append if Environme
 ```markdown
 ## Skill Loading
 
-When the doit skill is invoked, automatically load these skills:
+**Mandatory: Always load doit skill for every task, every session, every command.** The doit workflow is the primary development framework for this project. Regardless of what the user asks, the doit skill must be loaded first.
+
+Skills to load on every session:
+- **doit** — spec-driven TDD workflow. **Always active, every task.** Load via `Skill skill="doit"` tool call at session start.
 - **caveman** — terse response mode. Load via `Skill skill="caveman"` tool call. If unavailable, proceed in verbose mode.
 ```
 
@@ -373,7 +376,7 @@ Run this detection script to verify all doit-skill external tools are available:
 echo "=== Tool Availability ==="
 
 # Skill tools
-for skill in doit grill-me tdd diagnose prototype handoff improve-codebase-architecture; do
+for skill in doit grill-me tdd diagnose prototype handoff improve-codebase-architecture caveman; do
   if [ -d "$HOME/.claude/skills/$skill" ]; then
     echo "  [OK]   $skill (skill)"
   else
@@ -382,7 +385,7 @@ for skill in doit grill-me tdd diagnose prototype handoff improve-codebase-archi
 done
 
 # External tools
-for tool in rtk uv tokensave caveman; do
+for tool in rtk uv tokensave; do
   if command -v "$tool" >/dev/null 2>&1; then
     echo "  [OK]   $tool ($(command -v $tool))"
   else
