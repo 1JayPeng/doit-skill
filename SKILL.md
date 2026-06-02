@@ -31,7 +31,6 @@ See [setup.md](setup.md) for full tool/skill install manifest.
 **Absolute first step. Before anything else.** First check `.doit/env-cache.json` — if same branch and <24h old, skip full scan. Otherwise scan: all virtual env types (conda/uv/venv/poetry/asdf/mise/nvm/...), version pin files (`.python-version`/`.node-version`/`.tool-versions`/...), lock files (`uv.lock`/`poetry.lock`/`package-lock.json`/...), Docker/K8s (`Dockerfile`/`docker-compose`/...), and system info (OS/arch/shell/hooks). Write results to CLAUDE.md `## Environment` section. Multiple envs detected → AskUserQuestion. Cannot determine → AskUserQuestion. Never stop and wait.
 
 Also init `.doit/config.yaml` if not present (default config for doc-capture, commit branch strategy). See [env-check.md](env-check.md) and [doit-config.md](doit-config.md).
-**Multiple envs detected -> AskUserQuestion. Cannot determine -> AskUserQuestion. Never stop and wait.**
 
 ## 铁律 — Non-Interruptive Questions
 
@@ -52,6 +51,7 @@ Five principles guide every phase. See [principles.md](principles.md).
 
 | Principle | What it prevents |
 |-----------|------------------|
+| **Non-Interruptive Questions (铁律)** | blocking workflow, wasted tokens, user frustration |
 | **Think Before Coding** | wrong assumptions, hidden confusion, missing trade-offs |
 | **Brevity First** | over-engineering, bloated abstractions |
 | **Surgical Edits** | unrelated edits, touching code that shouldn't be touched |
