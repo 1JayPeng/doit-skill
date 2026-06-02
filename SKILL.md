@@ -146,9 +146,20 @@ Remove all intermediate workflow files. See [commit.md](shared/commit.md) step 8
 
 **Keep:** `.spec/archive/`, `.doit/config.yaml`, `.doit/docs/`
 
+## Phase 9.5 — Completion Summary
+
+**Before compact, tell the user what was done and what to do next.** This is the last visible output before context compression. See [commit.md](shared/commit.md) Gate section for format.
+
+Must include:
+- Branch, commit hash, change summary
+- What each REQ delivered
+- **Actionable next steps** — concrete commands to run, features to test, services to restart
+
+**No vague "done" messages.** User needs to know: "what do I do now?"
+
 ## Phase 10 — Auto-Compact
 
-After Phase 9 completes, automatically trigger context compression to reduce token usage for the next session:
+After Phase 9.5 completion summary, automatically trigger context compression to reduce token usage for the next session:
 
 1. **RTK token report** (if available):
    - `rtk gain` — show total session token savings
@@ -214,28 +225,31 @@ This recovers what was done in prior sessions without relying on filesystem stat
 
 ```
 [Phase Gate] Type R flow (resume):
-  [x] Phase 0   Classify → detect in-progress work
+  [x] Phase 0     Classify → detect in-progress work
   [x] Resume from detected phase → complete remaining phases
-  [x] Phase 10  Auto-Compact
+  [x] Phase 9.5   Completion Summary (user-facing)
+  [x] Phase 10    Auto-Compact
 
 [Phase Gate] Type F flow (full):
-  [x] Phase -1  Detect Environment + Config
-  [x] Phase 0   Classify Request
-  [x] Phase 1   Spec (grill → write → branch)
-  [x] Phase 2   Plan (impact analysis)
-  [x] Phase 3   Execute (TDD per REQ)
-  [x] Phase 4   E2E (initial tests)
-  [x] Phase 5   Review
-  [x] Phase 6   Review + Simplify
-  [x] Phase 7   E2E Verification Loop
-  [x] Phase 8   Commit + Push
-  [x] Phase 9   Cleanup intermediate files
-  [x] Phase 10  Auto-Compact
+  [x] Phase -1    Detect Environment + Config
+  [x] Phase 0     Classify Request
+  [x] Phase 1     Spec (grill → write → branch)
+  [x] Phase 2     Plan (impact analysis)
+  [x] Phase 3     Execute (TDD per REQ)
+  [x] Phase 4     E2E (initial tests)
+  [x] Phase 5     Review
+  [x] Phase 6     Review + Simplify
+  [x] Phase 7     E2E Verification Loop
+  [x] Phase 8     Commit + Push
+  [x] Phase 9     Cleanup intermediate files
+  [x] Phase 9.5   Completion Summary (user-facing)
+  [x] Phase 10    Auto-Compact
   [x] Doc Capture (if user prompt has docs)
 
 [Phase Gate] Type S flow (simple):
   [x] Phase 0   Classify
   [x] Execute directly
+  [x] Phase 9.5 Completion Summary (user-facing)
   [x] Phase 10  Auto-Compact
   [x] Doc Capture (if user prompt has docs)
 
@@ -243,6 +257,7 @@ This recovers what was done in prior sessions without relying on filesystem stat
   [x] Phase 0   Classify
   [x] D0-D6     Debug workflow (debug.md)
   [x] Phase 8   Commit + Push
+  [x] Phase 9.5 Completion Summary (user-facing)
   [x] Phase 10  Auto-Compact
 ```
 
@@ -250,6 +265,7 @@ This recovers what was done in prior sessions without relying on filesystem stat
 **After Phase 6 completes:** always continue to Phase 7. E2E verification after simplification.
 **After Phase 7 completes:** always continue to Phase 8. Every feature ships committed + pushed.
 **After Phase 8 completes:** always continue to Phase 9. Clean up intermediate files.
-**After Phase 9 completes:** always continue to Phase 10. Compact conversation context.
+**After Phase 9 completes:** always continue to Phase 9.5. Present completion summary to user.
+**After Phase 9.5 completes:** always continue to Phase 10. Compact conversation context.
 
 **The only valid end state is Phase 10 compact.** If you're about to say "done" or "completed" and context has not been compacted, you haven't finished.

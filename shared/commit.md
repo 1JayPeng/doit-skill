@@ -154,13 +154,47 @@ rm -rf .scratch/  # if empty
 **What NOT to commit:**
 These files are excluded from git (see step 3). Cleanup is for local directory hygiene, not git.
 
-## Gate — Session End
+## Gate — Completion Summary
 
-This is the **final phase**. After push + cleanup, announce:
-- Branch name (remote)
-- Commit hash
-- Summary of changes
-- Intermediate files cleaned
+**After push + cleanup, BEFORE compact, present a structured completion summary to the user.** This is the last thing the user sees before context compression. Make it actionable.
+
+### Summary Format
+
+```
+## ✅ 完成
+
+**分支:** `origin/<branch-name>`
+**提交:** `<short-hash>` — "<commit subject>"
+**变更:** <N> 文件, <N> REQs 完成
+
+### 完成内容
+- REQ-001: <one-line result>
+- REQ-002: <one-line result>
+
+### 下一步
+1. `<command>` — <what it does, why user runs it>
+2. `<command>` — <what it does>
+3. 手动测试: <specific thing to click/run/verify>
+```
+
+### Next Steps Generation Rules
+
+**Every completion MUST give the user at least one concrete next action.** Vague "done" messages are forbidden.
+
+Next steps are derived from the work done:
+
+| Work Type | Next Step Template |
+|-----------|-------------------|
+| New feature | `./bin/<app>` or `npm start` — run the new feature |
+| Bug fix | Re-run the failing case to verify fix |
+| API change | Run tests: `cargo test` / `pytest` / `npm test` |
+| Config change | Restart service / re-login to pick up changes |
+| Documentation | `git diff origin/main...HEAD` — review PR before merge |
+| Refactor | Run benchmarks: `<benchmark command>` — verify no regression |
+
+**Command detection:** scan changed files for `Makefile`, `package.json` scripts, `Cargo.toml` `[scripts]`, `pyproject.toml` to find the project's actual run/test commands. Don't guess — use what's documented.
+
+**Branch pushed?** Add: `git diff origin/<base>...HEAD` to review changes before merging.
 
 **MemPalace persistence** (if available):
 ```
@@ -168,9 +202,4 @@ mempalace_kg_add subject="<project>" predicate="shipped" object="<feature>" vali
 mempalace_diary_write agent_name="doit" entry="<commit-hash>: <feature summary>, <N> REQs, <N> files" topic="<feature>"
 ```
 
-**Auto-compact** (Phase 10):
-After MemPalace filing, trigger context compression:
-1. Run `/compact` if available (Claude Code built-in)
-2. If context-mode active, run `ctx stats` to log session token savings
-
-**Doit session ends here. No additional confirmation needed.**
+**After summary, proceed to Phase 10 Auto-Compact.** Doit session ends after compact.
