@@ -155,6 +155,7 @@ A single `/doit` invocation may not complete the entire workflow — spec grilli
 | 6 | Review + Simplify (mandatory) | tokensave |
 | 7 | E2E Verification Loop | tokensave, context-mode |
 | 8 | Git commit + Push | git, mempalace |
+| 9.5 | Completion Summary | mempalace |
 | 10 | Auto-Compact | RTK, context-mode, mempalace |
 
 ## Mandatory E2E Gate
@@ -228,7 +229,7 @@ doit uses a **bundled dependency model** — core skills ship inside `skills/`. 
 | tokensave | `cargo install tokensave && tokensave install --agent claude` | Phase 2-7 |
 | caveman | `claude plugin marketplace add JuliusBrussee/caveman && claude plugin install caveman@caveman` (curl fallback) | Phase 0+ |
 | code-review | `claude plugin install code-review` | Phase 5 |
-| MemPalace | `claude plugin install --scope user mempalace` | Phase -1, 0, 1, 2, 3, 5, 8, 10 |
+| MemPalace | `claude plugin install --scope user mempalace` | Phase -1, 0, 1, 2, 3, 5, 8, 9.5, 10 |
 | Tavily MCP | Remote, API key only | Phase 1 |
 
 ## Tool Integration Guide
