@@ -91,7 +91,7 @@ If caveman skill is not found, announce `[WARN] caveman not installed -> verbose
 
 **Classify, announce type to user, proceed. If user disputes type, use their type.**
 
-**Step 2.5 — Memory Context Sweep (MANDATORY).** Before any phase logic executes, sweep MemPalace for project context. This gives the agent a complete picture of prior work before grilling specs or planning. See [mempalace.md](mempalace.md) Phase 0 section for exact calls. Returns: recent diary, knowledge graph facts, project timeline, bug history, decision history, implementation notes.
+**Step 2.5 — Memory Context Sweep (MANDATORY).** Before any phase logic executes, sweep MemPalace for project context. See [mempalace.md](mempalace.md) Phase 0 section. Returns: recent diary, knowledge graph facts, project timeline, semantic search results. All 4 core calls run in parallel after `mempalace_reconnect`.
 
 **Type S (simple) can skip this step** — simple changes don't need deep context.
 

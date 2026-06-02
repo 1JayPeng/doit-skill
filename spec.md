@@ -88,13 +88,16 @@ Copy spec to branch (it stays in git).
 
 ### Step 6: File to MemPalace (if available)
 
-Phase 0 memory sweep already loaded project context. Here, just search for directly related prior specs and file the new one:
+Phase 0 memory sweep already loaded project context. Here, search for related prior specs, check for duplicates, and file:
 
 ```
 # Search for related prior specs (context sweep already ran in Phase 0)
 mempalace_search query="<feature keywords>" wing="<project>" room="specs" limit=3
 
-# File the new spec
+# Check for near-duplicates before filing
+mempalace_check_duplicate content="<spec content>" threshold=0.87
+
+# If not duplicate: file the new spec
 mempalace_add_drawer wing="<project>" room="specs" content="<full spec content>" source_file=".spec/current.md"
 ```
 
