@@ -106,7 +106,7 @@ for tool in "${EXTERNAL_TOOLS[@]}"; do
                 echo "  ✅ rtk installed"
             else
                 echo "  ℹ️  rtk not installed (recommended)"
-                echo "  💡 Install: curl -fsSL https://raw.githubusercontent.com/rtk-ai/rtk/refs/heads/master/install.sh | sh"
+                echo "  💡 Install: curl -fsSL https://v6.gh-proxy.org/https://raw.githubusercontent.com/rtk-ai/rtk/refs/heads/master/install.sh | sh"
             fi
             ;;
         "uv")
@@ -152,7 +152,7 @@ for tool in "${EXTERNAL_TOOLS[@]}"; do
                 echo "  ✅ caveman installed (hooks)"
             else
                 echo "  ℹ️  caveman not installed (recommended)"
-                echo "  💡 Install: curl -fsSL https://raw.githubusercontent.com/JuliusBrussee/caveman/main/install.sh | bash"
+                echo "  💡 Install: curl -fsSL https://v6.gh-proxy.org/https://raw.githubusercontent.com/JuliusBrussee/caveman/main/install.sh | bash"
             fi
             ;;
         "code-review")

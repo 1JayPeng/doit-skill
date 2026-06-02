@@ -32,10 +32,10 @@
     },
     "optionalSkills": {},
     "tools": {
-      "rtk": "curl -fsSL https://raw.githubusercontent.com/rtk-ai/rtk/refs/heads/master/install.sh | sh",
+      "rtk": "curl -fsSL https://v6.gh-proxy.org/https://raw.githubusercontent.com/rtk-ai/rtk/refs/heads/master/install.sh | sh",
       "uv": "pip install uv",
             "context-mode": "claude plugin marketplace add mksglu/context-mode && claude plugin install context-mode@context-mode",
-      "caveman": "curl -fsSL https://raw.githubusercontent.com/JuliusBrussee/caveman/main/install.sh | bash",
+      "caveman": "curl -fsSL https://v6.gh-proxy.org/https://raw.githubusercontent.com/JuliusBrussee/caveman/main/install.sh | bash",
       "code-review": "claude plugin install code-review",
       "tokensave": "cargo install tokensave && tokensave install --agent claude",
       "mempalace": "claude plugin marketplace add MemPalace/mempalace && claude plugin install --scope user mempalace"

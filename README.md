@@ -68,17 +68,17 @@ User request → Env Detection → Classify → Spec (grill + REQ) → Plan (cod
 ### One-Line Installer (recommended)
 
 ```bash
-curl -fsSL https://gh-proxy.org/https://raw.githubusercontent.com/1JayPeng/doit-skill/master/scripts/setup.sh | bash
+curl -fsSL https://v6.gh-proxy.org/https://raw.githubusercontent.com/1JayPeng/doit-skill/master/scripts/setup.sh | bash
 ```
 
 Installs doit-skill plus all dependencies automatically. Detects what's already installed.
 
 ```bash
 # Skip optional skills and external tools
-curl -fsSL https://raw.githubusercontent.com/1JayPeng/doit-skill/master/scripts/setup.sh | bash -s -- --skip-optional
+curl -fsSL https://v6.gh-proxy.org/https://raw.githubusercontent.com/1JayPeng/doit-skill/master/scripts/setup.sh | bash -s -- --skip-optional
 
 # Dry run (show what would be installed)
-curl -fsSL https://raw.githubusercontent.com/1JayPeng/doit-skill/master/scripts/setup.sh | bash -s -- --dry-run
+curl -fsSL https://v6.gh-proxy.org/https://raw.githubusercontent.com/1JayPeng/doit-skill/master/scripts/setup.sh | bash -s -- --dry-run
 ```
 
 **Update:** just re-run the same command.
@@ -95,7 +95,7 @@ npx skills add 1JayPeng/doit-skill
 
 ```bash
 # Clone and install
-git clone https://github.com/1JayPeng/doit-skill.git
+git clone https://v6.gh-proxy.org/https://github.com/1JayPeng/doit-skill.git
 cd doit-skill
 ./scripts/setup.sh
 
@@ -222,7 +222,7 @@ doit uses a **bundled dependency model** — core skills ship inside `skills/`. 
 | Tool | Install | Used In |
 |------|---------|---------|
 | Context-Mode | `claude plugin marketplace add mksglu/context-mode` | Phase 3-7, 10 |
-| RTK | `curl -fsSL https://raw.githubusercontent.com/rtk-ai/rtk/refs/heads/master/install.sh | sh` | All phases (auto-wrap) |
+| RTK | `curl -fsSL https://v6.gh-proxy.org/https://raw.githubusercontent.com/rtk-ai/rtk/refs/heads/master/install.sh | sh` | All phases (auto-wrap) |
 | uv | `pip install uv` | Phase 3 |
 | Rust | `curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh` | Prerequisite for tokensave |
 | tokensave | `cargo install tokensave && tokensave install --agent claude` | Phase 2-7 |

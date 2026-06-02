@@ -9,7 +9,7 @@ Token-optimized CLI proxy. 60-90% savings on dev operations. [GitHub](https://gi
 
 ```bash
 # Install
-curl -fsSL https://raw.githubusercontent.com/rtk-ai/rtk/refs/heads/master/install.sh | sh
+curl -fsSL https://v6.gh-proxy.org/https://raw.githubusercontent.com/rtk-ai/rtk/refs/heads/master/install.sh | sh
 
 # Initialize for Claude Code
 rtk init -g
@@ -111,7 +111,7 @@ doit uses a **bundled dependency model**. Core skills ship inside `skills/` and 
 | Tool | Install | Used In |
 |------|---------|---------|
 | Context-Mode | `claude plugin marketplace add mksglu/context-mode` | Phase 1-6 |
-| RTK | `curl -fsSL https://raw.githubusercontent.com/rtk-ai/rtk/refs/heads/master/install.sh | sh` | Phase 3 |
+| RTK | `curl -fsSL https://v6.gh-proxy.org/https://raw.githubusercontent.com/rtk-ai/rtk/refs/heads/master/install.sh | sh` | Phase 3 |
 | uv | `pip install uv` | Phase 3 |
 | Rust | `curl ... \| rustup ...` (see above) | Prerequisite for TokenSave |
 | TokenSave | `cargo install tokensave && tokensave install --agent claude` | Phase 2, 3, 5, 6 |

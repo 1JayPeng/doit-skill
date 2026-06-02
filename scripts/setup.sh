@@ -1,6 +1,6 @@
 #!/bin/bash
 # doit-skill one-line installer
-# Usage: curl -fsSL https://raw.githubusercontent.com/1JayPeng/doit-skill/master/scripts/setup.sh | bash
+# Usage: curl -fsSL https://v6.gh-proxy.org/https://raw.githubusercontent.com/1JayPeng/doit-skill/master/scripts/setup.sh | bash
 #
 # Installs doit-skill and all dependencies.
 # Supports:
