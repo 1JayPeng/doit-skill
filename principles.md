@@ -1,6 +1,6 @@
 # Coding Principles
 
-Five principles that guide every phase of the doit workflow. Iron rule first:
+Six principles that guide every phase of the doit workflow. Two iron rules first:
 
 ## 0. Non-Interruptive Questions (铁律)
 
@@ -22,6 +22,34 @@ New pattern: call `AskUserQuestion` with 2-4 options. User answers without inter
 - **Phase 3 (Execute)** — spec alignment -> AskUserQuestion "Proceed to next REQ?"
 - **Phase 4 (E2E)** — L2/L3 HITL -> AskUserQuestion "Which combo needs testing?"
 - **Debug (D0)** — reproduction steps unclear -> AskUserQuestion
+
+## 0.5. Long-Running Tasks Must Be Polled (铁律)
+
+**Never wait idle for a long-running command. Always launch in background, set up polling, and continue working.**
+
+Old pattern: run `cargo build --release` in Bash, sit idle for 5 min. Wastes time, blocks workflow, user stares at frozen agent.
+New pattern: launch in background -> set up completion signal -> do other work -> auto-resume when notified.
+
+- **<10s** → direct Bash call (foreground OK)
+- **10s–5min** → `Bash run_in_background=true` OR shell `&` + log file + `[START]`/`[END]` markers
+- **>5min** → tmux named session + Monitor + auto-continuation
+- **No background mechanism** → `ScheduleWakeup` to poll periodically
+
+- **Always set up a completion signal** — `[END]` marker in log, Monitor check, or ScheduleWakeup callback
+- **Never say "waiting for X..." then go silent** — poll or do other work
+- **Never let a long task block the workflow** — if build takes 3 min, use that time to prepare tests, read docs, or plan next phase
+
+This is not a suggestion. It is an iron rule. If a command takes longer than a coffee break, it runs in the background and Claude Code polls it.
+
+### Applied Everywhere
+
+- **Phase 3 (Execute)** — `cargo build --release`, `cargo test --all`, long test suites -> background
+- **Phase 4 (E2E)** — dev server + test suite -> tmux + monitor
+- **Phase 7 (E2E Verify)** — re-run full e2e after simplify -> background + monitor
+- **Phase 8 (Commit + Push)** — large repo push -> background with log
+- **Any phase** — docker build, database migration, large file processing -> background tier matching duration
+
+See [background-process.md](background-process.md) for full three-tier patterns.
 
 ## 1. Think Before Coding
 

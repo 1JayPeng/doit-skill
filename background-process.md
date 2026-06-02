@@ -1,6 +1,8 @@
 # Background Process Management
 
-Standardized patterns for running long-running commands with observable exit signals, automatic monitoring, and phase-continuation.
+**铁律: 长时间任务必须有 Claude Code 轮询。不允许空等。** This is Principle 0.5 in [principles.md](principles.md).
+
+Standardized three-tier patterns for running long-running commands with observable exit signals, automatic monitoring, and phase-continuation.
 
 ## Three Tiers
 

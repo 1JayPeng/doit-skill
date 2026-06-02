@@ -161,7 +161,9 @@ After each REQ completes, if MemPalace is active:
 mempalace_add_drawer wing="<project>" room="implementation" content="REQ-00X: <what was done, key files changed>"
 ```
 
-### Background Process Management
+### Background Process Management (铁律)
+
+**铁律: 长时间任务必须后台执行 + 轮询。不允许空等。** See [principles.md](principles.md) Principle 0.5.
 
 For long-running commands, use the three-tier approach from [background-process.md](background-process.md):
 
@@ -198,7 +200,14 @@ Monitor "Watch build completion" \
   --interval 30
 ```
 
-When the monitor fires, Claude Code reads the log, checks the exit code, and **automatically continues to the next phase** without human intervention. See [background-process.md](background-process.md) for full patterns including multi-phase pipelines.
+When the monitor fires, Claude Code reads the log, checks the exit code, and **automatically continues to the next phase** without human intervention.
+
+**No Monitor available?** Use `ScheduleWakeup` to poll periodically:
+```
+ScheduleWakeup delaySeconds=120 reason="polling build completion" prompt="check .scratch/logs/build.log for [END] marker"
+```
+
+See [background-process.md](background-process.md) for full patterns including multi-phase pipelines.
 
 ## Phase 3 End
 
