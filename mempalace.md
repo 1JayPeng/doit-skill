@@ -39,26 +39,53 @@ mempalace_graph_stats → palace graph overview (nodes, tunnels, edges, connecti
 
 Write detection result to CLAUDE.md same section as tokensave.
 
-### Phase 0: Resume (blank /doit)
+### Phase 0: Memory Context Sweep (ALL types, before any phase runs)
 
-When resuming, check MemPalace before filesystem:
+**After classification, BEFORE any phase logic executes, sweep MemPalace for project context.** This gives the agent a complete picture of prior work before grilling specs or planning implementation. Run once, share results across all subsequent phases.
 
 ```
-mempalace_diary_read agent_name="doit" last_n=3
-mempalace_search query="<project> <feature>" wing="<project>" limit=5
+# 1. Recent activity — what was done last sessions
+mempalace_diary_read agent_name="doit" last_n=5
+
+# 2. Project knowledge graph — facts, decisions, constraints
 mempalace_kg_query entity="<project>"
-mempalace_kg_timeline entity="<project>" → chronological timeline of facts about this project
-mempalace_list_wings → list all wings (projects) with drawer counts
+
+# 3. Project timeline — chronological history of shipped features
+mempalace_kg_timeline entity="<project>"
+
+# 4. Bug history — avoid repeating past mistakes
+mempalace_list_drawers wing="<project>" room="bugs" limit=5
+
+# 5. Decision history — prior ADRs that constrain current work
+mempalace_list_drawers wing="<project>" room="decisions" limit=5
+
+# 6. Implementation notes — prior patterns, gotchas
+mempalace_list_drawers wing="<project>" room="implementation" limit=5
+
+# 7. Memory landscape — what rooms exist, what's stored
+mempalace_list_rooms wing="<project>"
+```
+
+**Why early:** Phase 1 grilling is more targeted when the agent knows what's already been built, what decisions were made, and what bugs were fixed. Phase 2 planning benefits from knowing prior implementation patterns.
+
+**Type-specific additions:**
+
+**Type R (resume)** — add timeline to recovery:
+```
+mempalace_search query="<project> resume" wing="<project>" limit=3
+```
+
+**Type B (bug)** — search for related prior bugs:
+```
+mempalace_search query="<bug keywords>" wing="<project>" room="bugs" limit=5
 ```
 
 ### Phase 1: Spec Generation
 
-Before grilling, search for prior related specs to avoid repeating decisions:
+Context sweep already ran in Phase 0. Here, search for SPECIFCALLY related prior specs to avoid duplicating or contradicting them:
 
 ```
-mempalace_search query="<user request keywords>" wing="<project>" limit=3
-mempalace_list_rooms wing="<project>" → see what rooms exist (specs, decisions, etc.)
-mempalace_list_drawers wing="<project>" room="specs" limit=5 → recent specs
+mempalace_search query="<user request keywords>" wing="<project>" room="specs" limit=3
 ```
 
 After writing `.spec/current.md`, file the spec:
@@ -69,11 +96,11 @@ mempalace_add_drawer wing="<project>" room="specs" content="<spec content>" sour
 
 ### Phase 2: Plan
 
-Search MemPalace for prior implementation context:
+Context sweep already ran in Phase 0. Here, focus on cross-room connections and deep implementation history for the specific feature:
 
 ```
 mempalace_search query="<feature name> implementation" wing="<project>" limit=3
-mempalace_traverse start_room="<project>/specs" max_hops=2 → find connected ideas across rooms
+mempalace_traverse start_room="specs" max_hops=2 → find connected ideas across rooms
 ```
 
 After producing the plan, store key decisions:

@@ -88,22 +88,19 @@ Copy spec to branch (it stays in git).
 
 ### Step 6: File to MemPalace (if available)
 
-If MemPalace is active, file the spec for cross-session recovery:
+Phase 0 memory sweep already loaded project context. Here, just search for directly related prior specs and file the new one:
 
 ```
-# Browse existing specs to understand what rooms exist
-mempalace_list_rooms wing="<project>"
-
-# Search for related prior specs to avoid repeating decisions
-mempalace_search query="<feature keywords>" wing="<project>" limit=3
+# Search for related prior specs (context sweep already ran in Phase 0)
+mempalace_search query="<feature keywords>" wing="<project>" room="specs" limit=3
 
 # File the new spec
 mempalace_add_drawer wing="<project>" room="specs" content="<full spec content>" source_file=".spec/current.md"
 ```
 
-If scope changes during grill, update the existing drawer instead of creating a duplicate:
+If scope changes during grill and a related spec exists, update it instead of creating a duplicate:
 ```
-mempalace_update_drawer drawer_id="<id from prior search>" content="<updated spec content>"
+mempalace_update_drawer drawer_id="<id from search>" content="<updated spec content>"
 ```
 
 If MemPalace is unavailable, skip silently. Filesystem (`.spec/current.md`) is the primary source of truth.

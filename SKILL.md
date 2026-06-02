@@ -91,6 +91,10 @@ If caveman skill is not found, announce `[WARN] caveman not installed -> verbose
 
 **Classify, announce type to user, proceed. If user disputes type, use their type.**
 
+**Step 2.5 — Memory Context Sweep (MANDATORY).** Before any phase logic executes, sweep MemPalace for project context. This gives the agent a complete picture of prior work before grilling specs or planning. See [mempalace.md](mempalace.md) Phase 0 section for exact calls. Returns: recent diary, knowledge graph facts, project timeline, bug history, decision history, implementation notes.
+
+**Type S (simple) can skip this step** — simple changes don't need deep context.
+
 **Before proceeding: check if user's prompt contains reference documentation.** If yes, capture it before any phase runs. See [doc-capture.md](doc-capture.md). Doc capture is independent of classification type (R/S/F/B) — always run first.
 
 ## Doc Capture (Pre-Phase)
@@ -99,7 +103,7 @@ If the user's prompt includes reference documents (API specs, business rules, co
 
 ## Phase 1 — Spec
 
-Write spec. See [spec.md](spec.md). Grill user ideas ruthlessly. Internet search via Tavily MCP for brainstorming. Split into acceptance criteria (REQ-001, REQ-002...). Save to `.spec/current.md`.
+Write spec. See [spec.md](spec.md). Grill user ideas ruthlessly — armed with MemPalace context from Phase 0 sweep. Internet search via Tavily MCP for brainstorming. Search MemPalace for related prior specs. Split into acceptance criteria (REQ-001, REQ-002...). Save to `.spec/current.md`.
 
 ## Phase 2 — Plan
 
