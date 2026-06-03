@@ -260,7 +260,7 @@ Agent({
 Agent({
   description: "Explore authentication code",
   prompt: "使用 tokensave_context 研究认证代码。查询 'authentication middleware'。",
-  subagent_type: "Explore",
+  subagent_type: "general-purpose",
   run_in_background: true
 })
 ```
@@ -306,7 +306,7 @@ Agent({
 Agent({
   description: "Analyze existing auth code",
   prompt: "使用 tokensave_context 分析当前项目的认证代码。查找 middleware、token、session 相关符号...",
-  subagent_type: "Explore",
+  subagent_type: "general-purpose",
   run_in_background: true
 })
 
