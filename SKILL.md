@@ -33,7 +33,9 @@ Claude Code's native Agent tool enables parallel task execution across workflow 
 - **Parallel review** — Phase 5: security, architecture, complexity reviews run concurrently
 - **Background execution** — Any phase: long-running tasks as background agents
 
-**Cost model:** Each agent = one API call. haiku models save ~90% vs opus. Parallel agents reduce total time by 50-70% when tasks are independent.
+**铁律：继承主对话模型。** 不指定 `model` 参数，subagent 继承主对话模型。避免模型不存在错误。
+
+**Cost model:** Each agent = one API call. Parallel agents reduce total time by 50-70% when tasks are independent.
 
 ## Prerequisites
 

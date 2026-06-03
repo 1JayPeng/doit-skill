@@ -68,7 +68,6 @@ Agent({
   description: "Security review",
   prompt: "Run security review: tokensave_unsafe_patterns(kinds=['unwrap','expect','panic','unsafe_block']), tokensave_todos(kinds=['HACK','TODO']), tokensave_module_api. Report all security vulnerabilities.",
   subagent_type: "general-purpose",
-  model: "sonnet",
   run_in_background: true
 })
 
@@ -76,7 +75,6 @@ Agent({
   description: "Architecture review",
   prompt: "Run architecture review: tokensave_dsm, tokensave_coupling(direction='fan_in'), tokensave_coupling(direction='fan_out'), tokensave_hotspots, tokensave_dependency_depth. Report structural issues.",
   subagent_type: "Plan",
-  model: "sonnet",
   run_in_background: true
 })
 
@@ -84,7 +82,6 @@ Agent({
   description: "Complexity review",
   prompt: "Run complexity review: tokensave_complexity(limit=10), tokensave_god_class(limit=5), tokensave_gini(metric='complexity'). Report complexity hotspots.",
   subagent_type: "general-purpose",
-  model: "haiku",
   run_in_background: true
 })
 

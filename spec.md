@@ -35,7 +35,6 @@ Agent({
   description: "Research competitive solutions",
   prompt: "使用 WebSearch 搜索 '<feature> competitive solutions 2026'，汇总前 5 个方案，包括优缺点...",
   subagent_type: "general-purpose",
-  model: "haiku",
   run_in_background: true
 })
 
@@ -43,7 +42,6 @@ Agent({
   description: "Research existing code patterns",
   prompt: "使用 tokensave_context 分析当前项目中与 '<feature>' 相关的现有代码...",
   subagent_type: "Explore",
-  model: "haiku",
   run_in_background: true
 })
 
@@ -51,7 +49,6 @@ Agent({
   description: "Research security requirements",
   prompt: "使用 WebSearch 搜索 'OWASP <feature> security requirements 2026'，提取关键安全要求...",
   subagent_type: "general-purpose",
-  model: "haiku",
   run_in_background: true
 })
 

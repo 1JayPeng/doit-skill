@@ -52,23 +52,30 @@ Agent({
 // agent 在 .claude/worktrees/ 下工作，不污染主分支
 ```
 
-### Model Selection per Agent
+### 铁律 — 继承主对话模型
+
+**绝不指定 `model` 参数。Subagent 继承主对话的模型。**
 
 ```
 Agent({
   description: "Complex architecture review",
   prompt: "Review the architecture...",
-  model: "opus",        // 复杂任务用 opus
   subagent_type: "Plan"
+  // 不指定 model -> 继承主对话模型
 })
 
 Agent({
   description: "Quick file search",
   prompt: "Find all usages of...",
-  model: "haiku",       // 简单任务用 haiku 省钱
   subagent_type: "Explore"
+  // 不指定 model -> 继承主对话模型
 })
 ```
+
+**为什么：**
+- 指定 `model: "haiku"` 或 `model: "opus"` 会导致模型不存在错误（当前环境可能不支持该模型）
+- 主对话模型已经是最优选择，subagent 继承即可
+- 减少配置表面，降低出错率
 
 ### SendMessage (Continue Agent)
 
@@ -191,25 +198,14 @@ Agent({ description: "Analyze module 3", prompt: "...", run_in_background: true 
 
 ## Cost Management
 
-激进并行策略下的成本优化：
+并行策略下的成本优化：
 
 | 策略 | 效果 |
 |------|------|
-| **haiku 用于简单搜索** | 比 opus 省 ~90% |
-| **sonnet 用于中等复杂度** | 平衡质量和成本 |
-| **opus 仅用于架构决策** | 高质量规划 |
+| **继承主对话模型** | 不指定 model 参数，避免模型不存在错误 |
 | **background agent 不阻塞** | 利用等待时间做其他工作 |
 | **SendMessage 复用上下文** | 比重新 spawn 省 token |
-
-### Model Selection Guide
-
-```
-简单搜索、文件查找      -> haiku
-代码阅读、模式匹配      -> haiku
-中等分析、bug 诊断      -> sonnet
-架构设计、实现计划      -> opus
-代码实现               -> sonnet (默认)
-```
+| **并行减少总时间** | 3 个并行 agent = 1 个串行 agent 的时间
 
 ## Integration with Background Execution (铁律)
 
@@ -301,7 +297,6 @@ Agent({
   description: "Research competitive solutions",
   prompt: "使用 WebSearch 搜索 'user authentication best practices 2026'，汇总前 5 个方案...",
   subagent_type: "general-purpose",
-  model: "sonnet",
   run_in_background: true
 })
 
@@ -309,7 +304,6 @@ Agent({
   description: "Analyze existing auth code",
   prompt: "使用 tokensave_context 分析当前项目的认证代码。查找 middleware、token、session 相关符号...",
   subagent_type: "Explore",
-  model: "haiku",
   run_in_background: true
 })
 
@@ -317,7 +311,6 @@ Agent({
   description: "Review security requirements",
   prompt: "使用 WebSearch 搜索 'OWASP authentication requirements 2026'，提取关键安全要求...",
   subagent_type: "general-purpose",
-  model: "sonnet",
   run_in_background: true
 })
 
