@@ -270,6 +270,7 @@ doit-skill/
 ├── tool-integration-guide.md  # 各阶段外部工具使用指南
 ├── mempalace.md      # MemPalace 跨阶段集成
 ├── background-process.md      # 后台进程日志模式
+├── subagent.md       # Subagent 编排模式（Claude Code 原生 Agent 工具）
 ├── package.json      # 包元数据 + 依赖
 ├── README.md         # 英文版
 ├── README_ZH.md      # 中文版（本文件）
