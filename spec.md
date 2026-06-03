@@ -25,6 +25,44 @@ Search for:
 
 **Use search results to inform grill questions.** Real-world data makes grill sharper.
 
+#### Subagent Parallel Research (Optional, when 2+ independent research topics)
+
+When the feature requires research across multiple independent domains, launch parallel agents instead of sequential searches. See [subagent.md](subagent.md) for full patterns.
+
+```
+// Detect 2+ independent research topics -> parallel agents
+Agent({
+  description: "Research competitive solutions",
+  prompt: "使用 WebSearch 搜索 '<feature> competitive solutions 2026'，汇总前 5 个方案，包括优缺点...",
+  subagent_type: "general-purpose",
+  model: "haiku",
+  run_in_background: true
+})
+
+Agent({
+  description: "Research existing code patterns",
+  prompt: "使用 tokensave_context 分析当前项目中与 '<feature>' 相关的现有代码...",
+  subagent_type: "Explore",
+  model: "haiku",
+  run_in_background: true
+})
+
+Agent({
+  description: "Research security requirements",
+  prompt: "使用 WebSearch 搜索 'OWASP <feature> security requirements 2026'，提取关键安全要求...",
+  subagent_type: "general-purpose",
+  model: "haiku",
+  run_in_background: true
+})
+
+// 主流程继续：准备 grill 问题框架
+// 当后台 agent 完成后，汇总结果，填充 grill 问题
+```
+
+**When to use:** Feature spans 2+ domains (e.g., auth + database + UI). Each domain gets one agent.
+**When to skip:** Single-domain feature, or research topics have dependencies between them.
+**Cost:** Each agent = one API call. haiku models save ~90% vs opus. 3 parallel haiku agents ~ 1 opus agent cost.
+
 ### Step 2: Grill
 
 Use `grill-me` skill to pressure-test the idea. Find holes, contradictions, scope creep. Resolve each before proceeding.

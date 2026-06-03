@@ -22,6 +22,19 @@ Three persistence layers work together:
 
 If any layer is unavailable, the workflow degrades gracefully using the remaining layers.
 
+## Subagent Orchestration
+
+Claude Code's native Agent tool enables parallel task execution across workflow phases. No external plugins required. See [subagent.md](subagent.md) for full patterns.
+
+**Quick reference:**
+- **Parallel research** — Phase 1: multiple agents research different aspects concurrently
+- **Parallel code analysis** — Phase 2: agents analyze different modules simultaneously
+- **Parallel TDD** — Phase 3: independent REQs executed by worktree-isolated agents
+- **Parallel review** — Phase 5: security, architecture, complexity reviews run concurrently
+- **Background execution** — Any phase: long-running tasks as background agents
+
+**Cost model:** Each agent = one API call. haiku models save ~90% vs opus. Parallel agents reduce total time by 50-70% when tasks are independent.
+
 ## Prerequisites
 
 See [setup.md](setup.md) for full tool/skill install manifest.

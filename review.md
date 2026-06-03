@@ -15,6 +15,35 @@ Run `code-review` skill. Focus:
 - Dead code -> remove
 - Over-abstraction -> flatten
 
+**Subagent Parallel Review (Optional):** Security, Architecture, and Complexity reviews are independent → run concurrently:
+```
+Agent({
+  description: "Security review",
+  prompt: "Run security review: tokensave_unsafe_patterns, tokensave_todos, tokensave_module_api. Report vulnerabilities.",
+  subagent_type: "general-purpose",
+  run_in_background: true
+})
+
+Agent({
+  description: "Architecture review",
+  prompt: "Run architecture review: tokensave_dsm, tokensave_coupling, tokensave_hotspots, tokensave_dependency_depth. Report structural issues.",
+  subagent_type: "Plan",
+  run_in_background: true
+})
+
+Agent({
+  description: "Complexity review",
+  prompt: "Run complexity review: tokensave_complexity, tokensave_god_class, tokensave_gini. Report complexity hotspots.",
+  subagent_type: "general-purpose",
+  run_in_background: true
+})
+
+// 主流程继续：准备 Spec Final Check
+// 当后台 agent 完成后，汇总 3 个审查报告
+```
+
+**Merge review results:** Combine findings into a single review report. Prioritize: Security > Architecture > Complexity.
+
 **tokensave tools for code review (use flexibly, pick what fits):**
 - `tokensave_health(details=true)` — baseline quality signal before review
 - `tokensave_diff_context(files=[<changed_files>])` — semantic diff of changed symbols, dependents, affected tests
@@ -28,6 +57,42 @@ Run `code-review` skill. Focus:
 - `tokensave_signature_search(params="&mut self", returns="Result")` — find functions with matching signatures (potential duplicates)
 - `tokensave_diagnostics(scope="workspace")` — run type-checker (cargo check / tsc / pyright) before committing
 - **Fallback:** If TokenSave unavailable -> `git diff` + `git diff --stat` manually review.
+
+#### Subagent Parallel Review (Optional, when multiple review dimensions)
+
+Security, Architecture, and Complexity reviews are independent → run concurrently. See [subagent.md](subagent.md) for full patterns.
+
+```
+// Parallel review agents
+Agent({
+  description: "Security review",
+  prompt: "Run security review: tokensave_unsafe_patterns(kinds=['unwrap','expect','panic','unsafe_block']), tokensave_todos(kinds=['HACK','TODO']), tokensave_module_api. Report all security vulnerabilities.",
+  subagent_type: "general-purpose",
+  model: "sonnet",
+  run_in_background: true
+})
+
+Agent({
+  description: "Architecture review",
+  prompt: "Run architecture review: tokensave_dsm, tokensave_coupling(direction='fan_in'), tokensave_coupling(direction='fan_out'), tokensave_hotspots, tokensave_dependency_depth. Report structural issues.",
+  subagent_type: "Plan",
+  model: "sonnet",
+  run_in_background: true
+})
+
+Agent({
+  description: "Complexity review",
+  prompt: "Run complexity review: tokensave_complexity(limit=10), tokensave_god_class(limit=5), tokensave_gini(metric='complexity'). Report complexity hotspots.",
+  subagent_type: "general-purpose",
+  model: "haiku",
+  run_in_background: true
+})
+
+// 主流程继续：准备 Spec Final Check
+// 当后台 agent 完成后，汇总 3 个审查报告
+```
+
+**Merge results:** Combine findings into a single review report. Prioritize: Security > Architecture > Complexity.
 
 ### 2. Architecture Check
 

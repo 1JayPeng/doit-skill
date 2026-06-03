@@ -210,6 +210,51 @@ ScheduleWakeup delaySeconds=120 reason="polling build completion" prompt="check 
 
 See [background-process.md](background-process.md) for full patterns including multi-phase pipelines.
 
+### Subagent Parallel TDD (Optional, Independent REQs Only)
+
+**When:** 2+ REQs have no code dependencies (verified via tokensave code graph). Parallel execution can save 50-70% time.
+
+**Before launching parallel agents:**
+1. `tokensave_context(task="<REQ description>")` — verify no code dependencies between REQs
+2. `tokensave_impact(node_id="<symbol>")` — check blast radius doesn't overlap
+
+**Launch independent REQs as parallel agents:**
+```
+// REQ-001 and REQ-002 have no dependencies -> parallel
+Agent({
+  description: "Implement REQ-001",
+  prompt: "Execute TDD for REQ-001: <full REQ description>. Use tokensave_str_replace for edits. Commit after RED->GREEN->REFACTOR.",
+  subagent_type: "claude",
+  isolation: "worktree",  // Independent git branch
+  run_in_background: true
+})
+
+Agent({
+  description: "Implement REQ-002",
+  prompt: "Execute TDD for REQ-002: <full REQ description>. Use tokensave_str_replace for edits. Commit after RED->GREEN->REFACTOR.",
+  subagent_type: "claude",
+  isolation: "worktree",
+  run_in_background: true
+})
+
+// 主流程继续：准备 Phase 4 E2E 测试计划
+// 当后台 agent 完成后，合并 worktree 分支到主分支
+```
+
+**Merge worktree results:**
+```bash
+# After agents complete, merge their worktrees
+git merge feat/req-001-branch --no-edit || { echo "merge conflict"; exit 1; }
+git merge feat/req-002-branch --no-edit || { echo "merge conflict"; exit 1; }
+```
+
+**When NOT to parallelize:**
+- REQs modify the same files → merge conflicts
+- REQs have dependency relationships → sequential
+- Single complex REQ → main flow handles it better
+
+**Cost:** Each agent = separate API call. 2 parallel agents = 2x concurrent tokens, but ~50% faster total time.
+
 ## Phase 3 End
 
 **When ALL REQs are done: proceed to Phase 4 (E2E). Code changes are NOT the end of the session.**

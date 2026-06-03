@@ -60,6 +60,35 @@ Use **TokenSave** for code intelligence (discovery + call graph + code quality):
 
 Tool selection guidance lives in global CLAUDE.md.
 
+#### Subagent Parallel Code Analysis (Optional, when 2+ independent modules)
+
+When the feature affects multiple independent modules, parallelize the code graph analysis. See [subagent.md](subagent.md) for full patterns.
+
+```
+// Analyze multiple modules in parallel
+Agent({
+  description: "Analyze module A impact",
+  prompt: "使用 tokensave_context 分析 '<feature>' 对模块 A 的影响。重点关注 API 变更、依赖关系、测试覆盖。",
+  subagent_type: "Plan",
+  model: "sonnet",
+  run_in_background: true
+})
+
+Agent({
+  description: "Analyze module B impact",
+  prompt: "使用 tokensave_context 分析 '<feature>' 对模块 B 的影响。重点关注 API 变更、依赖关系、测试覆盖。",
+  subagent_type: "Plan",
+  model: "sonnet",
+  run_in_background: true
+})
+
+// 主流程继续：准备实现计划框架
+// 当后台 agent 完成后，汇总分析结果，生成实现计划
+```
+
+**When to use:** Feature touches 2+ independent modules (e.g., frontend + backend + database).
+**When to skip:** Single-module feature, or modules have tight coupling.
+
 ### Step 2: Implementation Order
 
 Sort REQs by dependency:

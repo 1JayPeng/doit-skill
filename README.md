@@ -269,6 +269,7 @@ doit-skill/
 ├── tool-integration-guide.md  # Per-phase external tool usage guide
 ├── mempalace.md      # MemPalace integration across all phases
 ├── background-process.md      # Background process logging patterns
+├── subagent.md       # Subagent orchestration patterns (native Claude Code Agent tool)
 ├── package.json      # Package metadata + dependencies
 ├── README.md         # This file (English)
 ├── README_ZH.md      # Chinese version
