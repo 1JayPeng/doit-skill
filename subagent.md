@@ -94,6 +94,9 @@ SendMessage(to="<agent_id_or_name>", message="新的指令...")
 | **Plan** | 架构设计、实现计划 | 除 Agent、Edit、Write 外 |
 | **claude-code-guide** | Claude Code CLI 相关问题 | Bash, Read, WebFetch, WebSearch |
 
+**⚠️ 重要：Explore agent 内部硬编码了 haiku 模型，不继承主对话模型。** 在非 Claude 模型环境下，Explore agent 会失败。用 `general-purpose` 替代 Explore。
+
+
 ## Per-Phase Subagent Patterns
 
 ### Phase 1: Spec Generation
