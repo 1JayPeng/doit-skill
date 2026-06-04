@@ -15,28 +15,6 @@
 - 文档：修复 `grill-with-docs/` 死链接、`CLAUD.md` 拼写错误、硬编码日期
 - 文档：修复 `tokensave_ast_grep_rewrite`（不存在工具）引用
 
-## 近期更新
-
-**2026-06-04** — 全面代码审查修复：
-- 安全：修复 `scripts/add-dependency.sh` 命令注入漏洞
-- Bug：修复 `env-check.md` `goto_step_9` bash 语法错误
-- Bug：删除 `scripts/setup.sh` 重复的 Rust 安装代码
-- Bug：修复 `execute.md` Phase 4/7 顺序矛盾
-- 策略：所有 `Agent Explore` fallback 替换为 `grep`/`find`/`Read`（全局策略合规）
-- 文档：修复 `grill-with-docs/` 死链接、`CLAUD.md` 拼写错误、硬编码日期
-- 文档：修复 `tokensave_ast_grep_rewrite`（不存在工具）引用
-
-## 近期更新
-
-**2026-06-04** — 全面代码审查修复：
-- 安全：修复 `scripts/add-dependency.sh` 命令注入漏洞
-- Bug：修复 `env-check.md` `goto_step_9` bash 语法错误
-- Bug：删除 `scripts/setup.sh` 重复的 Rust 安装代码
-- Bug：修复 `execute.md` Phase 4/7 顺序矛盾
-- 策略：所有 `Agent Explore` fallback 替换为 `grep`/`find`/`Read`（全局策略合规）
-- 文档：修复 `grill-with-docs/` 死链接、`CLAUD.md` 拼写错误、硬编码日期
-- 文档：修复 `tokensave_ast_grep_rewrite`（不存在工具）引用
-
 ## 特性
 
 - **自动分类** — 区分简单修复、功能需求和 bug。简单变更直接上线；功能需求走完整流程。
