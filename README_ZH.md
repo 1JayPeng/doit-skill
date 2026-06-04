@@ -6,6 +6,14 @@
 
 ## 近期更新
 
+**2026-06-04** — MemPalace 读写对称集成：
+- 铁律："MemPalace 读写对称" — MP 调用与 tokensave 同级别，可用则必做
+- Phase 0：内嵌 4 个并行 MP sweep 调用（diary、KG 查询、KG 时间线、语义搜索）
+- 各 phase 文档新增 `[MP-READ]` / `[MP-WRITE]` 标记
+- 新增 MP 集成：e2e.md（E2E 结果）、review-simplify.md（决策检查/更新）
+- MemPalace.md：从 350 行精简到 ~150 行（删除重复的 phase 示例）
+- Subagent 铁律："同文件不并行" — 派发前强制文件交集检查
+
 **2026-06-04** — 全面代码审查修复：
 - 安全：修复 `scripts/add-dependency.sh` 命令注入漏洞
 - Bug：修复 `env-check.md` `goto_step_9` bash 语法错误

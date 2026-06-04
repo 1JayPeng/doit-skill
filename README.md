@@ -6,6 +6,14 @@ Spec-driven, TDD-based development workflow for [Claude&nbsp;Code](https://githu
 
 ## Recent Changes
 
+**2026-06-04** — MemPalace read-write symmetry integration:
+- Iron rule: "MemPalace read-write symmetry" — MP calls same level as tokensave, mandatory when available
+- Phase 0: embedded 4 parallel MP sweep calls (diary, KG query, KG timeline, semantic search) directly in SKILL.md
+- Per-phase `[MP-READ]` / `[MP-WRITE]` markers across all phase documents
+- New MP integration: e2e.md (E2E results), review-simplify.md (decision check/update)
+- MemPalace.md: reduced from 350 lines to ~150 (removed redundant per-phase examples)
+- Subagent iron rule: "no same-file parallelism" — mandatory file intersection check before parallel dispatch
+
 **2026-06-04** — Comprehensive code review fixes:
 - Security: Fixed command injection vulnerability in `scripts/add-dependency.sh`
 - Bug: Fixed `goto_step_9` bash syntax error in `env-check.md`
