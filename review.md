@@ -15,35 +15,6 @@ Run `code-review` skill. Focus:
 - Dead code -> remove
 - Over-abstraction -> flatten
 
-**Subagent Parallel Review (Optional):** Security, Architecture, and Complexity reviews are independent → run concurrently:
-```
-Agent({
-  description: "Security review",
-  prompt: "Run security review: tokensave_unsafe_patterns, tokensave_todos, tokensave_module_api. Report vulnerabilities.",
-  subagent_type: "general-purpose",
-  run_in_background: true
-})
-
-Agent({
-  description: "Architecture review",
-  prompt: "Run architecture review: tokensave_dsm, tokensave_coupling, tokensave_hotspots, tokensave_dependency_depth. Report structural issues.",
-  subagent_type: "Plan",
-  run_in_background: true
-})
-
-Agent({
-  description: "Complexity review",
-  prompt: "Run complexity review: tokensave_complexity, tokensave_god_class, tokensave_gini. Report complexity hotspots.",
-  subagent_type: "general-purpose",
-  run_in_background: true
-})
-
-// 主流程继续：准备 Spec Final Check
-// 当后台 agent 完成后，汇总 3 个审查报告
-```
-
-**Merge review results:** Combine findings into a single review report. Prioritize: Security > Architecture > Complexity.
-
 **tokensave tools for code review (use flexibly, pick what fits):**
 - `tokensave_health(details=true)` — baseline quality signal before review
 - `tokensave_diff_context(files=[<changed_files>])` — semantic diff of changed symbols, dependents, affected tests
@@ -142,7 +113,7 @@ mempalace_kg_add subject="<project>" predicate="passed_review" object="<feature 
 Run `rtk discover` to scan this session's commands for missed optimization opportunities.
 Run `rtk gain --history` to show per-command token savings history.
 
-### 5. Phase 6 Next (MANDATORY)
+### 6. Phase 6 Next (MANDATORY)
 
 **After Phase 5 completes, you MUST run Phase 6 Review+Simplify.** See [review-simplify.md](review-simplify.md).
 This is where you check your own work for:
@@ -152,7 +123,7 @@ This is where you check your own work for:
 
 **Do not proceed to Archive without Phase 6.**
 
-### 6. Archive
+### 7. Archive
 
 All REQs DONE + Phase 6 passes + user confirms:
 ```bash
