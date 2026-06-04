@@ -181,6 +181,14 @@ REQ-002: "unauthorized access returns 403"
 
 Phase 5 must not start until Phase 4 produces `e2e: passed`. Verify: all L0+L1 e2e tests passed.
 
+## MemPalace
+
+**[MP-WRITE] File E2E results for cross-session reference:**
+```
+mempalace_add_drawer wing="<project>" room="e2e" content="Phase 4 E2E: L0+L1 passed/failed, L2+L3 HITL status, entry points tested: <list>"
+```
+MP unavailable -> skip silently. The e2e test results are already in the git commit history.
+
 ## E2E Verification Loop (Phase 7 / D5)
 
 **Canonical source: [shared/e2e-verify.md](shared/e2e-verify.md)**

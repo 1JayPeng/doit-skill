@@ -51,9 +51,9 @@ Before writing tests, understand the code you'll modify:
 13. `tokensave_diagnostics(scope="workspace")` — run type-checker (cargo check / tsc / pyright) before writing code
 14. `ctx_search` — look up previously indexed information from this session
     - **Fallback:** If Context-Mode unavailable -> `grep` command output
-15. `mempalace_search query="<REQ description>" wing="<project>" limit=2` — recover cross-session context from prior implementations
-16. `mempalace_get_drawer drawer_id="<id from search>"` — fetch full content of a specific drawer (when search preview is insufficient)
-17. `mempalace_list_drawers wing="<project>" room="implementation" limit=5` — browse recent implementation notes
+15. `[MP-READ]` `mempalace_search query="<REQ description>" wing="<project>" limit=2` — recover cross-session context from prior implementations
+16. `[MP-READ]` `mempalace_get_drawer drawer_id="<id from search>"` — fetch full content of a specific drawer (when search preview is insufficient)
+17. `[MP-READ]` `mempalace_list_drawers wing="<project>" room="implementation" limit=5` — browse recent implementation notes
     - **Fallback:** If MemPalace unavailable -> skip (tokensave + context-mode cover session-level context)
 
 ### IMPLEMENT — Reuse Gate (MANDATORY before writing any code)
@@ -65,7 +65,7 @@ Before writing tests, understand the code you'll modify:
    - `tokensave_signature_search(params="<key param>", returns="<return type>")` — find functions by shape
 2. **tokensave_similar** — check if a similar function already exists:
    - `tokensave_similar(symbol="<new_function_name>")` — find naming conflicts or near-duplicates
-3. **mempalace_search** — check cross-session memory for prior solutions:
+3. **[MP-READ] mempalace_search** — check cross-session memory for prior solutions:
    - `mempalace_search query="<feature>" wing="<project>" limit=3` — find related implementations
 4. **Decision:** If existing code can be reused or extended → **reuse it**. Only write new code if nothing fits.
 
@@ -155,7 +155,7 @@ Update `.spec/current.md` status as REQs complete. Cross-session resume uses git
 
 After each REQ completes, if MemPalace is active:
 ```
-mempalace_add_drawer wing="<project>" room="implementation" content="REQ-00X: <what was done, key files changed>"
+[MP-WRITE] mempalace_add_drawer wing="<project>" room="implementation" content="REQ-00X: <what was done, key files changed>"
 ```
 
 ### Background Process Management (铁律)

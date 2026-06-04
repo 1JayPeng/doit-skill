@@ -84,7 +84,19 @@ Apply these simplifications **without changing behavior**:
 
 **Simplify boundary**: stop when you're just renaming for the sake of it. "Does this reduce code I have to read?" is the test.
 
-### 3. Documentation Check
+### 3. MemPalace Decision Check
+
+**[MP-READ] If simplification contradicts a prior decision, find and update it:**
+```
+mempalace_search query="<simplification keywords>" wing="<project>" room="decisions" limit=3
+```
+If a stored decision is contradicted by the simplification:
+```
+mempalace_get_drawer drawer_id="<id from search>"
+[MP-WRITE] mempalace_update_drawer drawer_id="<id>" content="<updated decision with rationale>"
+```
+
+### 4. Documentation Check
 
 After writing code, check what documentation needs updating:
 

@@ -11,7 +11,6 @@ MemPalace is available when `claude plugin install --scope user mempalace` has b
 ```
 mempalace_status
 ```
-
 Returns `{ total_drawers, wings, rooms, protocol, aaak_dialect }`. If it errors, MemPalace is not installed — skip all MemPalace steps.
 
 ## Tool Map
@@ -23,9 +22,9 @@ Returns `{ total_drawers, wings, rooms, protocol, aaak_dialect }`. If it errors,
 | Tool | Returns | When to Use |
 |------|---------|-------------|
 | `mempalace_status` | drawer/room counts, protocol | Phase -1 availability check |
-| `mempalace_list_wings` | wing → count | Cross-project work, rare |
-| `mempalace_list_rooms` | room → count within wing | Understanding memory landscape |
-| `mempalace_get_taxonomy` | full wing→room→drawer tree | Maintenance only, expensive |
+| `mempalace_list_wings` | wing -> count | Cross-project work, rare |
+| `mempalace_list_rooms` | room -> count within wing | Understanding memory landscape |
+| `mempalace_get_taxonomy` | full wing->room->drawer tree | Maintenance only, expensive |
 | `mempalace_kg_stats` | entity/triple counts, relationship types | Diagnostic, rarely needed |
 | `mempalace_graph_stats` | nodes, tunnels, edges | Diagnostic, rarely needed |
 | `mempalace_hook_settings` | silent_save, desktop_toast | Phase -1 configure |
@@ -72,239 +71,32 @@ Returns `{ total_drawers, wings, rooms, protocol, aaak_dialect }`. If it errors,
 ### Write — Knowledge Graph
 
 | Tool | Action | When to Use |
-|------|---------|-------------|
+|------|--------|-------------|
 | `mempalace_kg_add` | Add fact (subject, predicate, object) | Phase 8 — record shipped features |
 | `mempalace_kg_invalidate` | Mark fact as expired | Phase 8 — fix bugs, retire assumptions |
 
 ### Write — Agent Diary
 
 | Tool | Action | When to Use |
-|------|---------|-------------|
+|------|--------|-------------|
 | `mempalace_diary_write` | Write diary entry (AAAK format recommended) | Phase 9 — workflow summary |
 | `mempalace_diary_read` | Read recent entries | Phase 0 — what happened recently |
 
-## Integration Points
+## Per-Phase Integration
 
-### Phase -1: Environment Detection
+Each phase document embeds its own `[MP-READ]` and `[MP-WRITE]` steps. See the phase docs for the exact calls:
 
-**Minimal check.** Just confirm availability and configure hooks. Do NOT run stats tools here — they waste tokens and the data isn't used by subsequent phases.
-
-```
-mempalace_status → available?
-mempalace_hook_settings silent_save=true desktop_toast=false → configure
-```
-
-Write detection result to CLAUDE.md same section as tokensave.
-
-**Do NOT call here:** `mempalace_get_taxonomy`, `mempalace_kg_stats`, `mempalace_graph_stats`, `mempalace_list_wings`. These are diagnostic tools that don't inform the workflow. Phase 0's sweep returns all the context that matters.
-
-### Phase 0: Memory Context Sweep (ALL types, before any phase runs)
-
-**After classification, BEFORE any phase logic executes.** This is the single most important MemPalace interaction — it loads the project's entire history into context so Phase 1 grilling and Phase 2 planning are informed by prior work.
-
-**Step 1 — Refresh index (sequential, must complete first):**
-```
-mempalace_reconnect → ensures HNSW index is fresh after any external modifications
-```
-
-**Step 2 — Core context (ALL in parallel, no dependencies between them):**
-```
-# A) Recent activity — what was done in last sessions
-mempalace_diary_read agent_name="doit" last_n=5
-
-# B) Project knowledge graph — facts, constraints, decisions
-mempalace_kg_query entity="<project>"
-
-# C) Project timeline — chronological history of shipped features
-mempalace_kg_timeline entity="<project>"
-
-# D) Semantic search — finds relevant content across ALL rooms
-mempalace_search query="<user request keywords>" wing="<project>" limit=5
-```
-
-**Why 4 calls instead of 7+:** `mempalace_search` returns full drawer content with similarity scores across all rooms. It replaces `mempalace_list_drawers` calls for bugs, decisions, and implementation — those were returning previews anyway. The search finds the MOST RELEVANT content, not just the most recent. `mempalace_list_rooms` is unnecessary because the search results show which rooms have content.
-
-**Type-specific additions (also parallel):**
-
-**Type R (resume)** — recover in-progress work:
-```
-mempalace_search query="<project> resume in-progress" wing="<project>" limit=3
-```
-
-**Type B (bug)** — find related prior bugs:
-```
-mempalace_search query="<bug keywords> error" wing="<project>" room="bugs" limit=5
-```
-
-**Type S (simple)** — skip the sweep entirely. Simple changes don't need deep context.
-
-**Why `mempalace_reconnect` before search:** External scripts, CLI commands, or other sessions can modify the palace directly. Without reconnect, the in-memory HNSW index may be stale and search returns outdated results. This is especially important after `mempalace mine` or `mempalace compress` CLI operations.
-
-### Phase 1: Spec Generation
-
-Context sweep already ran. Use its results for targeted grilling.
-
-**Before grilling — check for directly related prior specs:**
-```
-mempalace_search query="<user request keywords>" wing="<project>" room="specs" limit=3
-```
-
-**After writing `.spec/current.md` — file to MemPalace:**
-```
-# Check for duplicates first (spec may have been filed in prior session)
-mempalace_check_duplicate content="<spec content>" threshold=0.87
-
-# If not duplicate, file it
-mempalace_add_drawer wing="<project>" room="specs" content="<spec content>" source_file=".spec/current.md"
-
-# If scope changes during grill and related spec exists, update instead:
-mempalace_update_drawer drawer_id="<id from check_duplicate>" content="<updated spec content>"
-```
-
-**Why `mempalace_check_duplicate` before `add_drawer`:** `mempalace_add_drawer` silently skips identical content (same deterministic drawer ID), but SIMILAR content (e.g., updated spec from a grill iteration) creates a duplicate. `mempalace_check_duplicate` catches this at 0.87 similarity threshold.
-
-### Phase 2: Plan
-
-Context sweep already ran. Focus on cross-room connections for architectural planning.
-
-**Search for prior implementation context:**
-```
-mempalace_search query="<feature name> implementation" wing="<project>" limit=3
-```
-
-**For cross-project features — find tunnels:**
-```
-mempalace_list_tunnels wing="<project>" → any existing cross-project connections?
-mempalace_traverse start_room="specs" max_hops=2 → connected ideas across rooms
-```
-
-**After producing the plan — store key decisions:**
-```
-mempalace_check_duplicate content="<ADR: decision, rationale, tradeoff>" threshold=0.87
-mempalace_add_drawer wing="<project>" room="decisions" content="<ADR: decision, rationale, tradeoff>"
-```
-
-### Phase 3: Execute
-
-**Before starting each REQ — search for relevant prior implementation:**
-```
-mempalace_search query="<REQ description>" wing="<project>" limit=2
-```
-
-**After completing each REQ — file implementation summary:**
-```
-mempalace_add_drawer wing="<project>" room="implementation" content="REQ-00X: <what was done, key files changed>"
-```
-
-Keep implementation summaries SHORT — 2-3 lines. These are for future context recovery, not detailed documentation.
-
-### Phase 4: E2E
-
-**After E2E tests complete — file results:**
-```
-mempalace_add_drawer wing="<project>" room="e2e" content="Phase 4 E2E: L0+L1 passed/failed, L2+L3 HITL status"
-```
-
-### Phase 5: Review
-
-**After code review — file findings for future reference:**
-```
-mempalace_add_drawer wing="<project>" room="reviews" content="<review summary: critical issues, patterns to avoid>"
-```
-
-### Phase 6: Review + Simplify
-
-**If simplification contradicts a prior decision — update it:**
-```
-# Find the decision (search is faster than list_drawers for this)
-mempalace_search query="<decision keywords>" wing="<project>" room="decisions" limit=3
-
-# If found and needs update, get full content first
-mempalace_get_drawer drawer_id="<id from search>"
-
-# Update with revised decision
-mempalace_update_drawer drawer_id="<id>" content="<updated decision with rationale>"
-```
-
-### Phase 8: Commit + Knowledge Graph
-
-**After successful commit — record in knowledge graph:**
-```
-mempalace_kg_add subject="<project>" predicate="shipped" object="<feature name>" valid_from="<today YYYY-MM-DD>"
-```
-
-**If fixing a bug — invalidate the prior bug fact:**
-```
-mempalace_kg_invalidate subject="<project>" predicate="has_bug" object="<bug description>" ended="<today>"
-```
-
-### Phase 9: Cleanup + Diary
-
-**Write workflow summary to diary — use AAAK format for compression:**
-```
-mempalace_diary_write agent_name="doit" entry="SESSION:<date>:<feature>:<N> REQs,<N> files,commit:<short-hash>" topic="<feature>"
-```
-
-AAAK format compresses the entry — `SESSION:` prefix marks it as a session entry, `:` separates fields. This keeps diary entries readable while saving ~40% tokens on retrieval.
-
-### Phase 10: Auto-Compact
-
-**After compact — verify MemPalace auto-save and write final diary:**
-```
-mempalace_memories_filed_away → verify checkpoint saved
-mempalace_diary_write agent_name="doit" entry="COMPACT:<date>:session ended, context compressed" topic="compact"
-```
-
-### Doc Capture Enhancement
-
-**When capturing reference docs — file to MemPalace alongside `.doit/docs/`:**
-```
-# Check duplicate first — docs often get captured multiple times
-mempalace_check_duplicate content="<doc content>" threshold=0.87
-
-# If not duplicate:
-mempalace_add_drawer wing="<project>" room="reference-docs" content="<doc content>" source_file="<original source>"
-```
-
-### Cross-Project Work
-
-**When a feature spans multiple projects:**
-```
-# Create tunnel between related wings
-mempalace_create_tunnel source_wing="project_a" source_room="api" target_wing="project_b" target_room="schema" label="API contract shared between projects"
-
-# Explore existing cross-project connections
-mempalace_list_tunnels wing="<project>"
-mempalace_follow_tunnels wing="<project>" room="api"
-mempalace_find_tunnels wing_a="project_a" wing_b="project_b"
-```
-
-### Maintenance (Periodic)
-
-**When project is restructured or files moved — run during Phase -1 if >7 days since last sync:**
-```
-mempalace_sync project_dir="<project_root>" → dry-run report
-mempalace_sync project_dir="<project_root>" apply=true → delete stale drawers
-mempalace_reconnect → refresh index after deletions
-```
-
-### Debug Workflow (Type B)
-
-**During D0 diagnosis — search for related prior bugs (already covered by Phase 0 Type B sweep):**
-Phase 0's Type-specific search already found related bugs. If new information emerges during diagnosis:
-```
-mempalace_search query="<new bug keywords>" wing="<project>" room="bugs" limit=3
-```
-
-**After diagnosing — file the diagnosis:**
-```
-mempalace_add_drawer wing="<project>" room="bugs" content="Bug: <description>, root cause: <X>, fix: <Y>, date: <today>"
-```
-
-**After fix — invalidate the bug fact:**
-```
-mempalace_kg_invalidate subject="<project>" predicate="has_bug" object="<bug description>" ended="<today>"
-```
+| Phase | Document | MP Integration |
+|-------|----------|----------------|
+| Phase 0 | [SKILL.md](SKILL.md) | Full sweep: diary, KG query, KG timeline, semantic search |
+| Phase 1 | [spec.md](spec.md) | `[MP-READ]` prior specs, `[MP-WRITE]` new spec |
+| Phase 2 | [plan.md](plan.md) | `[MP-READ]` implementation context, `[MP-WRITE]` ADRs |
+| Phase 3 | [execute.md](execute.md) | `[MP-READ]` prior implementations, `[MP-WRITE]` REQ summaries |
+| Phase 4 | [e2e.md](e2e.md) | `[MP-WRITE]` E2E results |
+| Phase 5 | [review.md](review.md) | `[MP-READ]` prior review findings, `[MP-WRITE]` review results |
+| Phase 6 | [shared/review-simplify.md](shared/review-simplify.md) | `[MP-READ]` prior decisions, `[MP-WRITE]` updated decisions |
+| Phase 8 | [shared/commit.md](shared/commit.md) | `[MP-READ]` project decisions, `[MP-WRITE]` KG facts + diary |
+| Debug D0 | [debug.md](debug.md) | `[MP-READ]` prior bugs, `[MP-WRITE]` bug diagnosis |
 
 ## Wing and Room Convention
 
@@ -327,10 +119,9 @@ MemPalace has a built-in hook that auto-saves conversation context. Configure in
 ```
 mempalace_hook_settings silent_save=true desktop_toast=false
 ```
-
 Verify after workflow completes:
 ```
-mempalace_memories_filed_away → { filed: true, message_count: N, timestamp: "..." }
+mempalace_memories_filed_away -> { filed: true, message_count: N, timestamp: "..." }
 ```
 
 ## Optimization Rules

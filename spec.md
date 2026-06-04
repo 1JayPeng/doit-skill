@@ -121,24 +121,23 @@ git checkout -b feature/[short-name]
 
 Copy spec to branch (it stays in git).
 
-### Step 6: File to MemPalace (if available)
+### Step 6: MemPalace
 
-Phase 0 memory sweep already loaded project context. Here, search for related prior specs, check for duplicates, and file:
+Phase 0 memory sweep already loaded project context. Use it here.
 
+**[MP-READ] Search for related prior specs (before grilling, use Phase 0 sweep results):**
 ```
-# Search for related prior specs (context sweep already ran in Phase 0)
 mempalace_search query="<feature keywords>" wing="<project>" room="specs" limit=3
+```
+Use findings to inform grill questions — avoid repeating already-decided specs.
 
-# Check for near-duplicates before filing
+**[MP-WRITE] File spec to MemPalace (after writing .spec/current.md):**
+```
 mempalace_check_duplicate content="<spec content>" threshold=0.87
-
-# If not duplicate: file the new spec
 mempalace_add_drawer wing="<project>" room="specs" content="<full spec content>" source_file=".spec/current.md"
 ```
-
-If scope changes during grill and a related spec exists, update it instead of creating a duplicate:
+If scope changes during grill and a related spec exists, update instead:
 ```
-mempalace_update_drawer drawer_id="<id from search>" content="<updated spec content>"
+mempalace_update_drawer drawer_id="<id from check_duplicate>" content="<updated spec content>"
 ```
-
-If MemPalace is unavailable, skip silently. Filesystem (`.spec/current.md`) is the primary source of truth.
+MP unavailable -> skip silently. Filesystem (`.spec/current.md`) is primary.

@@ -90,6 +90,16 @@ See [background-process.md](background-process.md) for full three-tier patterns.
 - **绝不"完成"却不提交** — 未提交的工作等于丢失的工作
 - **绝不跳过推送** — 本地提交不防会话丢失
 
+## 铁律 — MemPalace 读写对称
+
+**MemPalace 调用与 TokenSave 同级别，不可跳过。可用则必做，不可用则静默跳过。**
+
+- **Phase 0 sweep 必须执行**（Type S 除外）— 4 个并行调用加载项目上下文
+- **`[MP-READ]` 标记的步骤** — 读项目相关历史（spec、决策、实现、bug），为当前 phase 提供上下文
+- **`[MP-WRITE]` 标记的步骤** — 写当前 phase 产出（spec、ADR、实现摘要、KG 事实、diary）
+- **先读后写** — Phase 0 已做全局 sweep，各 phase 的 `[MP-READ]` 做精准搜索，`[MP-WRITE]` 在 phase 完成后写入
+- **MP 不可用** → 任何调用报错 → 静默跳过该 session 所有 MP 步骤，文件系统为主
+
 ## Principles
 
 Seven principles guide every phase. Three iron rules. See [principles.md](principles.md).
@@ -140,9 +150,25 @@ If caveman skill is not found, announce `[WARN] caveman not installed -> verbose
 
 **Classify, announce type to user, proceed. If user disputes type, use their type.**
 
-**Step 2.5 — Memory Context Sweep (MANDATORY).** Before any phase logic executes, sweep MemPalace for project context. See [mempalace.md](mempalace.md) Phase 0 section. Returns: recent diary, knowledge graph facts, project timeline, semantic search results. All 4 core calls run in parallel after `mempalace_reconnect`.
+**Step 2.5 — Memory Context Sweep (MANDATORY).** Before any phase logic executes, load project context from MemPalace. Type S (simple) can skip.
 
-**Type S (simple) can skip this step** — simple changes don't need deep context.
+**Step A — Refresh index (sequential, must complete first):**
+```
+mempalace_reconnect
+```
+
+**Step B — Core context (ALL 4 in parallel, no dependencies):**
+```
+mempalace_diary_read agent_name="doit" last_n=5
+mempalace_kg_query entity="<project>"
+mempalace_kg_timeline entity="<project>"
+mempalace_search query="<用户请求关键词>" wing="<project>" limit=5
+```
+
+**Type R (resume) append:** `mempalace_search query="<project> resume in-progress" wing="<project>" limit=3`
+**Type B (bug) append:** `mempalace_search query="<bug 关键词> error" wing="<project>" room="bugs" limit=5`
+
+If MemPalace unavailable (any call errors) → skip all MP steps silently for this session. Filesystem remains primary.
 
 **Before proceeding: check if user's prompt contains reference documentation.** If yes, capture it before any phase runs. See [doc-capture.md](doc-capture.md). Doc capture is independent of classification type (R/S/F/B) — always run first.
 

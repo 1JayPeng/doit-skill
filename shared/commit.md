@@ -196,7 +196,13 @@ Next steps are derived from the work done:
 
 **Branch pushed?** Add: `git diff origin/<base>...HEAD` to review changes before merging.
 
-**MemPalace persistence** (if available):
+**[MP-READ] Search for related project decisions (before committing):**
+```
+mempalace_search query="<feature> decision" wing="<project>" room="decisions" limit=3
+```
+Use findings to ensure commit message aligns with project decisions.
+
+**[MP-WRITE] MemPalace persistence:**
 ```
 mempalace_kg_add subject="<project>" predicate="shipped" object="<feature>" valid_from="<today YYYY-MM-DD>"
 mempalace_diary_write agent_name="doit" entry="<commit-hash>: <feature summary>, <N> REQs, <N> files" topic="<feature>"

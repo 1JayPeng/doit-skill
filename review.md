@@ -6,7 +6,15 @@ Trigger after all REQs DONE + Phase 4 initial e2e tests pass.
 
 ## Steps
 
-### 1. Code Review
+### 1. MemPalace Context
+
+**[MP-READ] Search for prior review findings (before starting review):**
+```
+mempalace_search query="<feature> review" wing="<project>" room="reviews" limit=3
+```
+Use findings to avoid repeating already-identified issues.
+
+### 2. Code Review
 
 **Caveman review (optional, recommended):** If caveman skill available, run `/caveman-review` for caveman-style code review. This provides terse, direct feedback on code quality.
 
@@ -102,7 +110,7 @@ Re-read `.spec/current.md`. Every REQ must be DONE. Gaps -> flag, don't auto-fix
 - `ctx_search(queries=[<REQ descriptions>])` — look up previously indexed spec content
 - **Fallback:** Read `.spec/current.md` directly + `grep -rn` for keywords.
 
-**MemPalace** (if available): file review findings for cross-session reference:
+**[MP-WRITE] File review findings for cross-session reference:**
 ```
 mempalace_add_drawer wing="<project>" room="reviews" content="Review: <summary>, issues: <X>, patterns: <Y>"
 mempalace_kg_add subject="<project>" predicate="passed_review" object="<feature name>" valid_from="<today>"

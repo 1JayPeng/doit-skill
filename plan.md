@@ -32,11 +32,13 @@ Use **TokenSave** for code intelligence (discovery + call graph + code quality):
 - `tokensave_signature(qualified_name="<name>")` — get function signature without body
 - `tokensave_signature_search(params="&mut self", returns="Result")` — find functions by signature shape
 
-**MemPalace tools for plan (if available):**
+**[MP-READ] MemPalace — search for prior implementation context (Phase 0 sweep already ran):**
 - `mempalace_search query="<feature name> implementation" wing="<project>" limit=3` — find prior implementation context
 - `mempalace_traverse start_room="<project>/specs" max_hops=2` — find connected ideas across rooms
-- `mempalace_kg_stats` — knowledge graph overview (how many facts about this project)
-- `mempalace_graph_stats` — palace graph overview (cross-project connectivity)
+
+**[MP-WRITE] MemPalace — store architecture decisions (after plan is finalized):**
+- `mempalace_check_duplicate content="<ADR: decision, rationale, tradeoff>" threshold=0.87`
+- `mempalace_add_drawer wing="<project>" room="decisions" content="<ADR: decision, rationale, tradeoff>"`
 
 **Type system analysis (when task involves interfaces, traits, classes):**
 - `tokensave_type_hierarchy(node_id="<id>")` — full type hierarchy tree for traits/interfaces/classes
