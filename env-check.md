@@ -8,6 +8,7 @@ Before running full scan, check if cached results are still valid:
 
 ```bash
 # Check env cache
+CACHE_HIT=false
 if [ -f .doit/env-cache.json ]; then
   cached_branch=$(python3 -c "import json; d=json.load(open('.doit/env-cache.json')); print(d.get('branch',''))" 2>/dev/null)
   current_branch=$(git branch --show-current 2>/dev/null || echo "unknown")
@@ -16,11 +17,8 @@ if [ -f .doit/env-cache.json ]; then
   if [ "$cached_branch" = "$current_branch" ] && [ -n "$cached_ts" ]; then
     age_hours=$(( ( $(date +%s) - $(date -d "$cached_ts" +%s 2>/dev/null || echo 0) ) / 3600 ))
     if [ "$age_hours" -lt 24 ]; then
+      CACHE_HIT=true
       echo "[ENV] Cache hit (${age_hours}h old, branch: ${current_branch}). Skipping full scan."
-      # Cache valid -> skip Steps 1-8 (detection), go directly to Step 9 (Background Rules)
-      # Then Step 10 (Tool Availability), Step 11 (Announce)
-      # Do NOT run Steps 12 (Save Cache) again - cache is still fresh
-      goto_step_9
     fi
   fi
 fi
@@ -32,8 +30,10 @@ fi
 - `.doit/env-cache.json` deleted
 - User explicitly requests re-scan
 
-**If cache valid:** skip Steps 1-8, proceed to Step 9 (Background Rules).
-**If cache invalid or missing:** proceed to full scan (Steps 1-14).
+**Flow:**
+- **If `CACHE_HIT=true`:** skip Steps 1-8 (detection), proceed to Step 9 (Background Rules).
+- **If `CACHE_HIT=false` or missing:** run full scan (Steps 1-8), then Step 9.
+- Always: Step 10 (Tool Availability) → Step 11 (Announce) → Step 12 (Save Cache, only if not cache hit).
 
 ## Detection Steps
 
@@ -377,8 +377,10 @@ echo "=== Tool Availability ==="
 
 # Skill tools
 for skill in doit grill-me tdd diagnose prototype handoff improve-codebase-architecture caveman; do
-  if [ -d "$HOME/.claude/skills/$skill" ]; then
-    echo "  [OK]   $skill (skill)"
+  if [ -d ".claude/skills/$skill" ]; then
+    echo "  [OK]   $skill (project skill)"
+  elif [ -d "$HOME/.claude/skills/$skill" ]; then
+    echo "  [OK]   $skill (global skill)"
   else
     echo "  [MISS] $skill (skill)"
   fi
@@ -427,7 +429,7 @@ fi
 ```
 [WARN] context-mode NOT available -> Phase 1-8 will use Bash + grep (no auto-index)
 [WARN] tavily NOT configured -> Phase 1 will use WebSearch (built-in) for internet research
-[WARN] tokensave NOT installed -> Phase 2-8 will use Agent Explore for codebase intelligence
+[WARN] tokensave NOT installed -> Phase 2-8 will use grep + find + Read for codebase intelligence
 [WARN] tokensave NOT installed -> Phase 5-6 will use git diff for review (no code graph)
 [WARN] rtk NOT installed -> shell commands run without token optimization
 [WARN] uv NOT installed -> Python commands will use pip instead of uv
@@ -440,7 +442,7 @@ fi
 
 | Tool | Unavailable → Fallback | Affected Phases |
 |------|----------------------|-----------------|
-| tokensave | `Agent Explore` + `grep` + `find` | 2, 3, 5, 6, 7, 8 |
+| tokensave | `grep` + `find` + `Read` | 2, 3, 5, 6, 7, 8 |
 | context-mode | native Bash (no auto-index) | 2, 3, 4, 7, 8 |
 | tavily MCP | `WebSearch` (built-in) | 1 |
 | rtk | Bash (no token opt) | all |

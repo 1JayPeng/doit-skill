@@ -425,41 +425,6 @@ CARGO_EOF
     fi
   fi
 
-  # Rust (required by TokenSave)
-  if command -v cargo >/dev/null 2>&1; then
-    echo_success "rust/cargo already installed"
-  else
-    echo_info "Installing Rust via rustup (Tsinghua mirror)..."
-    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs 2>/dev/null \
-      | RUSTUP_DIST_SERVER=https://mirrors.tuna.tsinghua.edu.cn/rustup \
-        RUSTUP_UPDATE_ROOT=https://mirrors.tuna.tsinghua.edu.cn/rustup/rustup \
-        sh -s -- -y 2>/dev/null \
-      || echo_warn "Failed to install Rust via rustup"
-    if [ -f "$HOME/.cargo/env" ]; then
-      source "$HOME/.cargo/env"
-    fi
-    if command -v cargo >/dev/null 2>&1; then
-      echo_success "Rust installed"
-    else
-      echo_warn "Rust installation failed — tokensave will be skipped"
-    fi
-  fi
-
-  # Cargo mirror (USTC) — speeds up cargo install in China
-  if [ -f "$HOME/.cargo/config.toml" ] && grep -q "ustc" "$HOME/.cargo/config.toml" 2>/dev/null; then
-    echo_success "cargo mirror already configured (USTC)"
-  else
-    echo_info "Configuring cargo mirror (USTC)..."
-    mkdir -p "$HOME/.cargo"
-    cat > "$HOME/.cargo/config.toml" <<'CARGO_EOF'
-[source.crates-io]
-replace-with = 'ustc'
-[source.ustc]
-registry = "sparse+https://mirrors.ustc.edu.cn/crates.io-index/"
-CARGO_EOF
-    echo_success "cargo mirror configured (USTC)"
-  fi
-
   # TokenSave
   if command -v tokensave >/dev/null 2>&1; then
     echo_success "tokensave already installed"

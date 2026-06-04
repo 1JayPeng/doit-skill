@@ -42,7 +42,7 @@ Write to `.doit/docs/<descriptive-name>.md`:
 ```markdown
 ---
 source: doit doc-capture
-date: 2025-05-25
+date: <today>
 description: Brief one-line description of doc content
 ---
 
@@ -57,8 +57,8 @@ description: Brief one-line description of doc content
 
 ### 3. Verify Tokensave Index
 
-```bash
-tokensave search --query "<doc keyword>"
+```
+tokensave_search(query="<doc keyword>")
 ```
 
 The `.doit/` directory is inside the project root so tokensave indexes it automatically. No extra config needed.
@@ -105,6 +105,6 @@ If MemPalace is unavailable or content is a duplicate, skip silently. Filesystem
 [DOC-CAPTURE] Filed to mempalace (if available)
 ```
 
-### 6. Skip if User Says So
+### 7. Skip if User Says So
 
 If user says "don't save", "keep in context", skip silently.

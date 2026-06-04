@@ -94,7 +94,7 @@ mempalace_status → available?
 mempalace_hook_settings silent_save=true desktop_toast=false → configure
 ```
 
-Write detection result to CLAUD.md same section as tokensave.
+Write detection result to CLAUDE.md same section as tokensave.
 
 **Do NOT call here:** `mempalace_get_taxonomy`, `mempalace_kg_stats`, `mempalace_graph_stats`, `mempalace_list_wings`. These are diagnostic tools that don't inform the workflow. Phase 0's sweep returns all the context that matters.
 

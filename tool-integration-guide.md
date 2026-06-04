@@ -476,7 +476,7 @@ MemPalace 是**补充**，不是替代：
 ### 3. 为什么降级策略是静默跳过？
 
 工作流不应该因为一个记忆层不可用就卡住。降级顺序：
-1. TokenSave 不可用 → 用 grep/find/Agent Explore
+1. TokenSave 不可用 → 用 grep/find/Read
 2. MemPalace 不可用 → 用文件系统（.doit/docs/, .spec/archive/）
 3. Context-Mode 不可用 → 用原生 Bash（不索引）
 
@@ -508,7 +508,7 @@ caveman 是**整个会话**的压缩通信模式，Phase 0 启用后一直生效
 
 | 工具 | 不可用时的降级 | 影响阶段 |
 |------|--------------|---------|
-| TokenSave | `Agent Explore` + `grep` + `find` | 2, 3, 5, 6, 7, 8 |
+| TokenSave | `grep` + `find` + `Read` | 2, 3, 5, 6, 7, 8 |
 | Context-Mode | 原生 Bash（不索引） | 2, 3, 4, 7, 8 |
 | Tavily MCP | `WebSearch`（内置） | 1 |
 | RTK | Bash（不优化） | 所有阶段 |
