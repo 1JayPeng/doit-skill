@@ -6,6 +6,13 @@ Spec-driven, TDD-based development workflow for [Claude&nbsp;Code](https://githu
 
 ## Recent Changes
 
+**2026-06-04** — Strengthened Background Execution iron rule:
+- Mandatory decision gate before every Bash command — estimate runtime, select tier, set completion signal
+- Forbidden behaviors explicitly listed — no idle waiting, no polling without Monitor/ScheduleWakeup, no forgotten background tasks
+- Background task checklist — 4-item verification after each background launch
+- Enhanced CLAUDE.md injection — stronger background task rules with mandatory polling written to project CLAUDE.md
+- Per-phase application: "ALL >10s commands run in background with Monitor/ScheduleWakeup. No exceptions."
+
 **2026-06-04** — MemPalace read-write symmetry integration:
 - Iron rule: "MemPalace read-write symmetry" — MP calls same level as tokensave, mandatory when available
 - Phase 0: embedded 4 parallel MP sweep calls (diary, KG query, KG timeline, semantic search) directly in SKILL.md

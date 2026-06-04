@@ -336,12 +336,30 @@ If no match found, inject:
 ```markdown
 ## Background Task Rules
 
-Before running any background command (via `run_in_background`), apply these rules:
+**铁律：永远不要空等长时间任务。长对话中不例外。**
+
+### 决策门控（每次运行 Bash 前必须判断）
+
+运行任何命令前，估计执行时间：
+- **<10s** → 前台 Bash（OK）
+- **≥10s** → **必须**后台执行 + 完成信号
+- **≥5min** → **必须** tmux + Monitor 或 ScheduleWakeup
+
+### 执行规则
 
 1. **Estimate runtime first** — how long should this command take? Set a timeout value that is **2x the estimated time**.
 2. **Ensure output readability** — background tasks must write to files (stdout/stderr redirect) so results can be read after completion.
 3. **Clear exit signal** — the task must have an obvious completion indicator (exit code, log line, etc.). If the task's exit condition is unclear or ambiguous, **do not run it in the background** — run it in the foreground with an explicit timeout instead.
 4. **Timeout default** — when no specific estimate is available, use 300 seconds (5 minutes) as the default timeout.
+5. **Mandatory polling** — every background task MUST have a corresponding Monitor or ScheduleWakeup. No polling = lost work.
+6. **Continue working** — after launching a background task with monitoring, immediately continue with other work. Never idle-wait for the monitor.
+
+### 禁止行为
+
+- **禁止**运行长时间命令后不做任何其他操作（空等）
+- **禁止**后台任务不设置完成信号（`[END]` 标记、Monitor、ScheduleWakeup）
+- **禁止**用 `tail -f` 手动轮询（用 Monitor 或 ScheduleWakeup）
+- **禁止**在长对话中忘记后台任务 → 用户问进度时立即检查 `.scratch/logs/` 和 `tmux list-sessions`
 ```
 
 **If config already has a Background Task Rules section:** skip. No overwrite.

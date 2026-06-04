@@ -1,8 +1,32 @@
 # Background Process Management
 
-**铁律: 长时间任务必须有 Claude Code 轮询。不允许空等。** This is Principle 0.5 in [principles.md](principles.md).
+**铁律: 长时间任务必须有轮询。不允许空等。这是铁律，不是建议。** This is Principle 0.5 in [principles.md](principles.md).
 
 Standardized three-tier patterns for running long-running commands with observable exit signals, automatic monitoring, and phase-continuation.
+
+## 强制决策门控（运行前必须检查）
+
+**在运行任何可能超过 10 秒的命令前，必须完成以下检查：**
+
+```
+□ 1. 估计运行时间：这个命令预计需要多久？
+□ 2. 选择执行级别：前台(<10s) / 后台(10s-5min) / tmux(>5min)
+□ 3. 设置完成信号：[END] 标记 + Monitor 或 ScheduleWakeup
+□ 4. 设置超时：timeout = 2x 估计时间（默认 300s）
+□ 5. 计划后续工作：后台任务启动后，继续做什么？
+```
+
+**任何一项未检查 = 违反铁律。**
+
+### 常见违例（禁止行为）
+
+| 违例 | 正确做法 |
+|------|---------|
+| 运行 `cargo build --release` 后沉默等待 | 后台启动 + Monitor + 继续其他工作 |
+| `tail -f` 日志文件来"看进度" | 设置 Monitor 自动检查 `[END]` |
+| 启动后台任务后不设轮询 | 每个后台任务必须有 Monitor 或 ScheduleWakeup |
+| 在长对话中忘记后台任务 | 用户问进度 → 立即检查 `.scratch/logs/` 和 `tmux list-sessions` |
+| 不设 timeout | 所有后台任务必须有 timeout，默认 300s |
 
 ## Three Tiers
 

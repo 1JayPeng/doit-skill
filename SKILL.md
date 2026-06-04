@@ -64,16 +64,53 @@ Also init `.doit/config.yaml` if not present (default config for doc-capture, co
 
 ## 铁律 — Background Execution
 
-**永远不要空等长时间任务。始终使用后台执行 + 轮询机制。**
+**永远不要空等长时间任务。始终使用后台执行 + 轮询机制。这是铁律，不是建议。**
 
 旧模式：运行 `cargo build --release` -> 干等 5min -> 结果。这阻塞工作流、浪费 token、让用户盯着冻结的 agent。
 新模式：后台启动 -> 继续做其他工作 -> 通知时检查结果。
 
+### 决策门控（每个命令运行前必须执行）
+
+在运行任何 Bash 命令前，**必须**先判断：
+
+1. **这个命令预计需要多长时间？**
+2. **>10s？** → 禁止前台直接运行，必须后台化
+3. **>5min？** → 必须 tmux + Monitor 或 ScheduleWakeup
+4. **后台任务设置完成后，是否已设置完成信号（Monitor/ScheduleWakeup）？** → 没有则禁止继续
+
+### 三级执行标准
+
 - **<10s** → 直接 Bash（前台 OK）
-- **10s–5min** → `Bash run_in_background=true` 或 shell `&` + log 文件 + `[START]`/`[END]` 标记
+- **10s–5min** → `Bash run_in_background=true` 或 shell `&` + log 文件 + `[START]`/`[END]` 标记 + **必须设置 Monitor 轮询**
 - **>5min** → tmux 命名 session + Monitor + 自动继续，或 `ScheduleWakeup` 定期轮询
+
+### 强制轮询规则
+
+**每个后台任务必须有一个对应的轮询机制。没有轮询的后台任务 = 丢失的工作。**
+
+- `Bash run_in_background=true` → Claude Code 自动通知，但仍需设置 timeout
+- Shell `&` → **必须**配合 `Monitor` 命令设置文件检查
+- tmux → **必须**配合 `Monitor` 命令 + `[END]` 标记检查
+- **禁止**启动后台任务后不做任何轮询设置
+
+### 轮询期间必须做其他工作
+
+**设置后台任务 + Monitor 后，必须立即继续其他工作。** 空等 Monitor 触发 = 违反铁律。
+如果无其他工作可做，使用 `ScheduleWakeup` 定期轮询（延迟 >= 60s）。
+
+### 禁止行为
+
+- **禁止**运行长时间命令后停止响应、沉默等待
+- **禁止**重复 `tail -f` 或频繁 `cat` 日志文件来手动轮询（用 Monitor 或 ScheduleWakeup）
+- **禁止**忘记设置完成信号（`[END]` 标记、Monitor、ScheduleWakeup）
+- **禁止**对后台任务不设 timeout（默认 300s）
+- **禁止**在长对话中忘记后台任务的存在 → 用户问进度时立即检查 `.scratch/logs/` 和 tmux sessions
+
+### 始终遵守
+
 - **始终设置完成信号** — `[END]` 标记、Monitor 检查或 ScheduleWakeup 回调
 - **绝不说"waiting for X..."然后沉默** — 要么轮询，要么做其他工作
+- **估计运行时，设置 2x 超时** — 如果预计 3min，timeout = 6min
 
 See [background-process.md](background-process.md) for full three-tier patterns.
 
@@ -117,7 +154,7 @@ Seven principles guide every phase. Three iron rules. See [principles.md](princi
 Per-phase application:
 - **Phase 1 (Spec)** — think before coding: grill ideas, challenge assumptions, present alternatives
 - **Phase 3 (Execute)** — goal-driven (testable verification per REQ), brevity first (minimal code per REQ)
-- **Phase 3-8** — background execution: all >10s commands run in background with polling
+- **Phase 3-8** — background execution: ALL >10s commands run in background with Monitor/ScheduleWakeup polling. Decision gate before every Bash command. No exceptions.
 - **Phase 3-8** — commit + push: every code change committed and pushed
 - **Phase 5-6 (Review + Simplify)** — surgical edits (only touch what's necessary), brevity first (remove unnecessary abstractions)
 - **Debug (D2 Fix)** — surgical edits (minimum change for regression test pass)
