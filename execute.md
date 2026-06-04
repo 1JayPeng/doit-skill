@@ -12,8 +12,6 @@
   - **Fallback:** If RTK not available -> run Bash commands directly (no token optimization).
 - **RTK wraps all phases.** RTK is not Phase 3 only — it auto-wraps every Bash call via PreToolUse hook across the entire session.
 
-- **RTK also wraps all shell commands in other phases.** RTK is not Phase 3 only — it auto-wraps every Bash call via PreToolUse hook across the entire session.
-
 - **Context-Mode for context management.** Auto-indexes command output, provides semantic search.
   - `ctx_execute` — run commands, output auto-indexed
   - `ctx_execute_file` — process large files without loading into context
@@ -22,8 +20,8 @@
   - **Fallback:** If Context-Mode not installed ->
     - `ctx_execute` -> native Bash tool (output not indexed)
     - `ctx_execute_file` -> `Read` tool (loads file into context)
-    - `ctx_search` -> `grep`/`find` with `Agent Explore`
-    - `ctx_batch_execute` -> parallel Bash calls + `Agent Explore`
+    - `ctx_search` -> `grep`/`find` with `Agent general-purpose`
+    - `ctx_batch_execute` -> parallel Bash calls + `Agent general-purpose`
 - **Vertical slice TDD.** One REQ at a time. RED -> GREEN -> REFACTOR. No horizontal slicing.
 - **Logging rules:**
   - Entry function: log inputs
@@ -36,7 +34,7 @@
 ### CONTEXT (before RED)
 Before writing tests, understand the code you'll modify:
 1. `tokensave_context` — get focused context for the REQ task (start here)
-   - **Fallback:** If TokenSave unavailable -> `Agent Explore` with task description
+   - **Fallback:** If TokenSave unavailable -> `Agent general-purpose` with task description
 2. `tokensave_search` — find specific symbols by name
    - **Fallback:** If TokenSave unavailable -> `grep -rn` + `find`
 3. `tokensave_similar(symbol="<name>")` — find symbols with similar names (avoid naming inconsistency)
