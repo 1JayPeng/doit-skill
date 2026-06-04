@@ -107,7 +107,7 @@ Run `improve-codebase-architecture` skill for insight only. **Do not execute arc
 - `tokensave_rank(edge_kind="implements", direction="incoming")` — most implemented interface (high coupling risk)
 - `tokensave_distribution(path="<dir>")` — node kind breakdown per file/directory
 - `tokensave_largest(node_kind="class", limit=5)` — largest classes (potential god classes)
-- **Fallback:** If TokenSave unavailable -> `Agent Explore` for architectural overview.
+- **Fallback:** If TokenSave unavailable -> `Agent general-purpose` for architectural overview.
 
 ### 3. Security Review (tokensave-based)
 

@@ -41,7 +41,7 @@ Agent({
 Agent({
   description: "Research existing code patterns",
   prompt: "使用 tokensave_context 分析当前项目中与 '<feature>' 相关的现有代码...",
-  subagent_type: "Explore",
+  subagent_type: "general-purpose",
   run_in_background: true
 })
 

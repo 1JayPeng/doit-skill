@@ -21,7 +21,7 @@ Use **TokenSave** for code intelligence (discovery + call graph + code quality):
 10. `tokensave_outline(file="<key_file>")` — flat list of top-level symbols (quick file overview)
 11. `tokensave_module_api(path="<src_dir>")` — public API surface (what's exposed to consumers)
 
-- **Fallback:** If TokenSave not installed -> use `Agent Explore` for codebase exploration.
+- **Fallback:** If TokenSave not installed -> use `Agent general-purpose` for codebase exploration (Explore agent hardcodes haiku model).
 
 **TokenSave additional tools for deeper analysis:**
 - `tokensave_callers` / `tokensave_callees` — who calls what, what does this call
