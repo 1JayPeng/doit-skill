@@ -6,6 +6,15 @@ Spec-driven, TDD-based development workflow for [Claude&nbsp;Code](https://githu
 
 ## Recent Changes
 
+**2026-06-04** — Workflow as iron rule — no phase can be skipped:
+- New iron rule: "完整工作流不可跳过" — every phase mandatory, in order, no skipping
+- New iron rule: "Review + Simplify 不可跳过" — unreviewed code cannot be committed
+- Review checklist: duplication, security (OWASP), over-abstraction, dead code, README sync
+- Simplify checklist: merge dupes, delete dead code, flatten abstractions, reduce lines
+- Forbidden: skip Review, skip Simplify, perfunctory Review, skip E2E after Simplify
+- CLAUDE.md injection: Workflow Rules section now propagated to every project
+- Principles table: 3 → 6 iron rules
+
 **2026-06-04** — Strengthened Background Execution iron rule:
 - Mandatory decision gate before every Bash command — estimate runtime, select tier, set completion signal
 - Forbidden behaviors explicitly listed — no idle waiting, no polling without Monitor/ScheduleWakeup, no forgotten background tasks

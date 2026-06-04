@@ -364,6 +364,60 @@ If no match found, inject:
 
 **If config already has a Background Task Rules section:** skip. No overwrite.
 
+### 9b. Inject Workflow Rules into CLAUDE.md
+
+Always inject this section after Background Task Rules. If the project already has a "Workflow Rules" section, skip. Check:
+
+```bash
+grep -i "workflow rules\|工作流铁律\|完整工作流" CLAUDE.md 2>/dev/null
+```
+
+If no match found, inject:
+
+```markdown
+## Workflow Rules
+
+**铁律：工作流不是建议，是铁律。每个 phase 必须按顺序完成，不允许跳过。**
+
+### 完整流程（Type F 功能）
+
+```
+Phase -1 → 0 → 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 → 9 → 9.5 → 10
+环境检测  分类 规格 计划 执行 E2E 审查 简化 E2E验证 提交 清理 总结 压缩
+```
+
+### 禁止跳过
+
+- **禁止**跳过 Phase 1（规格）直接写代码
+- **禁止**跳过 Phase 4（E2E）直接进入审查
+- **禁止**跳过 Phase 5-6（Review + Simplify）直接提交 — 没有审查不提交
+- **禁止**跳过 Phase 7（E2E 验证）直接提交 — 简化后必须重新验证
+- **禁止**跳过 Phase 8（Commit + Push）说"完成"
+- **禁止**跳过 Phase 10（Compact）结束对话
+
+### Phase 完成后必须继续
+
+- Phase 3 完成 → 立即 Phase 4
+- Phase 4 完成 → 立即 Phase 5
+- Phase 5 完成 → 立即 Phase 6
+- Phase 6 完成 → 立即 Phase 7
+- Phase 7 完成 → 立即 Phase 8
+- Phase 8 完成 → 立即 Phase 9
+- Phase 9 完成 → 立即 Phase 9.5
+- Phase 9.5 完成 → 立即 Phase 10
+
+### Review + Simplify 不可跳过
+
+每次代码变更后，必须经过 Review（Phase 5）和 Simplify（Phase 6）：
+- Review：找重复代码、安全漏洞、过度抽象、死代码
+- Simplify：合并重复、删除死代码、压平抽象、减少行数
+- Simplify 后必须重新运行 E2E（Phase 7）
+
+**唯一合法结束状态是 Phase 10 compact。**
+```
+
+**If config already has a Workflow Rules section:** skip. No overwrite.
+
 ### 10. Inject Skill Loading Rules into CLAUDE.md
 
 Write or update `## Skill Loading` section in CLAUDE.md. This ensures caveman loads even if the agent skips SKILL.md Step 1. Check first:

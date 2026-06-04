@@ -1,6 +1,6 @@
 # Coding Principles
 
-Seven principles that guide every phase of the doit workflow. Three iron rules first:
+Nine principles that guide every phase of the doit workflow. Six iron rules first:
 
 ## 0. Non-Interruptive Questions (铁律)
 
@@ -74,6 +74,77 @@ This is not optional. Code without commit is just text in a buffer. Code without
 - **Any code change** — commit before compacting context
 
 See [commit.md](commit.md) for commit message conventions and push strategies.
+
+## 1.25. MemPalace Read-Write Symmetry (铁律)
+
+**MemPalace calls are the same level as TokenSave — mandatory when available, silently skip when not.**
+
+- **Phase 0 sweep must execute** (Type S excepted) — 4 parallel calls load project context
+- **`[MP-READ]` marked steps** — read project history (specs, decisions, implementations, bugs) for current phase context
+- **`[MP-WRITE]` marked steps** — write phase output (specs, ADRs, implementation summaries, KG facts, diary)
+- **Read before write** — Phase 0 does global sweep, per-phase `[MP-READ]` does targeted search, `[MP-WRITE]` after phase completes
+- **MP unavailable** → any call errors → silently skip all MP steps for this session, filesystem remains primary
+
+## 1.5. Complete Workflow Cannot Be Skipped (铁律)
+
+**The workflow is not a suggestion, it is an iron rule. Every phase must be completed in order. No skipping.**
+
+Old pattern: modify code -> "done" -> skip Review/Simplify/E2E -> commit directly. This leads to degraded quality, duplicated logic, over-engineering, and bugs shipped to production.
+New pattern: every phase completed in order -> Phase Gate check -> next phase.
+
+**Forbidden behaviors:**
+- **禁止**跳过 Phase 1 (Spec) 直接写代码 — 没有 spec 不写代码
+- **禁止**跳过 Phase 4 (E2E) 直接进入审查 — 没有 E2E 不审查
+- **禁止**跳过 Phase 5-6 (Review + Simplify) 直接提交 — 没有审查不提交
+- **禁止**跳过 Phase 7 (E2E 验证) 直接提交 — 简化后必须重新验证
+- **禁止**跳过 Phase 8 (Commit + Push) 说"完成" — 未提交等于丢失
+- **禁止**跳过 Phase 10 (Compact) 结束对话 — 不压缩上下文
+
+**Phase completion means continue immediately:**
+- Phase 3 done → Phase 4, no stop
+- Phase 4 done → Phase 5, no stop
+- Phase 5 done → Phase 6, no stop
+- Phase 6 done → Phase 7, no stop
+- Phase 7 done → Phase 8, no stop
+- Phase 8 done → Phase 9, no stop
+- Phase 9 done → Phase 9.5, no stop
+- Phase 9.5 done → Phase 10, no stop
+
+**The only valid end state is Phase 10 compact.**
+
+### Applied Everywhere
+
+- **Type F (Feature)**: Full pipeline -1 through 10, every phase
+- **Type S (Simple)**: Phase 0 → execute → Phase 9.5 → Phase 10. Still needs commit + compact.
+- **Type B (Bug)**: Phase 0 → D0-D6 → Phase 8 → Phase 9.5 → Phase 10
+
+## 1.7. Review + Simplify Cannot Be Skipped (铁律)
+
+**After every code change, Review (Phase 5) and Simplify (Phase 6) are mandatory. Unreviewed code cannot be committed.**
+
+Old pattern: modify files -> commit directly. This leads to duplicated code, over-abstraction, undiscovered bugs, and out-of-sync documentation.
+New pattern: code change → Review (find duplication, security issues, architecture problems) → Simplify (remove redundancy, flatten) → E2E verify → commit.
+
+**Review must check:**
+- Duplicated code (same logic appearing multiple times)
+- Security vulnerabilities (OWASP Top 10: injection, XSS, auth bypass)
+- Over-abstraction (3 layers of functions for one operation)
+- Dead code (unused functions, variables, imports)
+- README synchronization
+
+**Simplify must execute:**
+- Merge duplicated logic
+- Delete dead code
+- Flatten unnecessary abstraction layers
+- Simplify error handling (only handle scenarios that can actually happen)
+- Reduce line count (200 lines → 50 lines if possible)
+
+### Forbidden Behaviors
+
+- **禁止**跳过 Review 直接 commit
+- **禁止**跳过 Simplify 直接提交 — "do it later" = never
+- **禁止**perfunctory Review ("looks good") — must find specific issues
+- **禁止**Simplify 后不重新运行 E2E (Phase 7) — simplification can break functionality
 
 ## 2. Think Before Coding
 

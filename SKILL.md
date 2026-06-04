@@ -137,15 +137,81 @@ See [background-process.md](background-process.md) for full three-tier patterns.
 - **先读后写** — Phase 0 已做全局 sweep，各 phase 的 `[MP-READ]` 做精准搜索，`[MP-WRITE]` 在 phase 完成后写入
 - **MP 不可用** → 任何调用报错 → 静默跳过该 session 所有 MP 步骤，文件系统为主
 
+## 铁律 — 完整工作流不可跳过
+
+**工作流不是建议，是铁律。每个 phase 必须按顺序完成，不允许跳过。**
+
+旧模式：改完代码 -> "完成" -> 跳过 Review/Simplify/E2E -> 直接 commit。这导致代码质量下降、重复逻辑、过度设计、bug 漏检。
+新模式：每个 phase 按顺序完成 -> Phase Gate 检查 -> 进入下一 phase。
+
+**Type F（功能）完整流程：**
+```
+Phase -1 → Phase 0 → Phase 1 → Phase 2 → Phase 3 → Phase 4 → Phase 5 → Phase 6 → Phase 7 → Phase 8 → Phase 9 → Phase 9.5 → Phase 10
+环境检测   分类       规格      计划     执行     E2E初始   审查    审查+简化   E2E验证   提交推送   清理    完成总结    压缩
+```
+
+**禁止行为：**
+- **禁止**跳过 Phase 1（规格）直接写代码 — 没有 spec 不写代码
+- **禁止**跳过 Phase 4（E2E）直接进入审查 — 没有 E2E 不审查
+- **禁止**跳过 Phase 5-6（Review + Simplify）直接提交 — 没有审查不提交
+- **禁止**跳过 Phase 7（E2E 验证）直接提交 — 简化后必须重新验证
+- **禁止**跳过 Phase 8（Commit + Push）说"完成" — 未提交等于丢失
+- **禁止**跳过 Phase 10（Compact）结束对话 — 不压缩上下文
+
+**Phase 完成后必须继续，不能停在中间：**
+- Phase 3 完成 → 立即 Phase 4，不要停
+- Phase 4 完成 → 立即 Phase 5，不要停
+- Phase 5 完成 → 立即 Phase 6，不要停
+- Phase 6 完成 → 立即 Phase 7，不要停
+- Phase 7 完成 → 立即 Phase 8，不要停
+- Phase 8 完成 → 立即 Phase 9，不要停
+- Phase 9 完成 → 立即 Phase 9.5，不要停
+- Phase 9.5 完成 → 立即 Phase 10，不要停
+
+**唯一合法结束状态是 Phase 10 compact。** 如果要说"完成"而上下文还没压缩，说明你没做完。
+
+**Type S（简单）简化流程：** Phase 0 → 直接执行 → Phase 9.5 → Phase 10。简单变更也需 commit + compact。
+**Type B（Bug）调试流程：** Phase 0 → D0-D6 → Phase 8 → Phase 9.5 → Phase 10。
+
+## 铁律 — Review + Simplify 不可跳过
+
+**每次代码变更后，必须经过 Review（Phase 5）和 Simplify（Phase 6）。没有审查的代码不能提交。**
+
+旧模式：改完文件 -> 直接 commit。这导致重复代码、过度抽象、未发现的 bug、README 不同步。
+新模式：改完代码 -> Review（找重复、安全漏洞、架构问题） -> Simplify（去冗余、扁平化） -> E2E 验证 -> commit。
+
+**Review 必须检查：**
+- 重复代码（相同逻辑出现多次）
+- 安全漏洞（OWASP Top 10：注入、XSS、认证绕过）
+- 过度抽象（一个操作包 3 层函数）
+- 死代码（未使用的函数、变量、import）
+- README 是否需要同步更新
+
+**Simplify 必须执行：**
+- 合并重复逻辑
+- 删除死代码
+- 压平不必要的抽象层
+- 简化错误处理（只处理可能发生的场景）
+- 减少代码行数（200 行能变 50 行，就改）
+
+**禁止行为：**
+- **禁止**跳过 Review 直接 commit
+- **禁止**跳过 Simplify 直接提交 — "以后再说" = 永远不会做
+- **禁止**走过场的 Review（"看起来不错"）— 必须找出具体的问题
+- **禁止**Simplify 后不重新运行 E2E（Phase 7）— 简化可能破坏功能
+
 ## Principles
 
-Seven principles guide every phase. Three iron rules. See [principles.md](principles.md).
+Seven principles guide every phase. Six iron rules. See [principles.md](principles.md).
 
 | Principle | What it prevents |
 |-----------|------------------|
 | **Non-Interruptive Questions (铁律)** | blocking workflow, wasted tokens, user frustration |
 | **Background Execution (铁律)** | idle waiting, frozen agent, dead conversation time |
 | **Commit + Push Mandatory (铁律)** | lost work, no git history, no PR trail |
+| **MemPalace 读写对称 (铁律)** | lost context across sessions, repeated research |
+| **完整工作流不可跳过 (铁律)** | skipped phases, degraded quality, bugs shipped |
+| **Review + Simplify 不可跳过 (铁律)** | unreviewed code, duplication, over-engineering |
 | **Think Before Coding** | wrong assumptions, hidden confusion, missing trade-offs |
 | **Brevity First** | over-engineering, bloated abstractions |
 | **Surgical Edits** | unrelated edits, touching code that shouldn't be touched |
