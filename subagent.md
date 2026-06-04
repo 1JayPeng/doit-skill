@@ -98,6 +98,70 @@ SendMessage(to="<agent_id_or_name>", message="新的指令...")
 
 **铁律：所有 subagent 调用必须使用 `general-purpose` 或 `Plan` 类型，绝不使用 `Explore`。**
 
+### 铁律 — 同文件冲突零容忍
+
+**多个 subagent 绝不允许并行修改同一文件。违反此规则 = 数据丢失。**
+
+```
+// ❌ 错误：两个 agent 修改同一文件
+Agent({ description: "Fix auth middleware", prompt: "...修改 src/auth/middleware.rs...", run_in_background: true })
+Agent({ description: "Add rate limiting", prompt: "...修改 src/auth/middleware.rs...", run_in_background: true })
+// → 第二个 agent 的修改覆盖第一个，或产生不可预测的合并冲突
+
+// ✅ 正确：文件无交集 → 并行
+Agent({ description: "Fix auth middleware", prompt: "...修改 src/auth/middleware.rs...", run_in_background: true })
+Agent({ description: "Add rate limiting", prompt: "...修改 src/api/rate-limit.rs...", run_in_background: true })
+
+// ✅ 正确：同文件 → 串行
+Agent({ description: "Fix auth middleware", prompt: "...修改 src/auth/middleware.rs..." })  // 阻塞直到完成
+Agent({ description: "Add rate limiting", prompt: "...修改 src/auth/middleware.rs..." })   // 第一个完成后执行
+```
+
+**执行流程（主流程责任）：**
+
+1. **Phase 2 规划时，为每个 REQ 列出 target_files** — 通过 `tokensave_impact` 或 `tokensave_context` 确定每个 REQ 影响哪些文件
+2. **构建文件分配表** — REQ-001 → [file_a, file_b], REQ-002 → [file_c], REQ-003 → [file_a, file_d]
+3. **检查文件交集** — REQ-001 和 REQ-003 共享 file_a → 不能并行
+4. **无交集 → 并行派发** | **有交集 → 串行执行（文件多的 agent 先跑）**
+
+**Worktree 隔离模式同样适用此规则：**
+
+```
+Agent({ description: "Implement REQ-001", prompt: "...", isolation: "worktree" })
+Agent({ description: "Implement REQ-002", prompt: "...", isolation: "worktree" })
+// 两个 worktree 各自修改不同文件 → 并行 OK
+// 完成后主流程合并：
+//   git merge worktree-req-001 --no-edit
+//   git merge worktree-req-002 --no-edit
+//   → 冲突？ → git diff --name-only --diff-filter=U → 解决
+```
+
+**只读操作天然安全：** Phase 5 的并行 review（security, architecture, complexity）只做 tokensave 查询，不写文件 → 无需检查文件交集。
+
+**违反后果：**
+- 同一文件并行写入 → 后完成的 agent 覆盖先完成的 → 工作丢失
+- Worktree 合并冲突 → 主流程额外工作量解决 → 延迟交付
+- Edit 工具 "string not found" 错误 → agent 失败 → 浪费 token
+
+**检测机制（主流程在派发前执行）：**
+
+```
+伪代码：
+agent_file_map = {}  # agent_id -> [files]
+for each agent_to_launch:
+  files = parse_target_files(agent.prompt)
+  for already_launched_agent in launched_agents:
+    intersection = files ∩ agent_file_map[already_launched_agent]
+    if intersection not empty:
+      # 冲突！串行执行此 agent，不并行
+      queue_for_sequential(agent)
+      break
+  else:
+    # 无冲突，安全并行
+    launch_parallel(agent)
+    agent_file_map[agent.id] = files
+```
+
 
 ## Per-Phase Subagent Patterns
 

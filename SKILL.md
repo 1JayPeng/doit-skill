@@ -35,6 +35,8 @@ Claude Code's native Agent tool enables parallel task execution across workflow 
 
 **铁律：继承主对话模型。** 不指定 `model` 参数，subagent 继承主对话模型。避免模型不存在错误。
 
+**铁律：同文件不并行。** 修改同一文件的 subagent 必须串行执行。主流程在 Phase 2 规划时构建文件分配表，检查文件交集 → 有交集则串行，无交集则并行。只读操作（review, analysis）天然安全。详见 [subagent.md](subagent.md)。
+
 **Cost model:** Each agent = one API call. Parallel agents reduce total time by 50-70% when tasks are independent.
 
 ## Prerequisites
