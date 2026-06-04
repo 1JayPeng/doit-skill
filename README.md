@@ -4,6 +4,17 @@ Spec-driven, TDD-based development workflow for [Claude&nbsp;Code](https://githu
 
 [English](README.md) · [简体中文](README_ZH.md)
 
+## Recent Changes
+
+**2026-06-04** — Comprehensive code review fixes:
+- Security: Fixed command injection vulnerability in `scripts/add-dependency.sh`
+- Bug: Fixed `goto_step_9` bash syntax error in `env-check.md`
+- Bug: Removed duplicate Rust installation code in `scripts/setup.sh`
+- Bug: Fixed Phase 4/7 ordering contradiction in `execute.md`
+- Policy: Replaced all `Agent Explore` fallbacks with `grep`/`find`/`Read` (global policy compliance)
+- Docs: Fixed dead `grill-with-docs/` references, `CLAUD.md` typo, hardcoded dates
+- Docs: Fixed `tokensave_ast_grep_rewrite` (non-existent tool) references
+
 ## Features
 
 - **Auto-classify** — Distinguishes simple fixes, features, and bugs. Simple changes ship immediately; features go through the full pipeline.
