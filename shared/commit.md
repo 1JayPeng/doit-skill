@@ -202,10 +202,27 @@ mempalace_search query="<feature> decision" wing="<project>" room="decisions" li
 ```
 Use findings to ensure commit message aligns with project decisions.
 
-**[MP-WRITE] MemPalace persistence:**
+**[MP-WRITE] MemPalace persistence — KG mandatory (铁律):**
+
+Check KG status first: `mempalace_kg_stats`. If `entities: 0`, you MUST populate it.
+
+**KG facts to add (at minimum):**
 ```
-mempalace_kg_add subject="<project>" predicate="shipped" object="<feature>" valid_from="<today YYYY-MM-DD>"
+mempalace_kg_add subject="<project>" predicate="shipped" object="<feature name>" valid_from="<today YYYY-MM-DD>"
+```
+
+**Additional KG facts (add if applicable):**
+```
+mempalace_kg_add subject="<project>" predicate="uses" object="<key technology/framework>" valid_from="<today YYYY-MM-DD>"
+mempalace_kg_add subject="<feature>" predicate="part_of" object="<project>" valid_from="<today YYYY-MM-DD>"
+mempalace_kg_add subject="<project>" predicate="has_decision" object="<decision summary>" valid_from="<today YYYY-MM-DD>"
+```
+
+**Diary entry:**
+```
 mempalace_diary_write agent_name="doit" entry="<commit-hash>: <feature summary>, <N> REQs, <N> files" topic="<feature>"
 ```
+
+**If KG stats show entities > 0 but no facts for this project:** still add the shipped fact. Every completed feature = at least one KG fact. No exceptions.
 
 **After summary, proceed to Phase 10 Auto-Compact.** Doit session ends after compact.

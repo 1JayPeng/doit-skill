@@ -267,9 +267,12 @@ mempalace_kg_query entity="<project>"
 mempalace_kg_timeline entity="<project>"
 mempalace_search query="<用户请求关键词>" wing="<project>" limit=5
 ```
+**CRITICAL: `wing="<project>"` is mandatory on every `mempalace_search`.** The `sessions` wing (auto-save) typically contains 80-95% of all drawers. Searching without `wing` filter returns auto-saved session dumps, not project context. `<project>` = project root directory name.
 
 **Type R (resume) append:** `mempalace_search query="<project> resume in-progress" wing="<project>" limit=3`
 **Type B (bug) append:** `mempalace_search query="<bug 关键词> error" wing="<project>" room="bugs" limit=5`
+
+**KG empty detection:** If `mempalace_kg_query` returns 0 relationships AND `mempalace_kg_timeline` returns empty, note `[WARN] KG empty — Phase 8 MUST populate it`. This means prior sessions failed to write KG facts.
 
 If MemPalace unavailable (any call errors) → skip all MP steps silently for this session. Filesystem remains primary.
 
@@ -350,6 +353,8 @@ After Phase 9.5 completion summary, automatically trigger context compression to
 3. **MemPalace diary** (if available):
    - `mempalace_diary_write agent_name="doit" entry="<compact summary>" topic="compact"`
    - `mempalace_memories_filed_away` → verify auto-save checkpoint was saved
+   - `mempalace_kg_stats` → verify KG was populated. If still 0 entities after Phase 8, add facts NOW:
+     - `mempalace_kg_add subject="<project>" predicate="shipped" object="<feature>" valid_from="<today>"`
    - `mempalace_kg_timeline entity="<project>"` → log project timeline for future reference
 4. **Caveman compress** (if available): Run `/caveman:compress CLAUDE.md` to compress CLAUDE.md using caveman's built-in compression skill. Falls back to step 5 if caveman unavailable.
 5. **MANDATORY: Run `/compact`** — execute the Claude Code built-in compaction command. Type `/compact` as a user message. Do NOT skip. Do NOT say "done" without compacting.

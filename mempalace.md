@@ -138,6 +138,14 @@ mempalace_memories_filed_away -> { filed: true, message_count: N, timestamp: "..
 
 **6. Stats tools are diagnostic, not operational.** `mempalace_get_taxonomy`, `mempalace_kg_stats`, `mempalace_graph_stats` — don't call these during normal workflow. They're for troubleshooting and maintenance.
 
+**7. ALWAYS filter by `wing` in `mempalace_search`.** The `sessions` wing (auto-save) typically contains 80-95% of all drawers and is pure noise for project context. Every `mempalace_search` MUST include `wing="<project>"`. Searching without wing filter means 90%+ of results are auto-saved session dumps.
+
+**8. KG is mandatory, not optional.** `mempalace_kg_add` in Phase 8 is NOT optional. Every completed feature MUST add at least one KG fact. Empty KG (0 entities) means the project has no structured memory — Phase 0 `kg_query` and `kg_timeline` will return nothing, wasting 2 of 4 sweep calls. If KG is empty, Phase 8 MUST populate it.
+
+**9. Auto-save hook writes to `sessions` wing.** The MemPalace auto-save hook (`mempalace_memories_filed_away`) writes to `sessions/technical` by default. This is NOT project context — it's raw conversation dumps. Do NOT search the sessions wing for project context. Use `mempalace_search wing="<project>"` to exclude it.
+
+**10. Periodic cleanup.** When `mempalace_status` shows sessions wing > 80% of total drawers, run `mempalace_sync wing="sessions"` (dry-run first) to prune stale session drawers. This improves search quality for all projects sharing the MemPalace instance.
+
 ## Fallback
 
 If MemPalace is unavailable:

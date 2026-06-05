@@ -496,6 +496,21 @@ else
 fi
 ```
 
+### 11b. MemPalace Health Check (if available)
+
+If MemPalace is available, run a quick health check:
+
+```bash
+# This is a MemPalace MCP call, not bash. Execute via tool:
+# mempalace_status → check total_drawers, wings
+# mempalace_kg_stats → check entities, triples
+```
+
+**If KG is empty (entities: 0):** announce `[WARN] MemPalace KG empty — Phase 8 MUST populate KG facts`
+**If sessions wing > 80% of total drawers:** announce `[WARN] MemPalace sessions wing bloated — run mempalace_sync wing="sessions" to clean`
+
+These warnings inform the agent to take corrective action during the workflow.
+
 **If tools are missing, announce warnings — do not block the workflow:**
 
 ```
