@@ -131,7 +131,7 @@ See [background-process.md](background-process.md) for full three-tier patterns.
 
 **MemPalace 调用与 TokenSave 同级别，不可跳过。可用则必做，不可用则静默跳过。**
 
-- **Phase 0 sweep 必须执行**（Type S 除外）— 8 个并行调用加载项目上下文（4 核心 + 4 知识 room）
+- **Phase 0 sweep 必须执行**（Type S 除外）— 10 个并行调用加载项目上下文（4 核心 + 4 知识 room + 2 sessions 反馈）
 - **`[MP-READ]` 标记的步骤** — 读项目相关历史（spec、决策、实现、bug），为当前 phase 提供上下文
 - **`[MP-WRITE]` 标记的步骤** — 写当前 phase 产出（spec、ADR、实现摘要、KG 事实、diary）
 - **先读后写** — Phase 0 已做全局 sweep，各 phase 的 `[MP-READ]` 做精准搜索，`[MP-WRITE]` 在 phase 完成后写入
@@ -270,7 +270,7 @@ mempalace_kg_timeline entity="<project>"
 mempalace_search query="<用户请求关键词>" wing="<project>" limit=5
 ```
 
-**Knowledge rooms (new 4):**
+**Knowledge rooms (4):**
 ```
 mempalace_search wing="<project>" room="knowledge_code" limit=3
 mempalace_search wing="<project>" room="knowledge_api" limit=3
@@ -278,13 +278,20 @@ mempalace_search wing="<project>" room="knowledge_db" limit=3
 mempalace_search wing="<project>" room="knowledge_flow" limit=3
 ```
 
+**Sessions feedback (2, captures user feedback stored in sessions wing):**
+```
+mempalace_search wing="sessions" room="general" limit=3
+mempalace_search wing="sessions" room="problems" limit=3
+```
+**Why:** `sessions/technical` (3500+ drawers) is auto-save noise — excluded. `sessions/general` and `sessions/problems` contain structured user feedback (auto-compact, no-repeated-actions, etc.) that applies across all projects.
+
 **CRITICAL: `wing="<project>"` is mandatory on every `mempalace_search`.** The `sessions` wing (auto-save) typically contains 80-95% of all drawers. Searching without `wing` filter returns auto-saved session dumps, not project context. `<project>` = project root directory name.
 
 **Type-specific sweep:**
-- **Type F (feature):** All 8 calls above
-- **Type S (simple):** Only core 4 calls, skip knowledge rooms
-- **Type B (bug):** Core 4 + `mempalace_search wing="<project>" room="knowledge_code" limit=3` + `mempalace_search query="<bug 关键词> error" wing="<project>" room="bugs" limit=5`
-- **Type R (resume):** Core 4 + `mempalace_search query="<project> resume in-progress" wing="<project>" limit=3`
+- **Type F (feature):** All 8 calls above + sessions feedback 2 = 10 total
+- **Type S (simple):** Only core 4 calls, skip knowledge rooms + sessions
+- **Type B (bug):** Core 4 + sessions 2 + `mempalace_search wing="<project>" room="knowledge_code" limit=3` + `mempalace_search query="<bug 关键词> error" wing="<project>" room="bugs" limit=5`
+- **Type R (resume):** Core 4 + sessions 2 + `mempalace_search query="<project> resume in-progress" wing="<project>" limit=3`
 
 **KG empty detection:** If `mempalace_kg_query` returns 0 relationships AND `mempalace_kg_timeline` returns empty, note `[WARN] KG empty — Phase 8 MUST populate it`. This means prior sessions failed to write KG facts.
 

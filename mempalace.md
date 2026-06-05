@@ -111,6 +111,7 @@ Each phase document embeds its own `[MP-READ]` and `[MP-WRITE]` steps. See the p
 | `reviews` | Code review findings | Phase 5 |
 | `reference-docs` | User-provided reference docs (raw) | Doc Capture |
 | `bugs` | Bug diagnosis results | Debug D0 |
+| `knowledge_docs` | User feedback (migrated from sessions) | Phase 0 setup |
 
 ### Knowledge Rooms (REQ-001)
 
@@ -130,6 +131,22 @@ Structured knowledge extracted from sessions. These are FIRST-CLASS citizens —
 - `wing` — project name
 
 Wing name = project root directory name (e.g., `my-project`, `doit-skill`).
+
+### Sessions Wing Strategy
+
+The `sessions` wing has 3 rooms with different signal-to-noise ratios:
+
+| Room | Drawers | Content | Phase 0 Action |
+|------|---------|---------|----------------|
+| `technical` | 3500+ | Auto-save raw conversation dumps | **Exclude** — pure noise |
+| `general` | ~8 | Structured user feedback (auto-compact, etc.) | **Search** — `wing="sessions" room="general"` |
+| `problems` | ~5 | Structured user feedback (no-repeat, etc.) | **Search** — `wing="sessions" room="problems"` |
+
+**Migration:** Valuable feedback from sessions/general and sessions/problems has been migrated to `knowledge_docs` rooms in project wings. Phase 0 searches BOTH:
+1. `mempalace_search wing="<project>" room="knowledge_docs"` — project-specific knowledge
+2. `mempalace_search wing="sessions" room="general"` — cross-project user feedback (transition period)
+
+**Never search `sessions/technical` without a specific reason.** It dilutes results 100x.
 
 ## Auto-Save Hook
 
@@ -161,7 +178,7 @@ mempalace_memories_filed_away -> { filed: true, message_count: N, timestamp: "..
 
 **8. KG is mandatory, not optional.** `mempalace_kg_add` in Phase 8 is NOT optional. Every completed feature MUST add at least one KG fact. Empty KG (0 entities) means the project has no structured memory — Phase 0 `kg_query` and `kg_timeline` will return nothing, wasting 2 of 4 sweep calls. If KG is empty, Phase 8 MUST populate it.
 
-**9. Auto-save hook writes to `sessions` wing.** The MemPalace auto-save hook (`mempalace_memories_filed_away`) writes to `sessions/technical` by default. This is NOT project context — it's raw conversation dumps. Do NOT search the sessions wing for project context. Use `mempalace_search wing="<project>"` to exclude it.
+**9. Sessions wing: technical = noise, general/problems = signal.** The auto-save hook writes to `sessions/technical` (3500+ drawers, raw conversation dumps — exclude). However, `sessions/general` and `sessions/problems` contain structured user feedback (auto-compact, no-repeated-actions) that applies across ALL projects. Phase 0 sweep includes `mempalace_search wing="sessions" room="general"` and `room="problems"` to capture this feedback. Do NOT search `sessions/technical`.
 
 **10. Periodic cleanup.** When `mempalace_status` shows sessions wing > 80% of total drawers, run `mempalace_sync wing="sessions"` (dry-run first) to prune stale session drawers. This improves search quality for all projects sharing the MemPalace instance.
 
