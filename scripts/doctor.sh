@@ -146,7 +146,7 @@ for tool in "${EXTERNAL_TOOLS[@]}"; do
         "caveman")
             if [ -d "$SKILL_DIR/caveman" ]; then
                 echo "  ✅ caveman installed (skill)"
-            elif [ -f "$HOME/.claude/plugins/caveman/plugin.json" ] || [ -f "$HOME/.claude/plugins/caveman/SKILL.md" ]; then
+            elif grep -rl "caveman" "$HOME/.claude/plugins/" > /dev/null 2>&1; then
                 echo "  ✅ caveman installed (plugin)"
             elif [ -f "$HOME/.claude/hooks/caveman.sh" ] || [ -f "$HOME/.claude/hooks/caveman-hook.sh" ]; then
                 echo "  ✅ caveman installed (hooks)"
