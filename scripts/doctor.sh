@@ -15,7 +15,7 @@ if [ -z "$SKILL_DIR" ]; then
 fi
 BUNDLED_SKILLS=("grill-me" "tdd" "diagnose" "prototype" "handoff" "improve-codebase-architecture")
 BUILTIN_SKILLS=()
-EXTERNAL_TOOLS=("context-mode" "rtk" "uv" "rust" "tokensave" "tavily" "caveman" "code-review" "mempalace")
+EXTERNAL_TOOLS=("context-mode" "rtk" "uv" "rust" "tokensave" "tavily" "caveman" "code-review" "mempalace" "agentmemory")
 SHARED_FILES=("shared/review-simplify.md" "shared/e2e-verify.md" "shared/commit.md")
 SYMLINK_TARGETS=("review-simplify.md:shared/review-simplify.md" "commit.md:shared/commit.md")
 
@@ -184,6 +184,36 @@ for tool in "${EXTERNAL_TOOLS[@]}"; do
             else
                 echo "  ℹ️  mempalace not initialized"
                 echo "  💡 Run: mempalace init ."
+            fi
+            ;;
+        "agentmemory")
+            if grep -rl "agentmemory" "$HOME/.claude/plugins/" > /dev/null 2>&1; then
+                echo "  ✅ agentmemory installed (plugin)"
+            else
+                echo "  ℹ️  agentmemory not installed (recommended default)"
+                echo "  💡 Install: claude plugin marketplace add rohitg00/agentmemory"
+                echo "     claude plugin install agentmemory"
+            fi
+            if curl -s http://localhost:3111/agentmemory/health >/dev/null 2>&1; then
+                echo "  ✅ agentmemory server running"
+            else
+                echo "  ℹ️  agentmemory server not running"
+                echo "  💡 Start: npx @agentmemory/agentmemory &"
+            fi
+            ;;
+        "agentmemory")
+            if grep -rl "agentmemory" "$HOME/.claude/plugins/" > /dev/null 2>&1; then
+                echo "  ✅ agentmemory installed (plugin)"
+            else
+                echo "  ℹ️  agentmemory not installed (optional memory layer)"
+                echo "  💡 Install: claude plugin marketplace add rohitg00/agentmemory"
+                echo "     claude plugin install agentmemory"
+            fi
+            if curl -s http://localhost:3111/agentmemory/health >/dev/null 2>&1; then
+                echo "  ✅ agentmemory server running"
+            else
+                echo "  ℹ️  agentmemory server not running"
+                echo "  💡 Start: npx @agentmemory/agentmemory &"
             fi
             ;;
     esac

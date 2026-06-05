@@ -521,6 +521,49 @@ CARGO_EOF
   fi
 fi
 
+# Step 3.5: Install agentmemory (optional memory layer)
+if [ "$SKIP_OPTIONAL" = false ]; then
+  echo "=========================================="
+  echo "  Step 3.5: Installing agentmemory (optional)"
+  echo "=========================================="
+  echo ""
+
+  # agentmemory plugin
+  if grep -rl "agentmemory" "$HOME/.claude/plugins/" > /dev/null 2>&1; then
+    echo_success "agentmemory already installed (plugin)"
+  else
+    echo_info "Installing agentmemory plugin..."
+    plugin_cmd 120 claude plugin marketplace add rohitg00/agentmemory 2>/dev/null || echo_warn "Failed to add agentmemory marketplace"
+    plugin_cmd 180 claude plugin install agentmemory 2>/dev/null || echo_warn "Failed to install agentmemory (install manually: claude plugin install agentmemory)"
+  fi
+
+  # agentmemory server - needs separate terminal
+  if curl -s http://localhost:3111/agentmemory/health >/dev/null 2>&1; then
+    echo_success "agentmemory server already running"
+  else
+    echo_info "agentmemory server not running"
+    echo_info "To start: npx @agentmemory/agentmemory &"
+    echo_info "  (run in a separate terminal, or add '&' to background it)"
+    echo_info "  Viewer: http://localhost:3113"
+    echo_info "  Health: http://localhost:3111/agentmemory/health"
+    echo ""
+    echo_info "Starting agentmemory server in background..."
+    if command -v npx >/dev/null 2>&1; then
+      nohup npx @agentmemory/agentmemory >/dev/null 2>&1 &
+      AGENTMEMORY_PID=$!
+      echo_info "Started agentmemory server (PID: $AGENTMEMORY_PID)"
+      sleep 5
+      if curl -s http://localhost:3111/agentmemory/health >/dev/null 2>&1; then
+        echo_success "agentmemory server is running"
+      else
+        echo_warn "agentmemory server may not have started yet. Check manually: curl http://localhost:3111/agentmemory/health"
+      fi
+    else
+      echo_warn "npx not found, skipping agentmemory server start"
+    fi
+  fi
+fi
+
 # Step 4: Run doctor before cleanup
 echo "=========================================="
 echo "  Step 4: Running dependency check"

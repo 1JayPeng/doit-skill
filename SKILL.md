@@ -15,12 +15,13 @@ Spec-driven TDD workflow. Every feature passes through 10 phases. Nothing ships 
 
 ## Memory Layer
 
-Three persistence layers work together:
+Four persistence layers work together:
 - **tokensave** — code graph (symbols, call edges, dependencies). See [plan.md](plan.md).
 - **context-mode** — session analytics (token usage, tool patterns). See [execute.md](execute.md).
-- **mempalace** — cross-session semantic memory (specs, decisions, implementation notes). See [mempalace.md](mempalace.md).
+- **agentmemory** — cross-session semantic memory (default). 53 MCP tools, 12 hooks, 4 skills. See [agentmemory.md](agentmemory.md).
+- **mempalace** — cross-session semantic memory (alternative). See [mempalace.md](mempalace.md).
 
-If any layer is unavailable, the workflow degrades gracefully using the remaining layers.
+**Default memory layer: agentmemory.** If agentmemory is unavailable, falls back to mempalace. If any layer is unavailable, the workflow degrades gracefully using the remaining layers.
 
 ## Subagent Orchestration
 
