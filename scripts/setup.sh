@@ -29,6 +29,20 @@ file_hash() {
   fi
 }
 
+# Plugin commands can be slow (marketplace lookup + download). Default timeout too short.
+# marketplace add: 120s, plugin install: 180s
+plugin_cmd() {
+  local timeout_s="${1:-120}"
+  shift
+  if command -v timeout >/dev/null 2>&1; then
+    timeout "$timeout_s" "$@"
+  elif command -v gtimeout >/dev/null 2>&1; then
+    gtimeout "$timeout_s" "$@"
+  else
+    "$@"
+  fi
+}
+
 # Create a hash snapshot of a directory: "hash relative_path" per file
 make_snapshot() {
   local dir="$1"
@@ -452,8 +466,8 @@ CARGO_EOF
     echo_success "caveman already installed (hooks)"
   else
     echo_info "Installing caveman (marketplace -> plugin -> curl fallback)..."
-    if claude plugin marketplace add JuliusBrussee/caveman 2>/dev/null && \
-       claude plugin install caveman@caveman 2>/dev/null; then
+    if plugin_cmd 120 claude plugin marketplace add JuliusBrussee/caveman 2>/dev/null && \
+       plugin_cmd 180 claude plugin install caveman@caveman 2>/dev/null; then
       echo_success "caveman installed (claude plugin)"
     else
       echo_warn "claude plugin install failed, trying curl fallback..."
@@ -470,7 +484,7 @@ CARGO_EOF
     echo_success "code-review already installed (plugin)"
   else
     echo_info "Installing code-review..."
-    claude plugin install code-review 2>/dev/null || echo_warn "Failed to install code-review (install manually: claude plugin install code-review)"
+    plugin_cmd 180 claude plugin install code-review 2>/dev/null || echo_warn "Failed to install code-review (install manually: claude plugin install code-review)"
   fi
 
   # MemPalace
@@ -478,8 +492,8 @@ CARGO_EOF
     echo_success "mempalace already installed (plugin)"
   else
     echo_info "Installing mempalace..."
-    claude plugin marketplace add MemPalace/mempalace 2>/dev/null || echo_warn "Failed to add mempalace marketplace"
-    claude plugin install --scope user mempalace 2>/dev/null || echo_warn "Failed to install mempalace (install manually: claude plugin install --scope user mempalace)"
+    plugin_cmd 120 claude plugin marketplace add MemPalace/mempalace 2>/dev/null || echo_warn "Failed to add mempalace marketplace"
+    plugin_cmd 180 claude plugin install --scope user mempalace 2>/dev/null || echo_warn "Failed to install mempalace (install manually: claude plugin install --scope user mempalace)"
   fi
 fi
 
