@@ -148,17 +148,70 @@ Simplify done -> E2E tests -> Pass? -> Spec alignment -> Match? -> Commit
 
 Max 3 iterations. After 3 failures, escalate to user.
 
+### Review + Simplify (Mandatory)
+
+Phase 5 reviews code for duplication, security vulnerabilities (OWASP Top 10), over-abstraction, and dead code. Phase 6 simplifies: merges duplicate logic, deletes dead code, flattens unnecessary abstraction layers, and reduces line count.
+
+**Unreviewed code cannot be committed.** After simplification, Phase 7 re-runs all E2E tests to verify nothing broke.
+
+### E2E Quality
+
+Phase 4 tests the user's full journey — exit codes, stdout, file output, database state — not unit tests with `subprocess`.
+
+| Level | What | Mode |
+|-------|------|------|
+| L0 | Required params, happy path | Auto |
+| L1 | Boundary values | Auto |
+| L2 | Conflicting param combinations | HITL |
+| L3 | Fuzzy/random input, stability | HITL |
+
 ### Three-Layer Memory
 
 doit integrates three memory layers so context survives across sessions:
 
-- **TokenSave** — code graph (symbols, call edges, dependencies)
-- **Context-Mode** — session context (command output, semantic search)
-- **MemPalace** — cross-session memory (specs, decisions, knowledge graph)
+| Layer | Tool | What It Stores |
+|-------|------|----------------|
+| **Code graph** | TokenSave | Symbols, call edges, dependencies — survives code changes |
+| **Session context** | Context-Mode | Command output, semantic search index — survives tool calls |
+| **Cross-session** | MemPalace | Specs, decisions, knowledge graph, agent diary — survives restarts |
+
+MemPalace uses a **read-write symmetry** iron rule: every phase that writes data (specs, ADRs, implementation notes) also reads it back in subsequent runs. Phase 0 sweeps 10 parallel calls (diary, KG, knowledge rooms, sessions feedback) to reconstruct project context.
 
 RTK auto-wraps every Bash command via PreToolUse hook, saving 60-90% tokens across all phases.
 
 See [tool-integration-guide.md](tool-integration-guide.md) for per-phase tool call details.
+
+### Bundled Skills
+
+Six skills ship inside `skills/`, installed with doit:
+
+| Skill | Purpose | Used In |
+|-------|---------|---------|
+| `grill-me` | Idea grilling | Phase 1 |
+| `tdd` | TDD loop | Phase 3 |
+| `diagnose` | Bug diagnosis | Debug D0 |
+| `prototype` | Throwaway prototypes | Phase 1 |
+| `handoff` | Session handoff | Any phase |
+| `improve-codebase-architecture` | Architecture deepening | Phase 5 |
+
+### External Tools
+
+All external tools are installed by `setup.sh`. If a tool is missing, doit degrades gracefully:
+
+| Tool | Install | Used In |
+|------|---------|---------|
+| TokenSave | `cargo install tokensave && tokensave install --agent claude` | Phase 2-7 |
+| Context-Mode | `claude plugin marketplace add mksglu/context-mode` | Phase 3-7, 10 |
+| MemPalace | `claude plugin install --scope user mempalace` | Phase -1, 0, 1, 2, 3, 5, 8, 9.5, 10 |
+| RTK | `curl -fsSL https://v6.gh-proxy.org/https://raw.githubusercontent.com/rtk-ai/rtk/refs/heads/master/install.sh \| sh` | All phases (auto-wrap) |
+| caveman | `claude plugin marketplace add JuliusBrussee/caveman` | Phase 0+, 10 |
+| code-review | `claude plugin install code-review` | Phase 5 |
+| uv | `pip install uv` | Phase 3 |
+| Tavily MCP | Remote, API key only | Phase 1 |
+
+### Resume Mid-Session
+
+A single `/doit` invocation may not complete the entire workflow. To continue from where you left off, simply type `/doit` again. doit determines the current phase from conversation context, git state, and spec files. MemPalace diary entries and KG facts provide cross-session recovery when filesystem state is insufficient.
 
 ---
 
@@ -167,18 +220,14 @@ See [tool-integration-guide.md](tool-integration-guide.md) for per-phase tool ca
 **2026-06-04** — Workflow as iron rule — no phase can be skipped:
 - New iron rule: "完整工作流不可跳过" — every phase mandatory, in order, no skipping
 - New iron rule: "Review + Simplify 不可跳过" — unreviewed code cannot be committed
-- Review checklist: duplication, security (OWASP), over-abstraction, dead code, README sync
-- Simplify checklist: merge dupes, delete dead code, flatten abstractions, reduce lines
 
 **2026-06-04** — MemPalace read-write symmetry integration:
 - Iron rule: "MemPalace read-write symmetry" — MP calls same level as tokensave, mandatory when available
-- Phase 0: embedded 4 parallel MP sweep calls directly in SKILL.md
-- Per-phase `[MP-READ]` / `[MP-WRITE]` markers across all phase documents
+- Phase 0: embedded 10 parallel MP sweep calls (4 core + 4 knowledge rooms + 2 sessions feedback)
 
 **2026-06-04** — Comprehensive code review fixes:
 - Security: Fixed command injection vulnerability in `scripts/add-dependency.sh`
 - Bug: Fixed `goto_step_9` bash syntax error in `env-check.md`
-- Bug: Removed duplicate Rust installation code in `scripts/setup.sh`
 
 ## Structure
 
@@ -213,4 +262,27 @@ doit-skill/
     ├── setup.sh      # Full install
     ├── doctor.sh     # Dependency health check
     └── add-dependency.sh
+```
+
+## Adding Dependencies
+
+### Add a bundled skill
+```bash
+./scripts/add-dependency.sh <skill-name> bundled
+```
+
+### Add an optional skill
+```bash
+# Edit package.json
+"dependencies.optionalSkills": {
+  "new-skill": "recommended"
+}
+```
+
+### Add an external tool
+```bash
+# Edit package.json
+"dependencies.tools": {
+  "new-tool": "install-command"
+}
 ```
