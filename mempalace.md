@@ -88,14 +88,16 @@ Each phase document embeds its own `[MP-READ]` and `[MP-WRITE]` steps. See the p
 
 | Phase | Document | MP Integration |
 |-------|----------|----------------|
-| Phase 0 | [SKILL.md](SKILL.md) | Full sweep: diary, KG query, KG timeline, semantic search |
-| Phase 1 | [spec.md](spec.md) | `[MP-READ]` prior specs, `[MP-WRITE]` new spec |
+| Phase 0 | [SKILL.md](SKILL.md) | Extended sweep: diary, KG query, KG timeline, semantic search + knowledge rooms |
+| Phase 1 | [spec.md](spec.md) | `[MP-READ]` prior specs + knowledge, `[MP-WRITE]` new spec |
 | Phase 2 | [plan.md](plan.md) | `[MP-READ]` implementation context, `[MP-WRITE]` ADRs |
 | Phase 3 | [execute.md](execute.md) | `[MP-READ]` prior implementations, `[MP-WRITE]` REQ summaries |
 | Phase 4 | [e2e.md](e2e.md) | `[MP-WRITE]` E2E results |
 | Phase 5 | [review.md](review.md) | `[MP-READ]` prior review findings, `[MP-WRITE]` review results |
 | Phase 6 | [shared/review-simplify.md](shared/review-simplify.md) | `[MP-READ]` prior decisions, `[MP-WRITE]` updated decisions |
 | Phase 8 | [shared/commit.md](shared/commit.md) | `[MP-READ]` project decisions, `[MP-WRITE]` KG facts + diary |
+| Phase 9.5 | [SKILL.md](SKILL.md) | `[MP-WRITE]` knowledge extraction (code, api, db, flow) |
+| Doc Capture | [doc-capture.md](doc-capture.md) | `[MP-WRITE]` knowledge_docs + reference-docs |
 | Debug D0 | [debug.md](debug.md) | `[MP-READ]` prior bugs, `[MP-WRITE]` bug diagnosis |
 
 ## Wing and Room Convention
@@ -107,8 +109,25 @@ Each phase document embeds its own `[MP-READ]` and `[MP-WRITE]` steps. See the p
 | `implementation` | Per-REQ implementation summaries | Phase 3 |
 | `e2e` | E2E test results and verification notes | Phase 4 |
 | `reviews` | Code review findings | Phase 5 |
-| `reference-docs` | User-provided reference docs | Doc Capture |
+| `reference-docs` | User-provided reference docs (raw) | Doc Capture |
 | `bugs` | Bug diagnosis results | Debug D0 |
+
+### Knowledge Rooms (REQ-001)
+
+Structured knowledge extracted from sessions. These are FIRST-CLASS citizens — not secondary to filesystem.
+
+| Room | Content | Phase Write | Phase 0 Query |
+|------|---------|-------------|---------------|
+| `knowledge_code` | Code patterns, implementations, reusable logic | Phase 9.5 | Type F, B |
+| `knowledge_api` | API usage, endpoints, integrations | Phase 9.5 | Type F |
+| `knowledge_db` | DB schemas, migrations, data models | Phase 9.5 | Type F |
+| `knowledge_flow` | Data flows, architecture diagrams | Phase 9.5 | Type F |
+| `knowledge_docs` | User-provided reference docs (structured) | Doc Capture | Type F |
+
+**MP-WRITE format for knowledge rooms:** Each entry must include:
+- `source_file` — where the knowledge came from
+- `content` — structured summary (not raw copy-paste), 2-5 lines
+- `wing` — project name
 
 Wing name = project root directory name (e.g., `my-project`, `doit-skill`).
 

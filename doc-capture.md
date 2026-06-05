@@ -1,6 +1,6 @@
 # Doc Capture
 
-Captures user-provided reference documents into `.doit/docs/`, indexes with tokensave, and injects CLAUDE.md references for persistence.
+Captures user-provided reference documents. **MemPalace is primary** for knowledge storage, `.doit/docs/` is filesystem fallback. Indexes with tokensave, injects CLAUDE.md references.
 
 ## When to Trigger
 
@@ -80,21 +80,33 @@ If section exists, append new entries (deduplicate by filename).
 
 If CLAUDE.md doesn't exist, create it with just the reference docs section.
 
-### 5. File to MemPalace (if available)
+### 5. File to MemPalace (MANDATORY — primary storage)
 
-If MemPalace is active, also file the doc for cross-project semantic search:
+MemPalace is the PRIMARY storage for captured docs. Don't copy-paste the entire document — extract structured knowledge:
+
+**Extract from the document:**
+- Key API endpoints with parameters
+- Data models / schemas
+- Authentication methods
+- Rate limits, quotas
+- Integration patterns
 
 ```
-mempalace_check_duplicate content="<doc content>" threshold=0.87
+mempalace_check_duplicate content="<structured summary>" threshold=0.87
 ```
 
 If not a duplicate:
 
 ```
-mempalace_add_drawer wing="<project>" room="reference-docs" content="<doc content>" source_file="<original source>"
+mempalace_add_drawer wing="<project>" room="knowledge_docs" content="<structured summary, 2-5 lines per key item>" source_file=".doit/docs/<filename>.md"
 ```
 
-If MemPalace is unavailable or content is a duplicate, skip silently. Filesystem (`.doit/docs/`) remains the primary source of truth.
+**Also write to `reference-docs` for backward compatibility:**
+```
+mempalace_add_drawer wing="<project>" room="reference-docs" content="<doc content>" source_file=".doit/docs/<filename>.md"
+```
+
+If MemPalace is unavailable, skip silently. Filesystem (`.doit/docs/`) remains the fallback.
 
 ### 6. Announce to User
 
@@ -102,7 +114,7 @@ If MemPalace is unavailable or content is a duplicate, skip silently. Filesystem
 [DOC-CAPTURE] Saved to .doit/docs/api-endpoints.md
 [DOC-CAPTURE] Indexed by tokensave
 [DOC-CAPTURE] Updated CLAUDE.md Reference Docs section
-[DOC-CAPTURE] Filed to mempalace (if available)
+[DOC-CAPTURE] Filed to MemPalace knowledge_docs (primary) + reference-docs
 ```
 
 ### 7. Skip if User Says So

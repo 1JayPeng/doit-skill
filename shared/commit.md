@@ -216,6 +216,8 @@ mempalace_kg_add subject="<project>" predicate="shipped" object="<feature name>"
 mempalace_kg_add subject="<project>" predicate="uses" object="<key technology/framework>" valid_from="<today YYYY-MM-DD>"
 mempalace_kg_add subject="<feature>" predicate="part_of" object="<project>" valid_from="<today YYYY-MM-DD>"
 mempalace_kg_add subject="<project>" predicate="has_decision" object="<decision summary>" valid_from="<today YYYY-MM-DD>"
+mempalace_kg_add subject="<project>" predicate="has_api" object="<api name>" valid_from="<today YYYY-MM-DD>"
+mempalace_kg_add subject="<project>" predicate="has_db" object="<db schema>" valid_from="<today YYYY-MM-DD>"
 ```
 
 **Diary entry:**

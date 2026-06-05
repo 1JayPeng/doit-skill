@@ -1,6 +1,6 @@
 # Coding Principles
 
-Nine principles that guide every phase of the doit workflow. Six iron rules first:
+Ten principles that guide every phase of the doit workflow. Seven iron rules first:
 
 ## 0. Non-Interruptive Questions (铁律)
 
@@ -117,6 +117,28 @@ New pattern: every phase completed in order -> Phase Gate check -> next phase.
 - **Type F (Feature)**: Full pipeline -1 through 10, every phase
 - **Type S (Simple)**: Phase 0 → execute → Phase 9.5 → Phase 10. Still needs commit + compact.
 - **Type B (Bug)**: Phase 0 → D0-D6 → Phase 8 → Phase 9.5 → Phase 10
+
+## 1.6. Grill Enforcement (铁律)
+
+**Phase 1 MUST grill the user's idea with minimum 3 questions before writing any REQs. Less than 3 = incomplete Phase 1 = cannot proceed to Phase 2.**
+
+Old pattern: user says "I want X" -> agent immediately writes REQs. This produces specs that miss edge cases, don't challenge assumptions, and lead to wrong implementations.
+New pattern: user says "I want X" -> agent grills with 3+ questions -> writes REQs informed by grill.
+
+**GRILL CHECKLIST — all must complete before writing REQs:**
+- [ ] Challenge assumptions — at least 1 question
+- [ ] Internet search for existing solutions — Tavily MCP or WebSearch
+- [ ] MP search for prior specs/knowledge — `mempalace_search wing="<project>"`
+- [ ] Alternative approaches — at least 1 question
+- [ ] Scope clarification — at least 1 question
+
+**All grill questions MUST use AskUserQuestion.** Never stop and wait.
+
+### Applied Everywhere
+
+- **Phase 1 (Spec)** — 3+ grill questions before any REQ written
+- **Type F (Feature)** — full grill checklist
+- **Type B (Bug)** — grill reproduction steps + scope
 
 ## 1.7. Review + Simplify Cannot Be Skipped (铁律)
 

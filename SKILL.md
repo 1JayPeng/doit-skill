@@ -131,7 +131,7 @@ See [background-process.md](background-process.md) for full three-tier patterns.
 
 **MemPalace 调用与 TokenSave 同级别，不可跳过。可用则必做，不可用则静默跳过。**
 
-- **Phase 0 sweep 必须执行**（Type S 除外）— 4 个并行调用加载项目上下文
+- **Phase 0 sweep 必须执行**（Type S 除外）— 8 个并行调用加载项目上下文（4 核心 + 4 知识 room）
 - **`[MP-READ]` 标记的步骤** — 读项目相关历史（spec、决策、实现、bug），为当前 phase 提供上下文
 - **`[MP-WRITE]` 标记的步骤** — 写当前 phase 产出（spec、ADR、实现摘要、KG 事实、diary）
 - **先读后写** — Phase 0 已做全局 sweep，各 phase 的 `[MP-READ]` 做精准搜索，`[MP-WRITE]` 在 phase 完成后写入
@@ -260,17 +260,31 @@ If caveman skill is not found, announce `[WARN] caveman not installed -> verbose
 mempalace_reconnect
 ```
 
-**Step B — Core context (ALL 4 in parallel, no dependencies):**
+**Step B — Extended sweep (ALL 8 in parallel, no dependencies):**
+
+**Core context (existing 4):**
 ```
 mempalace_diary_read agent_name="doit" last_n=5
 mempalace_kg_query entity="<project>"
 mempalace_kg_timeline entity="<project>"
 mempalace_search query="<用户请求关键词>" wing="<project>" limit=5
 ```
+
+**Knowledge rooms (new 4):**
+```
+mempalace_search wing="<project>" room="knowledge_code" limit=3
+mempalace_search wing="<project>" room="knowledge_api" limit=3
+mempalace_search wing="<project>" room="knowledge_db" limit=3
+mempalace_search wing="<project>" room="knowledge_flow" limit=3
+```
+
 **CRITICAL: `wing="<project>"` is mandatory on every `mempalace_search`.** The `sessions` wing (auto-save) typically contains 80-95% of all drawers. Searching without `wing` filter returns auto-saved session dumps, not project context. `<project>` = project root directory name.
 
-**Type R (resume) append:** `mempalace_search query="<project> resume in-progress" wing="<project>" limit=3`
-**Type B (bug) append:** `mempalace_search query="<bug 关键词> error" wing="<project>" room="bugs" limit=5`
+**Type-specific sweep:**
+- **Type F (feature):** All 8 calls above
+- **Type S (simple):** Only core 4 calls, skip knowledge rooms
+- **Type B (bug):** Core 4 + `mempalace_search wing="<project>" room="knowledge_code" limit=3` + `mempalace_search query="<bug 关键词> error" wing="<project>" room="bugs" limit=5`
+- **Type R (resume):** Core 4 + `mempalace_search query="<project> resume in-progress" wing="<project>" limit=3`
 
 **KG empty detection:** If `mempalace_kg_query` returns 0 relationships AND `mempalace_kg_timeline` returns empty, note `[WARN] KG empty — Phase 8 MUST populate it`. This means prior sessions failed to write KG facts.
 
@@ -284,7 +298,9 @@ If the user's prompt includes reference documents (API specs, business rules, co
 
 ## Phase 1 — Spec
 
-Write spec. See [spec.md](spec.md). Grill user ideas ruthlessly — armed with MemPalace context from Phase 0 sweep. Internet search via Tavily MCP for brainstorming. Search MemPalace for related prior specs. Split into acceptance criteria (REQ-001, REQ-002...). Save to `.spec/current.md`.
+Write spec. See [spec.md](spec.md). Grill user ideas ruthlessly — armed with MemPalace context from Phase 0 sweep. Internet search via Tavily MCP for brainstorming. Search MemPalace for related prior specs AND knowledge rooms. Split into acceptance criteria (REQ-001, REQ-002...). Save to `.spec/current.md`.
+
+**铁律：Grill 最低 3 个问题。** Phase 1 必须至少 3 个 grill 问题（通过 AskUserQuestion）。少于 3 个 = 未完成的 Phase 1 = 不能进入 Phase 2。
 
 ## Phase 2 — Plan
 
@@ -331,7 +347,7 @@ Remove all intermediate workflow files. See [commit.md](shared/commit.md) step 8
 
 **Keep:** `.spec/archive/`, `.doit/config.yaml`, `.doit/docs/`
 
-## Phase 9.5 — Completion Summary
+## Phase 9.5 — Completion Summary + Knowledge Extraction
 
 **Before compact, tell the user what was done and what to do next.** This is the last visible output before context compression. See [commit.md](shared/commit.md) Gate section for format.
 
@@ -341,6 +357,36 @@ Must include:
 - **Actionable next steps** — concrete commands to run, features to test, services to restart
 
 **No vague "done" messages.** User needs to know: "what do I do now?"
+
+### Knowledge Extraction (MANDATORY after completion summary)
+
+After presenting the completion summary, extract reusable knowledge from this session into MemPalace. This is NOT optional.
+
+**Extraction checklist:**
+- [ ] Code patterns written this session -> `knowledge_code`
+- [ ] APIs discovered/used -> `knowledge_api`
+- [ ] DB schemas created/modified -> `knowledge_db`
+- [ ] Data flows/architecture decisions -> `knowledge_flow`
+
+**Process:**
+1. Review `git diff --stat` — what code was written?
+2. Scan conversation for API discussions, DB schemas, architecture decisions
+3. For each knowledge item found: `mempalace_check_duplicate` -> `mempalace_add_drawer`
+4. Announce: `[KNOWLEDGE] Extracted N items (code: X, api: Y, db: Z, flow: W)`
+
+**Knowledge entry format:**
+```
+mempalace_add_drawer wing="<project>" room="knowledge_code" content="<structured summary, 2-5 lines>" source_file="<file path>"
+```
+
+**KG facts for extracted knowledge (if applicable):**
+```
+mempalace_kg_add subject="<project>" predicate="has_api" object="<api name>" valid_from="<today>"
+mempalace_kg_add subject="<project>" predicate="has_db" object="<db schema>" valid_from="<today>"
+```
+
+**If nothing extracted:** Announce `[KNOWLEDGE] No new knowledge to extract this session` — don't skip silently.
+**MP unavailable:** Skip silently. Filesystem remains primary.
 
 ## Phase 10 — Auto-Compact
 

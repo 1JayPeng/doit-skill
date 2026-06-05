@@ -60,11 +60,19 @@ Agent({
 **When to skip:** Single-domain feature, or research topics have dependencies between them.
 **Cost:** Each agent = one API call. haiku models save ~90% vs opus. 3 parallel haiku agents ~ 1 opus agent cost.
 
-### Step 2: Grill
+### Step 2: Grill (MANDATORY minimum 3 questions)
 
 Use `grill-me` skill to pressure-test the idea. Find holes, contradictions, scope creep. Resolve each before proceeding.
 
 **铁律: Grill questions via AskUserQuestion, never stop and wait.**
+**铁律: Minimum 3 grill questions per feature. < 3 = incomplete Phase 1 = cannot proceed to Phase 2.**
+
+**GRILL CHECKLIST — all must complete before writing REQs:**
+- [ ] Challenge assumptions — at least 1 question
+- [ ] Internet search for existing solutions — Tavily MCP or WebSearch
+- [ ] MP search for prior specs/knowledge — `mempalace_search wing="<project>"`
+- [ ] Alternative approaches — at least 1 question
+- [ ] Scope clarification — at least 1 question
 
 When the grill reveals ambiguity, present it as AskUserQuestion:
 ```
