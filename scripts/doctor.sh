@@ -169,9 +169,21 @@ for tool in "${EXTERNAL_TOOLS[@]}"; do
             if grep -rl "mempalace" "$HOME/.claude/plugins/" > /dev/null 2>&1; then
                 echo "  ✅ mempalace installed (plugin)"
             else
-                echo "  ℹ️  mempalace not installed (recommended)"
+                echo "  ℹ️  mempalace plugin not installed (recommended)"
                 echo "  💡 Install: claude plugin marketplace add MemPalace/mempalace"
                 echo "     claude plugin install --scope user mempalace"
+            fi
+            if command -v mempalace >/dev/null 2>&1; then
+                echo "  ✅ mempalace CLI installed"
+            else
+                echo "  ℹ️  mempalace CLI not installed"
+                echo "  💡 Install: uv tool install mempalace"
+            fi
+            if [ -d ".mempalace" ]; then
+                echo "  ✅ mempalace initialized"
+            else
+                echo "  ℹ️  mempalace not initialized"
+                echo "  💡 Run: mempalace init ."
             fi
             ;;
     esac

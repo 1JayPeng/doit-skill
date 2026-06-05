@@ -495,6 +495,30 @@ CARGO_EOF
     plugin_cmd 120 claude plugin marketplace add MemPalace/mempalace 2>/dev/null || echo_warn "Failed to add mempalace marketplace"
     plugin_cmd 180 claude plugin install --scope user mempalace 2>/dev/null || echo_warn "Failed to install mempalace (install manually: claude plugin install --scope user mempalace)"
   fi
+
+  # MemPalace CLI (uv tool)
+  if command -v mempalace >/dev/null 2>&1; then
+    echo_success "mempalace CLI already installed"
+  else
+    echo_info "Installing mempalace CLI via uv tool..."
+    if command -v uv >/dev/null 2>&1; then
+      plugin_cmd 180 uv tool install mempalace 2>/dev/null || echo_warn "Failed to install mempalace CLI (install manually: uv tool install mempalace)"
+    else
+      echo_warn "uv not found, skipping mempalace CLI install"
+    fi
+  fi
+
+  # MemPalace init (very slow - creates HNSW index)
+  if [ -d ".mempalace" ]; then
+    echo_success "mempalace already initialized"
+  else
+    echo_info "Initializing mempalace (this may take a while)..."
+    if command -v mempalace >/dev/null 2>&1; then
+      plugin_cmd 600 mempalace init . 2>/dev/null || echo_warn "Failed to initialize mempalace (run manually: mempalace init .)"
+    else
+      echo_warn "mempalace CLI not found, skipping init"
+    fi
+  fi
 fi
 
 # Step 4: Run doctor before cleanup
