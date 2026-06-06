@@ -29,7 +29,8 @@ doit is a **workflow orchestrator** — it relies on specialized tools for each 
 |-------|------|------|
 | **Code graph** | [tokensave](https://github.com/aovestdipaperino/tokensave) | Symbol lookup, impact analysis, call graphs |
 | **Session context** | [context-mode](https://github.com/mksglu/context-mode) | Command output indexing, semantic search, token savings |
-| **Cross-session memory** | [MemPalace](https://github.com/MemPalace/mempalace) | Specs, decisions, knowledge graph — survives restarts |
+| **Cross-session memory** | [AgentMemory](https://github.com/rohitg00/agentmemory) (default) | 53 MCP tools, 12 hooks, real-time viewer — survives restarts |
+| **Cross-session memory** | [MemPalace](https://github.com/MemPalace/mempalace) (fallback) | Specs, decisions, knowledge graph — survives restarts |
 | **Token optimization** | [RTK](https://github.com/rtk-ai/rtk) | Auto-wraps Bash commands, saves 60-90% tokens |
 | **Code review** | [code-review](https://github.com/anthropics/claude-code-plugins) | OWASP security, architecture review |
 | **Brevity mode** | [caveman](https://github.com/JuliusBrussee/caveman) | Token-compact responses, commit messages |
@@ -165,17 +166,18 @@ Phase 4 tests the user's full journey — exit codes, stdout, file output, datab
 | L2 | Conflicting param combinations | HITL |
 | L3 | Fuzzy/random input, stability | HITL |
 
-### Three-Layer Memory
+### Four-Layer Memory
 
-doit integrates three memory layers so context survives across sessions:
+doit integrates four memory layers so context survives across sessions:
 
 | Layer | Tool | What It Stores |
 |-------|------|----------------|
 | **Code graph** | TokenSave | Symbols, call edges, dependencies — survives code changes |
 | **Session context** | Context-Mode | Command output, semantic search index — survives tool calls |
-| **Cross-session** | MemPalace | Specs, decisions, knowledge graph, agent diary — survives restarts |
+| **Cross-session** | AgentMemory (default) | Semantic search, sessions, governance — survives restarts |
+| **Cross-session** | MemPalace (fallback) | Specs, decisions, knowledge graph, agent diary — survives restarts |
 
-MemPalace uses a **read-write symmetry** iron rule: every phase that writes data (specs, ADRs, implementation notes) also reads it back in subsequent runs. Phase 0 sweeps 10 parallel calls (diary, KG, knowledge rooms, sessions feedback) to reconstruct project context.
+**Default: AgentMemory** (53 MCP tools, real-time viewer at localhost:3113). Falls back to MemPalace if AgentMemory is unavailable. Both follow **read-write symmetry**: every phase that writes also reads back in subsequent runs. Phase 0 sweeps 10 parallel calls to reconstruct project context.
 
 RTK auto-wraps every Bash command via PreToolUse hook, saving 60-90% tokens across all phases.
 
@@ -202,7 +204,8 @@ All external tools are installed by `setup.sh`. If a tool is missing, doit degra
 |------|---------|---------|
 | TokenSave | `cargo install tokensave && tokensave install --agent claude` | Phase 2-7 |
 | Context-Mode | `claude plugin marketplace add mksglu/context-mode` | Phase 3-7, 10 |
-| MemPalace | `claude plugin install --scope user mempalace` | Phase -1, 0, 1, 2, 3, 5, 8, 9.5, 10 |
+| AgentMemory | `claude plugin install agentmemory` | Phase -1, 0, 1, 2, 3, 5, 8, 9.5, 10 (default) |
+| MemPalace | `claude plugin install --scope user mempalace` | Phase -1, 0, 1, 2, 3, 5, 8, 9.5, 10 (fallback) |
 | RTK | `curl -fsSL https://v6.gh-proxy.org/https://raw.githubusercontent.com/rtk-ai/rtk/refs/heads/master/install.sh \| sh` | All phases (auto-wrap) |
 | caveman | `claude plugin marketplace add JuliusBrussee/caveman` | Phase 0+, 10 |
 | code-review | `claude plugin install code-review` | Phase 5 |
@@ -216,6 +219,12 @@ A single `/doit` invocation may not complete the entire workflow. To continue fr
 ---
 
 ## Recent Changes
+
+**2026-06-06** — AgentMemory as default memory layer:
+- New default: AgentMemory (53 MCP tools, 12 hooks, 4 skills, real-time viewer)
+- Fallback chain: AgentMemory -> MemPalace -> filesystem
+- setup.sh: Step 3.5 installs AgentMemory plugin + starts memory server
+- doctor.sh: Checks AgentMemory plugin + server health
 
 **2026-06-04** — Workflow as iron rule — no phase can be skipped:
 - New iron rule: "完整工作流不可跳过" — every phase mandatory, in order, no skipping
