@@ -209,6 +209,8 @@ See [background-process.md](background-process.md) for full patterns including m
 
 ### Subagent Parallel TDD (Optional, Independent REQs Only)
 
+**Config gate:** Read `.doit/config.yaml` `subagent.enabled`. If `false` (default), skip all subagent launches — execute REQs sequentially in main agent.
+
 **When:** 2+ REQs have no code dependencies (verified via tokensave code graph). Parallel execution can save 50-70% time.
 
 **Before launching parallel agents:**

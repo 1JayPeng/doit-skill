@@ -606,6 +606,9 @@ doc-capture:
   mode: auto
   path: .doit/docs
 
+subagent:
+  enabled: false
+
 commit:
   branch: branch
   feat_prefix: feat
@@ -615,9 +618,10 @@ EOF
 fi
 ```
 
-If `enabled` is false (user declined at install), write `doc-capture.enabled: false` instead.
+If `doc-capture.enabled` is false (user declined at install), write `doc-capture.enabled: false` instead.
+If `subagent.enabled` is true (user opted in at install), write `subagent.enabled: true` instead.
 
-**If config already exists:** skip. No overwrite.
+**If config already exists:** skip. No overwrite. On update, show current config values.
 
 ### 15. Cannot Determine Environment
 

@@ -27,6 +27,8 @@ Four persistence layers work together:
 
 Claude Code's native Agent tool enables parallel task execution across workflow phases. No external plugins required. See [subagent.md](subagent.md) for full patterns.
 
+**Config gate:** Read `.doit/config.yaml` `subagent.enabled`. If `false` (default), execute all REQs sequentially in main agent — skip all Agent tool calls. If `true`, enable Conductor Orchestration mode.
+
 **Default mode: Conductor Orchestration.** 主代理 = 纯主管（conductor），不做任何实现工作。REQ 依赖图 -> 自动波次调度 -> 并行派发 -> 深度监督 -> 鞭子机制 -> 结果汇总 -> spec 对齐。详见 [subagent.md](subagent.md) Conductor Orchestration Mode 章节。
 
 **Quick reference:**
@@ -44,7 +46,7 @@ Claude Code's native Agent tool enables parallel task execution across workflow 
 
 **铁律：规则完整注入。** 子代理有独立上下文窗口，不继承 SKILL.md。Conductor prompt 必须注入完整铁律原文，不是简化摘要。子代理 prompt = 子代理的 SKILL.md。详见 [subagent.md](subagent.md) Rule Injection 章节。
 
-**Cost model:** Each agent = one API call. Parallel agents reduce total time by 50-70% when tasks are independent.
+**Cost model:** Each agent = one API call. Parallel agents reduce total time by 50-70% when tasks are independent, but cost 2x-4x tokens.
 
 ## Prerequisites
 

@@ -133,6 +133,16 @@ if [ -t 0 ] && [ -t 1 ]; then
   esac
 fi
 
+# Ask about subagent orchestration (interactive, skip if piped/non-tty)
+SUBAGENT_ENABLED="false"
+if [ -t 0 ] && [ -t 1 ]; then
+  read -r -p "Enable subagent orchestration (parallel, token-intensive)? [y/N] " answer
+  case "${answer:-N}" in
+    [yY][eE][sS]|[yY]) SUBAGENT_ENABLED="true" ;;
+    *) SUBAGENT_ENABLED="false" ;;
+  esac
+fi
+
 # Check if Tavily is already configured (script doubles as update, don't re-ask)
 tavily_already_configured=false
 if claude mcp list 2>/dev/null | grep -q tavily; then
@@ -192,6 +202,7 @@ if [ "$DRY_RUN" = true ]; then
 
   echo "  Options (configurable at install):"
   echo "    • doc-capture    (persist reference docs, default: enabled)"
+  echo "    • subagent       (parallel orchestration, default: disabled)"
   echo "    • --global       install to ~/.claude/skills/ instead of .claude/skills/"
 
   echo ""
@@ -592,14 +603,32 @@ if [ ${#UPDATED_FILES[@]} -gt 0 ]; then
     echo "    • $f"
   done
   echo ""
-  echo "  To update: re-run this curl command (downloads latest and installs)"
-  echo "  To check dependencies: ./scripts/doctor.sh"
-  echo ""
 else
   echo "  ✅ doit-skill installation complete!"
   echo "=========================================="
   echo ""
-  echo "  To update: re-run this curl command (downloads latest and installs)"
-  echo "  To check dependencies: ./scripts/doctor.sh"
-  echo ""
 fi
+
+# Show current configuration
+echo "  [CONFIG] Current doit configuration:"
+
+# Read from existing config or use defaults
+_CONFIG_FILE="$HOME/.doit/config.yaml"
+if [ -f "$_CONFIG_FILE" ]; then
+  _DOC_CAPTURE=$(grep -A1 'doc-capture:' "$_CONFIG_FILE" 2>/dev/null | grep 'enabled:' | awk '{print $2}' || echo "true")
+  _SUBAGENT=$(grep -A1 'subagent:' "$_CONFIG_FILE" 2>/dev/null | grep 'enabled:' | awk '{print $2}' || echo "false")
+  _COMMIT_BRANCH=$(grep -A1 'commit:' "$_CONFIG_FILE" 2>/dev/null | grep 'branch:' | awk '{print $2}' || echo "branch")
+else
+  _DOC_CAPTURE="$DOC_CAPTURE"
+  _SUBAGENT="$SUBAGENT_ENABLED"
+  _COMMIT_BRANCH="branch"
+fi
+
+echo "    doc-capture.enabled: $_DOC_CAPTURE"
+echo "    subagent.enabled: $_SUBAGENT"
+echo "    commit.branch: $_COMMIT_BRANCH"
+echo ""
+echo "  To update: re-run this curl command (downloads latest and installs)"
+echo "  To check dependencies: ./scripts/doctor.sh"
+echo "  To change config: edit ~/.doit/config.yaml"
+echo ""

@@ -12,6 +12,9 @@ doc-capture:
   mode: auto
   path: .doit/docs
 
+subagent:
+  enabled: false
+
 commit:
   branch: branch
   feat_prefix: feat
@@ -24,6 +27,10 @@ commit:
 - `ask` — confirm each doc before saving
 - `off` — same as `enabled: false`
 
+**Values for `subagent.enabled`:**
+- `true` — enable subagent orchestration (Conductor mode, parallel waves). Each subagent = separate API call, 2x+ tokens for parallel work. Faster completion, higher cost.
+- `false` — disable subagents. All REQs executed sequentially by main agent. Slower, but token-efficient. **Default.**
+
 **Values for `commit.branch`:**
 - `branch` — create `feat/...` or `fix/...` branch before push (default)
 - `current` — push current branch directly, no new branch
@@ -33,16 +40,28 @@ commit:
 
 Every doit phase that modifies project state reads config first:
 - Doc Capture — check `doc-capture.enabled` and `doc-capture.mode`
+- Subagent — check `subagent.enabled` before launching any Agent tool calls
 - Commit — check `commit.branch` and branch prefix names
 
 ## Install Interaction
 
 During `./scripts/setup.sh`, ask user:
+
 ```
 Enable doc-capture (persist reference docs in .doit/docs/)? [Y/n]
+Enable subagent orchestration (parallel, token-intensive)? [y/N]
 ```
 
-- Y → default config ships with `doc-capture.enabled: true`
-- n → default config ships with `doc-capture.enabled: false`
+- `doc-capture`: Y → `doc-capture.enabled: true`, n → `false`
+- `subagent`: Y → `subagent.enabled: true`, n (default) → `false`
 
-This default gets written to user projects on first doit run.
+These defaults get written to user projects on first doit run.
+
+After install/update, display current configuration:
+
+```
+[CONFIG] Current doit configuration:
+  doc-capture.enabled: true
+  subagent.enabled: false
+  commit.branch: branch
+```
