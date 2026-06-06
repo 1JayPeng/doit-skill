@@ -42,6 +42,8 @@ Claude Code's native Agent tool enables parallel task execution across workflow 
 
 **铁律：Conductor 模式不写代码。** 主代理只做调度、监督、轮询、汇总、spec 检查。禁止编写实现代码或修改业务逻辑文件。
 
+**铁律：规则完整注入。** 子代理有独立上下文窗口，不继承 SKILL.md。Conductor prompt 必须注入完整铁律原文，不是简化摘要。子代理 prompt = 子代理的 SKILL.md。详见 [subagent.md](subagent.md) Rule Injection 章节。
+
 **Cost model:** Each agent = one API call. Parallel agents reduce total time by 50-70% when tasks are independent.
 
 ## Prerequisites

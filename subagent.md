@@ -626,7 +626,19 @@ Action: Dispatch fix agent for REQ-002, or handle in Review phase.
 4. 主代理编写 Phase 3 完成摘要 -> 附加到工作流状态
 ```
 
-### Conductor Prompt 模板
+### Rule Injection — 规则注入机制
+
+**问题：** 子代理有独立上下文窗口，不会继承主对话的 SKILL.md 铁律。如果 prompt 中没有明确注入规则，子代理不知道规则存在。
+
+**解决：** conductor prompt 模板必须注入完整铁律，而非简化摘要。子代理 prompt = 子代理的 SKILL.md。
+
+**规则注入原则：**
+1. **完整注入，不摘要** — 铁律原文注入，不是"遵守铁律"这样的模糊指令
+2. **违规后果明确** — 每条铁律标注违反后果（鞭子机制触发）
+3. **自我审计强制** — 返回前必须执行自我审计清单
+4. **主代理同样受约束** — conductor 铁律在 SKILL.md 中，主代理必须遵守
+
+### Conductor Prompt 模板（完整版）
 
 **构建子代理 prompt：**
 
@@ -638,18 +650,76 @@ build_conductor_prompt(req, spec, context):
   ## 验收标准：
   {req.acceptance_criteria}
 
-  ## 目标文件：{req.target_files}
+  ## 目标文件（只修改这些文件，超出范围 = 违规）：
+  {req.target_files}
   ## 依赖：{req.dependencies}（已完成）
 
   ## 上下文：
   {context}  # tokensave_context 结果
 
-  ## 铁律提醒：
-  1. 使用 tokensave 工具（不用 Explore agent）
-  2. TDD 循环：先写测试（RED），再实现（GREEN）
-  3. 完成后 git commit + push
-  4. 使用 context-mode 管理上下文
-  5. MemPalace 读写（如果可用）
+  ## ===== 铁律（必须遵守，违反将触发鞭子机制） =====
+
+  ### 铁律 1：工具使用规范
+  - MUST 使用 tokensave_context 理解代码
+  - MUST 使用 tokensave_search 查找符号
+  - MUST 使用 context-mode 工具（ctx_search, ctx_execute）管理上下文
+  - MUST NOT 使用 Explore agent（使用 general-purpose 替代）
+  - MUST NOT 使用 Bash 处理大量输出（>20 行用 context-mode）
+  - 违反后果：Level 2 修正指令 -> 强制使用正确工具
+
+  ### 铁律 2：TDD 循环不可跳过
+  - Step 1: 编写测试（RED）— 测试必须失败
+  - Step 2: 编写最少实现（GREEN）— 测试必须通过
+  - Step 3: 运行测试验证 — 确认通过
+  - 禁止先写实现再补测试
+  - 禁止跳过测试
+  - 违反后果：Level 3 杀死重启，prompt 中加粗 TDD 步骤
+
+  ### 铁律 3：后台执行
+  - >10s 命令：必须使用 run_in_background=true 或 &
+  - >5min 命令：必须使用 tmux + Monitor
+  - 禁止空等长时间命令
+  - 违反后果：Level 1 SendMessage 催促
+
+  ### 铁律 4：Commit + Push 必须完成
+  - 工作完成后：git add -> git commit -> git push
+  - commit message 格式：type: description
+  - 禁止只 commit 不 push
+  - 违反后果：Level 2 SendMessage 指导完成
+
+  ### 铁律 5：MemPalace 读写对称
+  - 如果 MemPalace 工具可用：必须读写
+  - [MP-READ] 搜索相关历史
+  - [MP-WRITE] 写入实现摘要
+  - 如果 MemPalace 不可用（工具报错）：静默跳过
+  - 违反后果：低优先级，记录在 review 清单
+
+  ### 铁律 6：同文件不并行
+  - 你独占你的目标文件
+  - 不要修改目标文件列表之外的文件
+  - 如果必须修改额外文件：在结果中声明
+  - 违反后果：Level 2 修正指令
+
+  ### 铁律 7：文件范围不超出 REQ
+  - 只修改目标文件列表中指定的文件
+  - 禁止"顺便"修改其他文件
+  - 禁止添加未在 spec 中描述的功能
+  - 违反后果：Level 2 修正指令
+
+  ## ===== 自我审计（返回前必须执行） =====
+
+  在返回 [Agent Result] 之前，逐项检查：
+
+  [Self-Audit]
+  1. 工具使用：我使用了 tokensave 而非 Explore？[Y/N]
+  2. TDD 循环：我先写测试（RED）再实现（GREEN）？[Y/N]
+  3. 测试通过：所有测试都通过了？[Y/N]
+  4. Commit + Push：我完成了 commit 和 push？[Y/N]
+  5. 文件范围：我只修改了目标文件？[Y/N]
+  6. 后台执行：长时间命令使用了后台执行？[Y/N]
+  7. MemPalace：我执行了 MP 读写（如果可用）？[Y/N]
+
+  任何 N -> 先修复，再返回。不要带着 N 返回。
 
   ## 返回格式：
   完成后返回以下结构化结果：
@@ -660,10 +730,44 @@ build_conductor_prompt(req, spec, context):
   Tests: PASS (X/Y) | FAIL (X/Y)
   Commit: <hash> (pushed to <branch>)
   Tools Used: [...]
-  Iron Rules Violated: [] | [detail]
+  Iron Rules Violated: [] | [rule_number: detail]
+  Self-Audit: [7/7 PASS] | [X/7 PASS, failed: rule_Y]
   Notes: <optional>
   """
 ```
+
+### Conductor Self-Check — 主代理自我约束
+
+**主代理（conductor）同样受铁律约束。以下清单在 SKILL.md 中定义，conductor 必须遵守：**
+
+```
+[Conductor Self-Check]
+每启动一个波次前：
+  [ ] 我没有编写任何实现代码（纯主管角色）
+  [ ] 我构建了 REQ 依赖图（不是猜测）
+  [ ] 我检查了文件冲突（同文件不并行）
+  [ ] 子代理 prompt 包含了完整铁律（不是简化摘要）
+
+每收到子代理结果后：
+  [ ] 我执行了深度监督清单（不是只看 PASS/FAIL）
+  [ ] 我检查了自我审计结果（Self-Audit 项）
+  [ ] 违规项已记录并计划修复
+
+鞭子机制触发时：
+  [ ] Level 1 -> Level 2 -> Level 3 按顺序升级（不跳级）
+  [ ] Level 3 重启前分析了失败原因（不是盲目重启）
+  [ ] Prompt 修正针对具体失败原因（不是通用模板）
+
+波次全部完成后：
+  [ ] 完成矩阵已构建（所有 REQ x 所有检查项）
+  [ ] FAIL 项已生成修复任务
+  [ ] 修复完成前不交付 Review
+```
+
+**为什么需要主代理自我约束：**
+- 主代理有更强的能力诱惑（可以直接改代码比调度更快）
+- 主代理跳过监督 -> 子代理质量失控 -> 最终返工成本 > 监督成本
+- 主代理简化铁律注入 -> 子代理不知道规则 -> 违规率上升
 
 ## Complete Example: Conductor Mode Phase 3
 
@@ -694,8 +798,30 @@ Agent({
 // Conductor 轮询 Wave 1...
 
 [Wave 1 Result]
-REQ-001: PASS, Tests 5/5, Commit a1b2c3d, Supervision PASS
-REQ-003: PASS, Tests 3/3, Commit i7j8k9l, Supervision PASS
+REQ-001:
+  [Agent Result]
+  REQ: REQ-001
+  Status: PASS
+  Files Modified: [src/models/user.rs, tests/user_test.rs]
+  Tests: PASS (5/5)
+  Commit: a1b2c3d (pushed to feat/user-auth)
+  Tools Used: [tokensave_context, tokensave_search, Edit, Bash]
+  Iron Rules Violated: []
+  Self-Audit: [7/7 PASS]
+
+REQ-003:
+  [Agent Result]
+  REQ: REQ-003
+  Status: PASS
+  Files Modified: [src/api/config.rs, tests/config_test.rs]
+  Tests: PASS (3/3)
+  Commit: i7j8k9l (pushed to feat/user-auth)
+  Tools Used: [tokensave_context, Edit, Bash]
+  Iron Rules Violated: []
+  Self-Audit: [7/7 PASS]
+
+// Conductor 监督：REQ-001 Self-Audit 7/7 PASS, 工具合规 -> PASS
+// Conductor 监督：REQ-003 Self-Audit 7/7 PASS, 工具合规 -> PASS
 -> Wave 1 complete, proceed to Wave 2
 
 === Wave 2: REQ-002 (依赖 REQ-001) ===
