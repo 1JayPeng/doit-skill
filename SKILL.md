@@ -27,16 +27,20 @@ Four persistence layers work together:
 
 Claude Code's native Agent tool enables parallel task execution across workflow phases. No external plugins required. See [subagent.md](subagent.md) for full patterns.
 
+**Default mode: Conductor Orchestration.** 主代理 = 纯主管（conductor），不做任何实现工作。REQ 依赖图 -> 自动波次调度 -> 并行派发 -> 深度监督 -> 鞭子机制 -> 结果汇总 -> spec 对齐。详见 [subagent.md](subagent.md) Conductor Orchestration Mode 章节。
+
 **Quick reference:**
+- **Conductor mode** — Phase 3: 主代理纯主管，波次调度 + 监督 + 鞭子 + 汇总
 - **Parallel research** — Phase 1: multiple agents research different aspects concurrently
 - **Parallel code analysis** — Phase 2: agents analyze different modules simultaneously
-- **Parallel TDD** — Phase 3: independent REQs executed by worktree-isolated agents
 - **Parallel review** — Phase 5: security, architecture, complexity reviews run concurrently
 - **Background execution** — Any phase: long-running tasks as background agents
 
 **铁律：继承主对话模型。** 不指定 `model` 参数，subagent 继承主对话模型。避免模型不存在错误。
 
 **铁律：同文件不并行。** 修改同一文件的 subagent 必须串行执行。主流程在 Phase 2 规划时构建文件分配表，检查文件交集 → 有交集则串行，无交集则并行。只读操作（review, analysis）天然安全。详见 [subagent.md](subagent.md)。
+
+**铁律：Conductor 模式不写代码。** 主代理只做调度、监督、轮询、汇总、spec 检查。禁止编写实现代码或修改业务逻辑文件。
 
 **Cost model:** Each agent = one API call. Parallel agents reduce total time by 50-70% when tasks are independent.
 

@@ -216,25 +216,28 @@ See [background-process.md](background-process.md) for full patterns including m
 2. `tokensave_impact(node_id="<symbol>")` — check blast radius doesn't overlap
 
 **Launch independent REQs as parallel agents:**
+
+See [subagent.md Conductor Mode](subagent.md) for full orchestration (wave scheduling, supervision, whip mechanism). Quick reference:
+
 ```
 // REQ-001 and REQ-002 have no dependencies -> parallel
 Agent({
   description: "Implement REQ-001",
-  prompt: "Execute TDD for REQ-001: <full REQ description>. Use tokensave_str_replace for edits. Commit after RED->GREEN->REFACTOR.",
-  subagent_type: "claude",
+  prompt: build_conductor_prompt(REQ-001, spec, context),  // See subagent.md template
+  subagent_type: "general-purpose",
   isolation: "worktree",  // Independent git branch
   run_in_background: true
 })
 
 Agent({
   description: "Implement REQ-002",
-  prompt: "Execute TDD for REQ-002: <full REQ description>. Use tokensave_str_replace for edits. Commit after RED->GREEN->REFACTOR.",
-  subagent_type: "claude",
+  prompt: build_conductor_prompt(REQ-002, spec, context),
+  subagent_type: "general-purpose",
   isolation: "worktree",
   run_in_background: true
 })
 
-// 主流程继续：准备 Phase 4 E2E 测试计划
+// Conductor 轮询 -> 监督 -> 鞭子机制 -> 结果汇总 -> spec 对齐
 // 当后台 agent 完成后，合并 worktree 分支到主分支
 ```
 

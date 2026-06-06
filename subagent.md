@@ -356,37 +356,395 @@ ctx_search(queries=["authentication endpoint"])
 4. worktree 清理 -> agent 完成后自动清理（如无变更）
 ```
 
-## Complete Example: Phase 1 Spec with Subagents
+## Conductor Orchestration Mode
+
+**核心范式：** 主代理 = 纯主管（conductor），不做任何实现工作。所有实现交给子代理。主代理负责调度、监督、轮询、汇总、spec 对齐。
+
+### Why Conductor Mode
+
+| 问题 | 无 conductor | 有 conductor |
+|------|-------------|-------------|
+| 主代理角色混乱 | 有时自己做，有时调度 | 纯主管，职责清晰 |
+| 子代理卡住无人管 | 等超时或永远卡住 | 鞭子机制逐步升级 |
+| 波次混乱 | 全部并行或全部串行 | REQ 依赖图 -> 自动波次 |
+| 结果不可靠 | 子代理偷懒/偏离无检测 | 深度监督 + spec 对齐 |
+| 质量失控 | 跳过 TDD、跳过 commit | 监督铁律遵守 |
+
+### Conductor 责任矩阵
+
+**主代理（Conductor）DO:**
+- 构建 REQ 依赖图 -> 推导波次
+- 派发子代理（每个 REQ 一个子代理）
+- 轮询子代理进度
+- 监督子代理工具使用和铁律遵守
+- 触发鞭子机制（SendMessage 催促 -> 杀死重启）
+- 汇总所有子代理结果
+- 对照 spec 逐项检查（完成矩阵）
+- 交付 Review + Simplify
+
+**主代理（Conductor）DON'T:**
+- 编写实现代码
+- 修改业务逻辑文件
+- 代替子代理做 TDD 循环
+- 代替子代理写 commit
+- 在子代理运行时做无关工作
+
+**子代理 DO:**
+- 执行分配的 REQ（完整 TDD 循环）
+- 使用正确工具（tokensave, context-mode, mempalace）
+- 遵守所有 doit 铁律
+- 完成后 commit + push（如果 worktree 隔离）
+- 返回结构化结果（文件列表、测试状态、工具合规性）
+
+**子代理 DON'T:**
+- 修改超出 REQ 范围的文件
+- 跳过测试
+- 跳过 commit
+
+### Wave Scheduling — 波次调度器
+
+**目标：** REQ 依赖图 -> 自动推导并行波次。同一波次内并行，波次间串行。
+
+**Phase 2 规划时，为每个 REQ 标注依赖：**
 
 ```
-// === Phase 1: Spec Generation ===
+REQ-001: 创建用户模型, dependencies: []
+REQ-002: 创建认证 API, dependencies: [REQ-001]
+REQ-003: 创建用户配置 API, dependencies: []
+REQ-004: 集成认证中间件, dependencies: [REQ-002]
+```
 
-// Step 1: 并行研究（激进并行）
+**波次推导算法（拓扑排序）：**
+
+```
+伪代码：
+waves = []
+resolved = {}
+remaining = all_reqs.copy()
+
+while remaining not empty:
+  wave = []
+  for req in remaining:
+    if all(dep in resolved for dep in req.dependencies):
+      wave.append(req)
+
+  # 文件冲突检查：同文件不能并行
+  parallel_groups = split_by_file_conflict(wave)
+  for group in parallel_groups:
+    waves.append(group)
+
+  for req in wave:
+    resolved[req] = true
+    remaining.remove(req)
+
+return waves
+```
+
+**输出示例：**
+
+```
+Wave 1: [REQ-001, REQ-003]     # 无依赖，并行
+Wave 2: [REQ-002]               # 依赖 REQ-001
+Wave 3: [REQ-004]               # 依赖 REQ-002
+```
+
+**执行模板：**
+
+```
+for wave in waves:
+  # 并行派发本波次所有 REQ
+  for req in wave:
+    Agent({
+      description: req.description,
+      prompt: build_conductor_prompt(req, spec, context),
+      subagent_type: "general-purpose",
+      isolation: "worktree",
+      run_in_background: true
+    })
+
+  # 轮询本波次全部完成
+  wait_for_all(wave)
+
+  # 监督检查
+  for req in wave:
+    result = collect_result(req)
+    if not validate_result(result, req):
+      handle_failure(req, result)
+
+  # 全部通过 -> 下一波次
+```
+
+### Deep Supervision — 深度监督机制
+
+**监督清单（每个子代理完成后检查）：**
+
+```
+[Supervision Checklist]
+REQ-XXX: <description>
+
+工具使用:
+  [ ] 使用 tokensave_context/tokensave_search（而非 Explore agent）
+  [ ] 使用 context-mode 工具（ctx_search, ctx_execute）
+  [ ] 未使用被禁止的工具（Bash 用于大量输出）
+
+TDD 循环:
+  [ ] 先写测试（RED）
+  [ ] 实现通过测试（GREEN）
+  [ ] 运行测试验证（测试通过）
+
+铁律遵守:
+  [ ] git commit + push 完成
+  [ ] MemPalace 读写（如果可用）
+  [ ] 后台执行铁律（>10s 命令后台化）
+  [ ] 未修改超出 REQ 范围的文件
+
+产出质量:
+  [ ] 修改文件列表与 Phase 2 计划一致
+  [ ] 测试覆盖率 > 0
+  [ ] 无编译错误
+```
+
+**监督执行方式：**
+
+子代理返回结果必须是结构化格式：
+
+```
+[Agent Result]
+REQ: REQ-001
+Status: PASS | FAIL | PARTIAL
+Files Modified: [file1, file2]
+Tests: PASS (3/3) | FAIL (1/3)
+Commit: abc1234 (pushed)
+Tools Used: [tokensave_context, Edit, Bash]
+Iron Rules Violated: [] | [detail]
+Notes: <optional>
+```
+
+主代理根据结构化结果填充监督清单。发现违规 -> 记录 -> 在 Review 阶段修复。
+
+### Whip Mechanism — 鞭子机制
+
+**三级升级：** 子代理超时/卡住/偏离 -> 逐步升级干预。
+
+```
+Level 1 — SendMessage 催促:
+  触发条件: 超过预期时间 50% 未返回
+  动作: SendMessage(to=agent_id, message="进度检查：你目前的进展如何？列出已完成和待完成项。")
+  预期: 子代理返回进度报告
+
+Level 2 — 修正指令:
+  触发条件: Level 1 后仍未返回，或进度报告显示偏离方向
+  动作: SendMessage(to=agent_id, message="修正：你偏离了 REQ-XXX 的目标。正确做法是 [具体指令]。立即回到正轨。")
+  预期: 子代理修正方向并继续
+
+Level 3 — 杀死重启:
+  触发条件: Level 2 后仍未返回，或确认子代理卡死
+  动作:
+    1. TaskStop(task_id=agent_id) — 终止子代理
+    2. 分析失败原因（检查部分输出、worktree 状态）
+    3. 修正 prompt（根据失败原因调整指令）
+    4. 重新 spawn 新代理（使用修正后的 prompt）
+  预期: 新代理完成 REQ
+```
+
+**预期时间计算：**
+
+```
+expected_time = base_time + (file_count * per_file_time) + (complexity_bonus)
+base_time = 5 min (agent startup overhead)
+per_file_time = 2 min per file
+complexity_bonus = tokensave_complexity score * 0.5 min
+
+timeout_threshold = expected_time * 1.5  # 50% buffer
+```
+
+**Prompt 修正策略（Level 3 重启时）：**
+
+```
+原始 prompt 分析：
+  - 是否过于宽泛？ -> 缩小范围，指定具体文件
+  - 是否缺少上下文？ -> 注入 tokensave_context 结果
+  - 是否有歧义？ -> 明确 REQ 的 acceptance criteria
+
+修正模板：
+  "你之前在执行 REQ-XXX 时卡住了。失败原因：[原因分析]。
+   修正后的指令：[具体化指令]。
+   目标文件：[file1, file2]。
+   验收标准：[acceptance criteria]。
+   完成后返回结构化结果。"
+```
+
+### Result Collection — 结果汇总 + Spec 对齐
+
+**每个子代理完成后记录：**
+
+```
+[Result Record]
+REQ-001: 创建用户模型
+  Status: PASS
+  Files: [src/models/user.rs, tests/user_model_test.rs]
+  Tests: PASS (5/5)
+  Commit: a1b2c3d (pushed to feat/user-auth)
+  Supervision: PASS (all checks)
+  Spec Alignment: PASS
+
+REQ-002: 创建认证 API
+  Status: PARTIAL
+  Files: [src/api/auth.rs]
+  Tests: FAIL (2/4)
+  Commit: e4f5g6h (pushed to feat/user-auth)
+  Supervision: WARN (skipped mempalace)
+  Spec Alignment: REQ-002.3 not implemented
+```
+
+**全部波次完成后 -> 完成矩阵：**
+
+```
+[Completion Matrix]
++---------+-----------+---------+----------+-------------+
+| REQ     | Status    | Tests   | Commit   | Spec Align  |
++---------+-----------+---------+----------+-------------+
+| REQ-001 | PASS      | 5/5     | a1b2c3d  | PASS        |
+| REQ-002 | PARTIAL   | 2/4     | e4f5g6h  | PARTIAL     |
+| REQ-003 | PASS      | 3/3     | i7j8k9l  | PASS        |
++---------+-----------+---------+----------+-------------+
+
+Failed Items:
+  - REQ-002: 2 tests failing -> fix needed
+  - REQ-002: REQ-002.3 not implemented -> fix needed
+  - REQ-002: MemPalace skipped -> low priority
+
+Action: Dispatch fix agent for REQ-002, or handle in Review phase.
+```
+
+**交付流程：**
+
+```
+1. 所有 REQ PASS -> 合并所有 worktree 分支
+2. 存在 FAIL/PARTIAL -> 生成修复任务 -> 派发修复 agent 或在 Review 阶段处理
+3. 全部通过 -> 主代理宣布 Phase 3 完成 -> 交付 Phase 4 E2E
+4. 主代理编写 Phase 3 完成摘要 -> 附加到工作流状态
+```
+
+### Conductor Prompt 模板
+
+**构建子代理 prompt：**
+
+```
+build_conductor_prompt(req, spec, context):
+  return f"""
+  ## 任务：{req.description}
+  ## REQ ID: {req.id}
+  ## 验收标准：
+  {req.acceptance_criteria}
+
+  ## 目标文件：{req.target_files}
+  ## 依赖：{req.dependencies}（已完成）
+
+  ## 上下文：
+  {context}  # tokensave_context 结果
+
+  ## 铁律提醒：
+  1. 使用 tokensave 工具（不用 Explore agent）
+  2. TDD 循环：先写测试（RED），再实现（GREEN）
+  3. 完成后 git commit + push
+  4. 使用 context-mode 管理上下文
+  5. MemPalace 读写（如果可用）
+
+  ## 返回格式：
+  完成后返回以下结构化结果：
+  [Agent Result]
+  REQ: {req.id}
+  Status: PASS | FAIL | PARTIAL
+  Files Modified: [...]
+  Tests: PASS (X/Y) | FAIL (X/Y)
+  Commit: <hash> (pushed to <branch>)
+  Tools Used: [...]
+  Iron Rules Violated: [] | [detail]
+  Notes: <optional>
+  """
+```
+
+## Complete Example: Conductor Mode Phase 3
+
+```
+=== Scenario: 用户认证系统 ===
+REQ-001: 创建用户模型, deps: [], files: [src/models/user.rs, tests/user_test.rs]
+REQ-002: 创建认证 API, deps: [REQ-001], files: [src/api/auth.rs, tests/auth_test.rs]
+REQ-003: 创建用户配置 API, deps: [], files: [src/api/config.rs, tests/config_test.rs]
+
+=== Wave 1: REQ-001 + REQ-003 (并行) ===
+
 Agent({
-  description: "Research competitive solutions",
-  prompt: "使用 WebSearch 搜索 'user authentication best practices 2026'，汇总前 5 个方案...",
+  description: "Implement REQ-001 user model",
+  prompt: build_conductor_prompt(REQ-001, spec, tokensave_context("user model")),
   subagent_type: "general-purpose",
+  isolation: "worktree",
   run_in_background: true
 })
 
 Agent({
-  description: "Analyze existing auth code",
-  prompt: "使用 tokensave_context 分析当前项目的认证代码。查找 middleware、token、session 相关符号...",
+  description: "Implement REQ-003 user config API",
+  prompt: build_conductor_prompt(REQ-003, spec, tokensave_context("user config")),
   subagent_type: "general-purpose",
+  isolation: "worktree",
   run_in_background: true
 })
+
+// Conductor 轮询 Wave 1...
+
+[Wave 1 Result]
+REQ-001: PASS, Tests 5/5, Commit a1b2c3d, Supervision PASS
+REQ-003: PASS, Tests 3/3, Commit i7j8k9l, Supervision PASS
+-> Wave 1 complete, proceed to Wave 2
+
+=== Wave 2: REQ-002 (依赖 REQ-001) ===
 
 Agent({
-  description: "Review security requirements",
-  prompt: "使用 WebSearch 搜索 'OWASP authentication requirements 2026'，提取关键安全要求...",
+  description: "Implement REQ-002 auth API",
+  prompt: build_conductor_prompt(REQ-002, spec, tokensave_context("auth API") + REQ-001 result),
   subagent_type: "general-purpose",
+  isolation: "worktree",
   run_in_background: true
 })
 
-// 主流程在等待期间：准备 spec 模板、检查 MemPalace 历史
-mempalace_search(query="authentication spec", limit=3)
+// Conductor 轮询... REQ-002 超时预警 (expected 12min, elapsed 8min)
+// Whip Level 1: SendMessage 催促
+SendMessage(to="REQ-002-agent", message="进度检查：你目前的进展如何？列出已完成和待完成项。")
+// REQ-002 返回：正在实现 login 端点，register 未完成
+// -> 正常进度，继续等待
 
-// Step 2: 研究 agent 完成后，汇总结果
-// Step 3: 综合研究结果 + 用户输入 -> 撰写 spec
-// Step 4: 保存 .spec/current.md
+// REQ-002 完成
+[Wave 2 Result]
+REQ-002: PASS, Tests 4/4, Commit e4f5g6h, Supervision PASS
+-> Wave 2 complete
+
+=== Result Collection ===
+
+[Completion Matrix]
++---------+--------+---------+----------+-------------+
+| REQ     | Status | Tests   | Commit   | Spec Align  |
++---------+--------+---------+----------+-------------+
+| REQ-001 | PASS   | 5/5     | a1b2c3d  | PASS        |
+| REQ-002 | PASS   | 4/4     | e4f5g6h  | PASS        |
+| REQ-003 | PASS   | 3/3     | i7j8k9l  | PASS        |
++---------+--------+---------+----------+-------------+
+
+All REQ PASS -> Phase 3 complete -> 交付 Phase 4 E2E
+
+[Whip Level 3 Example — 杀死重启]
+// 假设 REQ-002 卡住，Level 1+2 均无效
+TaskStop(task_id="REQ-002-agent")
+// 分析：REQ-002 原 prompt 过于宽泛，未指定具体文件
+// 修正 prompt -> 添加目标文件 + acceptance criteria
+Agent({
+  description: "Implement REQ-002 auth API (retry)",
+  prompt: "你之前在实现 REQ-002 时卡住了。失败原因：prompt 过于宽泛。
+          修正后的指令：实现 src/api/auth.rs 中的 login 和 register 端点。
+          验收标准：login 返回 JWT token, register 创建用户并返回 201。
+          完成后返回结构化结果。",
+  subagent_type: "general-purpose",
+  isolation: "worktree",
+  run_in_background: true
+})
 ```
