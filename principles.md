@@ -14,6 +14,8 @@ New pattern: call `AskUserQuestion` with 2-4 options. User answers without inter
 - Always use `AskUserQuestion` with clear options
 - Always provide a sensible default as the first option
 - If user doesn't answer -> proceed with default
+- **Exception: grill questions.** Grill questions must be asked first, then defaults apply if user doesn't answer. Skipping grill != user not answering.
+- **Exception: grill questions do NOT use this rule.** Grill questions must be asked first, then unanswered questions use defaults. Skipping grill != user not answering.
 
 ### Applied Everywhere
 
@@ -120,10 +122,15 @@ New pattern: every phase completed in order -> Phase Gate check -> next phase.
 
 ## 1.6. Grill Enforcement (铁律)
 
-**Phase 1 MUST grill the user's idea with minimum 3 questions before writing any REQs. Less than 3 = incomplete Phase 1 = cannot proceed to Phase 2.**
+**Phase 1 MUST grill the user's idea with minimum 5 questions (Type F) or 3 questions (Type B) before writing any REQs. Less than minimum = incomplete Phase 1 = cannot proceed to Phase 2.**
 
 Old pattern: user says "I want X" -> agent immediately writes REQs. This produces specs that miss edge cases, don't challenge assumptions, and lead to wrong implementations.
-New pattern: user says "I want X" -> agent grills with 3+ questions -> writes REQs informed by grill.
+New pattern: user says "I want X" -> agent grills with 5+ questions -> writes REQs informed by grill.
+
+**Grill quality > quantity.** 5 specific questions that reference the user's request beat 12 generic questions. Each question must:
+- Reference a specific detail from the user's request
+- Explain WHY the answer matters (consequence of getting it wrong)
+- Provide 2-3 concrete options
 
 **GRILL CHECKLIST — all must complete before writing REQs:**
 - [ ] Challenge assumptions — at least 1 question

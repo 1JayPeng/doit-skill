@@ -13,6 +13,16 @@ Grill reveals idea is unworkable (tech infeasible, self-contradictory).
 
 **Action:** Terminate. Tell user why. Zero code generated -> zero loss.
 
+### Phase 1 (Spec) — Grill Skipped
+Phase 1 completed or Phase 2 started without minimum grill questions via AskUserQuestion.
+
+**Action:** Stop. Return to Phase 1 Step 2. Complete the full grill checklist (uncertainty scan, 5+ questions, internet search, MP search, grill summary). Do not discard REQs already written — use grill findings to supplement them, then merge into existing REQs.
+
+### Phase 1 (Spec) — Grill Skipped
+Phase 1 completed or Phase 2 started without minimum grill questions via AskUserQuestion.
+
+**Action:** Stop. Return to Phase 1 Step 2. Complete the full grill checklist (uncertainty scan, 5+ questions, internet search, MP search, grill summary). Do not discard REQs already written — use grill findings to supplement them, then merge into existing REQs.
+
 ### D0 (Diagnose) Fail
 Cannot reproduce the bug.
 

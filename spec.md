@@ -60,12 +60,15 @@ Agent({
 **When to skip:** Single-domain feature, or research topics have dependencies between them.
 **Cost:** Each agent = one API call. haiku models save ~90% vs opus. 3 parallel haiku agents ~ 1 opus agent cost.
 
-### Step 2: Grill (MANDATORY minimum 3 questions)
+### Step 2: Grill (MANDATORY minimum 5 questions for Type F, 3 for Type B)
 
 Use `grill-me` skill to pressure-test the idea. Find holes, contradictions, scope creep. Resolve each before proceeding.
 
 **铁律: Grill questions via AskUserQuestion, never stop and wait.**
-**铁律: Minimum 3 grill questions per feature. < 3 = incomplete Phase 1 = cannot proceed to Phase 2.**
+**铁律: Minimum 5 grill questions per feature (Type F), 3 per bug (Type B). < minimum = incomplete Phase 1 = cannot proceed to Phase 2.**
+
+**Step 2a: Uncertainty Scan (internal, before generating questions):**
+List 3-5 things you're uncertain about in the user's request. Rate each 1-5 (5 = completely unclear). Generate questions only for items rated >= 3.
 
 **GRILL CHECKLIST — all must complete before writing REQs:**
 - [ ] Challenge assumptions — at least 1 question
@@ -73,6 +76,17 @@ Use `grill-me` skill to pressure-test the idea. Find holes, contradictions, scop
 - [ ] MP search for prior specs/knowledge — `mempalace_search wing="<project>"`
 - [ ] Alternative approaches — at least 1 question
 - [ ] Scope clarification — at least 1 question
+
+**Step 2b: Grill Summary (after grill complete, before REQs):**
+Write `.doit/grill-summary.json`:
+```json
+{
+  "questions_asked": 5,
+  "checklist": {"challenge_assumptions": true, "internet_search": true, "mp_search": true, "alternative_approaches": true, "scope_clarification": true},
+  "questions": ["Q1 text", "Q2 text", ...],
+  "answers": {"Q1": "user answer or default used"}
+}
+```
 
 When the grill reveals ambiguity, present it as AskUserQuestion:
 ```
@@ -88,7 +102,7 @@ AskUserQuestion:
       description: "Need more context"
 ```
 
-If user doesn't answer -> use the recommended default and continue. Grill should not block the workflow.
+After asking all grill questions: if user doesn't answer within the same response cycle -> use the recommended default and continue. Grill questions MUST be asked before defaults are applied. Skipping grill questions entirely is NOT equivalent to user not answering.
 
 ### Step 3: Split to Acceptance Criteria
 

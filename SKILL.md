@@ -70,6 +70,7 @@ Also init `.doit/config.yaml` if not present (default config for doc-capture, co
 - 始终用 `AskUserQuestion` + 2-4 个选项
 - 始终提供合理默认值作为第一个选项
 - 用户不回答 -> 用默认值继续
+- **例外：grill 问题不适用此规则。** grill 问题必须先被提出，然后用户不回答才用默认值。跳过 grill 问题 ≠ 用户不回答。
 
 ## 铁律 — Background Execution
 
@@ -244,14 +245,17 @@ fi
 ```
 **Why:** avoids working on stale code, prevents conflicts. `|| true` so network errors don't block.
 
-**Step 1 — Load doit + caveman skills for the entire session.** Call the Skill tool to load both. These are Tool calls, not code comments:
+**Step 1 — Load doit + caveman + grill-me skills for the entire session.** Call the Skill tool to load all three. These are Tool calls, not code comments:
 
 ```
 Skill skill="doit"
 Skill skill="caveman"
+Skill skill="grill-me"
 ```
 
-If caveman skill is not found, announce `[WARN] caveman not installed -> verbose mode` and continue. CLAUDE.md `## Skill Loading` section (written by Phase -1) also enforces this, so even if this step is skipped, the CLAUDE.md instruction should trigger skill load.
+If caveman skill is not found, announce `[WARN] caveman not installed -> verbose mode` and continue.
+If grill-me skill is not found, announce `[WARN] grill-me not installed -> basic grill mode` and continue. **grill-me is required for Phase 1 grill protocol.** Without it, the model only has a 3-line reminder to "grill" — which it tends to skip.
+CLAUDE.md `## Skill Loading` section (written by Phase -1) also enforces this, so even if this step is skipped, the CLAUDE.md instruction should trigger skill load.
 
 **Step 2 — Auto-classify.** Read [classifier.md](classifier.md). Four types:
 
@@ -314,9 +318,31 @@ If the user's prompt includes reference documents (API specs, business rules, co
 
 ## Phase 1 — Spec
 
-Write spec. See [spec.md](spec.md). Grill user ideas ruthlessly — armed with MemPalace context from Phase 0 sweep. Internet search via Tavily MCP for brainstorming. Search MemPalace for related prior specs AND knowledge rooms. Split into acceptance criteria (REQ-001, REQ-002...). Save to `.spec/current.md`.
+**Step 1: Grill FIRST (before writing any REQs):**
+- Load grill-me skill: `Skill skill="grill-me"`
+- **Uncertainty scan:** List 3-5 things you're uncertain about in the user's request. Rate 1-5. Focus questions on items >= 3.
+- Ask 5+ questions via AskUserQuestion (Type F) or 3+ (Type B). Each question must:
+  - Reference a specific detail from the user's request
+  - Explain WHY the answer matters (consequence of getting it wrong)
+  - Provide 2-3 concrete options
+- Internet search for existing solutions — Tavily MCP or WebSearch
+- MP search for prior specs/knowledge — `mempalace_search wing="<project>"`
+- Write grill summary to `.doit/grill-summary.json` (questions asked, checklist, answers)
+- **Do NOT write any REQs until grill is complete.**
 
-**铁律：Grill 最低 3 个问题。** Phase 1 必须至少 3 个 grill 问题（通过 AskUserQuestion）。少于 3 个 = 未完成的 Phase 1 = 不能进入 Phase 2。
+**Step 2: Write spec** — Split grill output into REQ-N items, save to `.spec/current.md`. See [spec.md](spec.md).
+
+**铁律：Grill 最低 5 个问题(Type F) / 3 个(Type B)。** Phase 1 必须至少 5 个 grill 问题（通过 AskUserQuestion）。少于 5 个 = 未完成的 Phase 1 = 不能进入 Phase 2。
+
+## Phase 1 → Phase 2 Gate
+
+进入 Phase 2 前，自检：
+1. 统计本会话 AskUserQuestion 调用次数 — 必须 >= 5 (Type F) 或 >= 3 (Type B) 个 grill 问题
+2. 确认 GRILL CHECKLIST 全部完成（challenge, search, MP, alternatives, scope）
+3. 确认 `.doit/grill-summary.json` 已写入
+4. 如果任一检查失败，返回 Phase 1 补全缺失步骤
+
+未通过自检 = Phase 1 未完成 = 不能进入 Phase 2。
 
 ## Phase 2 — Plan
 
@@ -482,7 +508,9 @@ This recovers what was done in prior sessions without relying on filesystem stat
 [Phase Gate] Type F flow (full):
   [x] Phase -1    Detect Environment + Config
   [x] Phase 0     Classify Request
-  [x] Phase 1     Spec (grill → write → branch)
+  [x] Phase 1     Spec
+  [x] Phase 1a      Grill: skill loaded, 5+ questions (Type F) / 3+ (Type B), checklist done, .doit/grill-summary.json
+  [x] Phase 1b      Spec: .spec/current.md written, branch created
   [x] Phase 2     Plan (impact analysis)
   [x] Phase 3     Execute (TDD per REQ)
   [x] Phase 4     E2E (initial tests)
