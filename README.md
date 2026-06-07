@@ -280,15 +280,19 @@ headroom mcp install
 Cross-session semantic memory — 53 MCP tools, 12 hooks, real-time viewer. [GitHub](https://github.com/rohitg00/agentmemory)
 
 ```bash
-# 1. Install plugin
-claude plugin marketplace add rohitg00/agentmemory
-claude plugin install agentmemory
+# 1. Install CLI globally
+npm install -g @agentmemory/agentmemory
 
-# 2. Start memory server
+# 2. Connect to Claude Code
+agentmemory connect claude-code
+
+# 3. Start memory server
 npx @agentmemory/agentmemory &
 ```
 
 #### MemPalace (fallback memory layer)
+
+**Note:** MemPalace and AgentMemory are mutually exclusive. If AgentMemory is installed and running, MemPalace is not needed.
 
 Cross-session semantic memory — specs, decisions, knowledge graph, agent diary. [GitHub](https://github.com/MemPalace/mempalace)
 

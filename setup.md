@@ -111,6 +111,26 @@ headroom proxy
 ANTHROPIC_BASE_URL=http://127.0.0.1:8787 claude
 ```
 
+## AgentMemory (Default Memory Layer)
+
+Cross-session semantic memory — 53 MCP tools, 12 hooks, real-time viewer. [GitHub](https://github.com/rohitg00/agentmemory)
+
+```bash
+# 1. Install CLI globally
+npm install -g @agentmemory/agentmemory
+
+# 2. Connect to Claude Code
+agentmemory connect claude-code
+
+# 3. Start memory server
+npx @agentmemory/agentmemory &
+
+# Verify
+curl -s http://localhost:3111/agentmemory/health
+```
+
+**Note:** MemPalace and AgentMemory are mutually exclusive. If AgentMemory is installed and running, MemPalace is not needed.
+
 ## Tavily MCP (Internet Search)
 
 Remote MCP. Streamable HTTP transport — no install needed.

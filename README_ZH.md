@@ -156,15 +156,19 @@ headroom mcp install
 跨会话语义记忆 — 53 MCP tools, 12 hooks, 实时 viewer。[GitHub](https://github.com/rohitg00/agentmemory)
 
 ```bash
-# 1. 安装插件
-claude plugin marketplace add rohitg00/agentmemory
-claude plugin install agentmemory
+# 1. 全局安装 CLI
+npm install -g @agentmemory/agentmemory
 
-# 2. 启动 memory server
+# 2. 连接到 Claude Code
+agentmemory connect claude-code
+
+# 3. 启动 memory server
 npx @agentmemory/agentmemory &
 ```
 
 #### MemPalace（备选记忆层）
+
+**注意：** MemPalace 和 AgentMemory 二选一。如果 AgentMemory 已安装运行，不需要 MemPalace。
 
 跨会话语义记忆 — 规格、决策、知识图谱、agent diary。[GitHub](https://github.com/MemPalace/mempalace)
 

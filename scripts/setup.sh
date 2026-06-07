@@ -519,55 +519,65 @@ CARGO_EOF
     plugin_cmd 180 claude plugin install code-review || echo_warn "Failed to install code-review (install manually: claude plugin install code-review)"
   fi
 
-  # MemPalace
-  if grep -rl "mempalace" "$HOME/.claude/plugins/" > /dev/null 2>&1; then
-    echo_success "mempalace already installed (plugin)"
+  # agentmemory install FIRST (for mutual exclusion with mempalace)
+  _agentmemory_installed=false
+  if grep -rl "agentmemory" "$HOME/.claude/plugins/" > /dev/null 2>&1; then
+    echo_success "agentmemory already installed (plugin)"
+    _agentmemory_installed=true
   else
-    echo_info "Installing mempalace..."
-    plugin_cmd 120 claude plugin marketplace add MemPalace/mempalace || echo_warn "Failed to add mempalace marketplace"
-    plugin_cmd 180 claude plugin install --scope user mempalace || echo_warn "Failed to install mempalace (install manually: claude plugin install --scope user mempalace)"
-  fi
-
-  # MemPalace CLI (uv tool)
-  if command -v mempalace >/dev/null 2>&1; then
-    echo_success "mempalace CLI already installed"
-  else
-    echo_info "Installing mempalace CLI via uv tool..."
-    if command -v uv >/dev/null 2>&1; then
-      plugin_cmd 180 uv tool install mempalace || echo_warn "Failed to install mempalace CLI (install manually: uv tool install mempalace)"
-    else
-      echo_warn "uv not found, skipping mempalace CLI install"
+    echo_info "Installing agentmemory CLI..."
+    npm install -g @agentmemory/agentmemory 2>&1 || echo_warn "Failed to install agentmemory via npm"
+    agentmemory connect claude-code 2>&1 || echo_warn "Failed to connect agentmemory to claude-code"
+    if grep -rl "agentmemory" "$HOME/.claude/plugins/" > /dev/null 2>&1; then
+      echo_success "agentmemory installed"
+      _agentmemory_installed=true
     fi
   fi
 
-  # MemPalace init (very slow - creates HNSW index)
-  if [ -d ".mempalace" ]; then
-    echo_success "mempalace already initialized"
+  # MemPalace — skip if agentmemory is already installed (二选一)
+  if [ "$_agentmemory_installed" = "true" ]; then
+    echo_info "mempalace skipped — agentmemory already installed (二选一)"
   else
-    echo_info "Initializing mempalace (creating HNSW index — may take 1-2 min)..."
-    if command -v mempalace >/dev/null 2>&1; then
-      plugin_cmd 600 mempalace init . || echo_warn "Failed to initialize mempalace (run manually: mempalace init .)"
+    if grep -rl "mempalace" "$HOME/.claude/plugins/" > /dev/null 2>&1; then
+      echo_success "mempalace already installed (plugin)"
     else
-      echo_warn "mempalace CLI not found, skipping init"
+      echo_info "Installing mempalace..."
+      plugin_cmd 120 claude plugin marketplace add MemPalace/mempalace || echo_warn "Failed to add mempalace marketplace"
+      plugin_cmd 180 claude plugin install --scope user mempalace || echo_warn "Failed to install mempalace (install manually: claude plugin install --scope user mempalace)"
+    fi
+
+    # MemPalace CLI (uv tool)
+    if command -v mempalace >/dev/null 2>&1; then
+      echo_success "mempalace CLI already installed"
+    else
+      echo_info "Installing mempalace CLI via uv tool..."
+      if command -v uv >/dev/null 2>&1; then
+        plugin_cmd 180 uv tool install mempalace || echo_warn "Failed to install mempalace CLI (install manually: uv tool install mempalace)"
+      else
+        echo_warn "uv not found, skipping mempalace CLI install"
+      fi
+    fi
+
+    # MemPalace init (very slow - creates HNSW index)
+    if [ -d ".mempalace" ]; then
+      echo_success "mempalace already initialized"
+    else
+      echo_info "Initializing mempalace (creating HNSW index — may take 1-2 min)..."
+      if command -v mempalace >/dev/null 2>&1; then
+        plugin_cmd 600 mempalace init . || echo_warn "Failed to initialize mempalace (run manually: mempalace init .)"
+      else
+        echo_warn "mempalace CLI not found, skipping init"
+      fi
     fi
   fi
 fi
 
-# Step 3.5: Install agentmemory (optional memory layer)
+# Step 3.5: Start agentmemory server (install happens in Step 3)
 if [ "$SKIP_OPTIONAL" = false ]; then
   echo "=========================================="
-  echo "  Step 3.5: Installing agentmemory (optional)"
+  echo "  Step 3.5: Starting agentmemory server"
   echo "=========================================="
   echo ""
-
-  # agentmemory plugin
-  if grep -rl "agentmemory" "$HOME/.claude/plugins/" > /dev/null 2>&1; then
-    echo_success "agentmemory already installed (plugin)"
-  else
-    echo_info "Installing agentmemory plugin..."
-    plugin_cmd 120 claude plugin marketplace add rohitg00/agentmemory || echo_warn "Failed to add agentmemory marketplace"
-    plugin_cmd 180 claude plugin install agentmemory || echo_warn "Failed to install agentmemory (install manually: claude plugin install agentmemory)"
-  fi
 
   # agentmemory server - needs separate terminal
   if curl -s http://localhost:3111/agentmemory/health >/dev/null 2>&1; then
