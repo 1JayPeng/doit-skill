@@ -137,6 +137,7 @@ Each phase is mandatory. Phases can't be skipped. The workflow enforces quality 
 | 7 | E2E Verification Loop | tokensave, context-mode |
 | 8 | Git commit + Push | git, agentmemory |
 | 9.5 | Completion Summary + Knowledge Extraction | agentmemory |
+| 9.5.5 | Knowledge Distillation (structured learning) | learn/, agentmemory, mempalace, context-mode |
 | 10 | Session Summary | RTK, context-mode, headroom, agentmemory |
 
 ### E2E Verification Loop

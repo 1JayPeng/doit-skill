@@ -126,12 +126,17 @@ If the user's prompt includes reference documents (API specs, business rules, co
 
 **[LOAD] [phases.md](phases.md)#phase-1 — 完整 grill 协议 (5+ 问题 Type F / 3+ Type B)、uncertainty scan、Phase 1→2 gate。**
 
-Grill FIRST (5+ AskUserQuestion with structured options) → Internet search → MP search → Write spec → Create branch → Gate check.
+**[LOAD] [learn/inject.md](learn/inject.md) — 知识注入：搜索相关历史 session、注入 top-3 到上下文。**
+
+Knowledge injection (past sessions) → Grill FIRST (5+ AskUserQuestion with structured options) → Internet search → MP search → Write spec → Create branch → Gate check.
 
 **铁律：Grill 最低 5 个问题(Type F) / 3 个(Type B)。** 少于最低 = 未完成的 Phase 1 = 不能进入 Phase 2。
 
 ### Phase 2 — Plan
 
+**[LOAD] [learn/inject.md](learn/inject.md) — 知识注入：搜索相关历史案例、注入 top-3。**
+
+Knowledge injection → Search relevant past sessions → Inject top-3 into context.
 Check TokenSave code graph. Map impact at symbol and coupling level. Produce implementation order. See [plan.md](plan.md).
 **Phase 2 完成后：** 记录工作日志（影响分析结果、实现顺序、预计工时）。See [worklog.md](worklog.md)。
 
@@ -187,6 +192,14 @@ Remove all intermediate workflow files. See [commit.md](shared/commit.md) step 8
 **[LOAD] [phases.md](phases.md)#phase-9.5 — 完成总结格式、知识提取清单、KG facts。**
 
 Present completion summary to user → Extract knowledge (code/api/db/flow) → MemPalace → Announce extraction count.
+
+### Phase 9.5.5 — Knowledge Distillation
+
+**[LOAD] [learn/extract.md](learn/extract.md) — 结构化知识提取、用户确认、多层存储。**
+
+Extract structured session knowledge → User confirmation → Save to agentmemory + mempalace + context-mode + filesystem. See [learn/](learn/) module.
+
+### Phase 10 — Session Summary
 
 ### Phase 10 — Session Summary
 

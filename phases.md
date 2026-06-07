@@ -81,6 +81,19 @@ If MemPalace unavailable (any call errors) → skip all MP steps silently for th
 
 ## Phase 1 — Spec (完整 grill 协议)
 
+**Step 0.5 — Knowledge Injection (before grill):**
+
+Before asking grill questions, inject relevant past knowledge to inform decisions:
+
+**[LOAD] [learn/inject.md](learn/inject.md) — 搜索、排名、注入。**
+
+1. Search for relevant past sessions using user's request as semantic query
+2. Rank by relevance + time decay (recent sessions weighted higher)
+3. Inject top-3 into context as `[LEARN] Related past sessions:`
+4. Use injected knowledge to pre-fill grill options and warn about known pitfalls
+
+If no knowledge found → proceed with standard grill. If knowledge tools unavailable → skip injection.
+
 **Step 1: Grill FIRST (before writing any REQs):**
 - Load grill-me skill: `Skill skill="grill-me"`
 - **Uncertainty scan:** List 3-5 things you're uncertain about in the user's request. Rate 1-5. Focus questions on items >= 3.
@@ -151,6 +164,26 @@ mempalace_kg_add subject="<project>" predicate="has_db" object="<db schema>" val
 **If nothing extracted:** Announce `[KNOWLEDGE] No new knowledge to extract this session` — don't skip silently.
 **MP unavailable:** Skip silently. Filesystem remains primary.
 
+## Phase 9.5.5 — Knowledge Distillation (结构化知识沉淀)
+
+**[LOAD] [learn/extract.md](learn/extract.md) — 完整提取流程、用户确认、多层存储。**
+
+After Phase 9.5 knowledge extraction, distill structured session knowledge for future reuse:
+
+1. **Gather session data**: Git diff, worklog, spec, grill decisions
+2. **Generate knowledge record**: Per [learn/schema.json](learn/schema.json)
+3. **User confirmation**: Present summary, ask for confirmation/edit
+4. **Multi-layer storage**:
+   - AgentMemory: Full structured record for semantic search
+   - MemPalace: Summary in `knowledge_distillation` room + KG facts
+   - Context-Mode: Indexed for session-level retrieval
+   - Filesystem: `.doit/knowledge/<id>.json` backup
+5. **Report**: `[KNOWLEDGE] Saved to: agentmemory ✓, mempalace ✓, context-mode ✓, filesystem ✓`
+
+**Failed sessions also extracted** with `status: "failed"` and root cause analysis. These teach what NOT to do.
+
+**Graceful degradation**: If any layer unavailable, skip that layer and continue. Filesystem always available as fallback.
+
 ## Phase 10 — Session Summary
 
 After Phase 9.5 completion summary, gather session statistics and preserve knowledge:
@@ -214,8 +247,9 @@ This recovers what was done in prior sessions without relying on filesystem stat
 [Phase Gate] Type R flow (resume):
   [x] Phase 0     Classify → detect in-progress work
   [x] Resume from detected phase → complete remaining phases
-  [x] Phase 9.5   Completion Summary (user-facing)
-  [x] Phase 10    Session Summary
+  [x] Phase 9.5     Completion Summary (user-facing)
+  [x] Phase 9.5.5   Knowledge Distillation (structured extraction)
+  [x] Phase 10      Session Summary
 
 [Phase Gate] Type F flow (full):
   [x] Phase -1    Detect Environment + Config
@@ -230,24 +264,27 @@ This recovers what was done in prior sessions without relying on filesystem stat
   [x] Phase 6     Review + Simplify
   [x] Phase 7     E2E Verification Loop
   [x] Phase 8     Commit + Push
-  [x] Phase 9     Cleanup intermediate files
-  [x] Phase 9.5   Completion Summary (user-facing)
-  [x] Phase 10    Session Summary
+  [x] Phase 9       Cleanup intermediate files
+  [x] Phase 9.5     Completion Summary (user-facing)
+  [x] Phase 9.5.5   Knowledge Distillation (structured extraction)
+  [x] Phase 10      Session Summary
   [x] Doc Capture (if user prompt has docs)
 
 [Phase Gate] Type S flow (simple):
   [x] Phase 0   Classify
   [x] Execute directly
-  [x] Phase 9.5 Completion Summary (user-facing)
-  [x] Phase 10  Session Summary
+  [x] Phase 9.5     Completion Summary (user-facing)
+  [x] Phase 9.5.5   Knowledge Distillation (structured extraction)
+  [x] Phase 10      Session Summary
   [x] Doc Capture (if user prompt has docs)
 
 [Phase Gate] Type B flow (bug):
   [x] Phase 0   Classify
   [x] D0-D6     Debug workflow (debug.md)
-  [x] Phase 8   Commit + Push
-  [x] Phase 9.5 Completion Summary (user-facing)
-  [x] Phase 10  Session Summary
+  [x] Phase 8     Commit + Push
+  [x] Phase 9.5   Completion Summary (user-facing)
+  [x] Phase 9.5.5 Knowledge Distillation (structured extraction)
+  [x] Phase 10    Session Summary
 ```
 
 **After Phase 3 completes:** always continue to Phase 4. Never stop at "tests pass, done."
@@ -255,6 +292,7 @@ This recovers what was done in prior sessions without relying on filesystem stat
 **After Phase 7 completes:** always continue to Phase 8. Every feature ships committed + pushed.
 **After Phase 8 completes:** always continue to Phase 9. Clean up intermediate files.
 **After Phase 9 completes:** always continue to Phase 9.5. Present completion summary to user.
-**After Phase 9.5 completes:** always continue to Phase 10. Gather session statistics and preserve knowledge.
+**After Phase 9.5 completes:** always continue to Phase 9.5.5. Extract structured knowledge.
+**After Phase 9.5.5 completes:** always continue to Phase 10. Gather session statistics and preserve knowledge.
 
 **The only valid end state is Phase 10 complete.** If you're about to say "done" or "completed" and Phase 10 has not run, you haven't finished.
