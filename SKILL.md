@@ -375,31 +375,38 @@ If the user's prompt includes reference documents (API specs, business rules, co
 ## Phase 2 — Plan
 
 Check TokenSave code graph. Map impact at symbol and coupling level. Produce implementation order. See [plan.md](plan.md).
+**Phase 2 完成后：** 记录工作日志（影响分析结果、实现顺序、预计工时）。See [worklog.md](worklog.md)。
 
 ## Phase 3 — Execute
 
 TDD loop per acceptance criteria. See [execute.md](execute.md). Start each REQ with tokensave_context for code understanding. RTK for all shell commands. uv for Python. Context-Mode for context management. Interactive spec alignment after each TDD cycle. Per-REQ review+simplify built in. Full e2e happens after Phase 6.
+**Phase 3 完成后：** 记录工作日志（每个 REQ 的 TDD 结果、耗时、文件变更）。See [worklog.md](worklog.md)。
 
 ## Phase 4 — E2E (initial)
 
 End-to-end tests in real env. See [e2e.md](e2e.md). L0+L1 auto, L2+L3 HITL. Run after Phase 3 unit tests complete.
+**Phase 4 完成后：** 记录工作日志（E2E 测试结果、覆盖率）。See [worklog.md](worklog.md)。
 
 ## Phase 5 — Review
 
 Feature-level review. Merge duplicate logic. Minimal refactor. See [review.md](review.md).
 If caveman skill available, run `/caveman-review` for caveman-style code review before tokensave analysis.
+**Phase 5 完成后：** 记录工作日志（Review 发现的问题、严重程度）。See [worklog.md](worklog.md)。
 
 ## Phase 6 — Review + Simplify
 
 Review what you wrote. Find duplicates, over-engineering, missed README updates. Simplify. See [review-simplify.md](review-simplify.md). **NEVER skip this step.** After this, enters Phase 7 E2E Verification loop.
+**Phase 6 完成后：** 记录工作日志（Simplify 删除的代码行数、合并的函数数）。See [worklog.md](worklog.md)。
 
 ## Phase 7 — E2E Verification Loop
 
 Re-run e2e tests after Review + Simplify. Compare actual output against spec REQs (not just test assertions). If mismatch → fix code to match spec, not test to match code. Loop until e2e passes AND output matches spec. See [shared/e2e-verify.md](shared/e2e-verify.md).
+**Phase 7 完成后：** 记录工作日志（E2E 验证结果、循环次数）。See [worklog.md](worklog.md)。
 
 ## Phase 8 — Commit + Push
 
 Stage changed files, commit with meaningful message matching project's commit style, update spec status, and push to remote. See [commit.md](commit.md).
+**Phase 8 完成后：** 记录工作日志（最终 commit hash、变更统计 +X/-Y 行）。See [worklog.md](worklog.md)。
 If caveman skill available, run `/caveman-commit` for caveman-style commit message generation.
 
 **Auto-push (no confirmation needed):** read `.doit/config.yaml` commit.branch:
