@@ -543,6 +543,16 @@ CARGO_EOF
     if grep -rl "agentmemory" "$HOME/.claude/plugins/" > /dev/null 2>&1; then
       echo_success "agentmemory installed"
       _agentmemory_installed=true
+
+      # Fix MCP config: npx @agentmemory/mcp package doesn't exist -> use CLI
+      echo_info "Fixing agentmemory MCP configuration..."
+      _am_mcp_json="$HOME/.claude/plugins/cache/rohitg00-agentmemory/agentmemory/*/\.mcp.json"
+      for _mcp_file in $_am_mcp_json; do
+        if [ -f "$_mcp_file" ] && grep -q 'npx.*@agentmemory/mcp' "$_mcp_file" 2>/dev/null; then
+          sed -i 's|"npx", *-y *, *@agentmemory/mcp|"agentmemory", "mcp"|g; s|"npx"\|"@agentmemory/mcp"|"agentmemory"|g' "$_mcp_file" 2>/dev/null || true
+          echo_info "Fixed agentmemory MCP command in $_mcp_file"
+        fi
+      done
     fi
   fi
 

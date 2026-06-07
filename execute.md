@@ -106,6 +106,21 @@ After RED->GREEN->REFACTOR completes, **before moving to next REQ**:
 
 **Do not skip this.** Do not move to next REQ without reviewing current changes.
 
+### Worklog Write (MANDATORY after each REQ)
+
+**[CALL] Write worklog after every REQ completion. Three-layer storage: agentmemory > mempalace > filesystem.**
+
+1. **Primary:** `agentmemory_remember content="<worklog JSON>"` — semantic search index
+2. **Fallback:** `mempalace_add_drawer wing="<project>" room="worklog" content="<summary>"`
+3. **Final fallback:** Append to `.doit/worklog.json`
+
+**Worklog JSON format:**
+```json
+{"phase":3,"req":"REQ-00X","desc":"<what was done>","files":["<changed_file>"],"duration":"<approx>","tests":"pass/fail","decision":"<key decision>"}
+```
+
+**If worklog write fails:** Announce `[WARN] worklog failed` and continue. Never block the workflow on worklog failure.
+
 **Full Phase 6 review-simplify runs after Phase 5.** Shared source: [shared/review-simplify.md](shared/review-simplify.md)
 
 **Phase sequence:** Phase 3 -> Phase 4 (E2E initial) -> Phase 5 (Review) -> Phase 6 (Review + Simplify) -> Phase 7 (E2E Verification Loop).
@@ -207,7 +222,24 @@ ScheduleWakeup delaySeconds=120 reason="polling build completion" prompt="check 
 
 See [background-process.md](background-process.md) for full patterns including multi-phase pipelines.
 
-### Subagent Parallel TDD (Optional, Independent REQs Only)
+### Subagent Decision Gate (MANDATORY — Execute Before First REQ)
+
+**[CALL] This gate runs once before Phase 3 execution. No skip.**
+
+1. Read `.doit/config.yaml` `subagent.enabled`
+2. If `true` AND spec has >= 2 independent REQs (no dependencies between them):
+   - `tokensave_context(task="<REQ description>")` — verify no code dependencies
+   - `tokensave_impact(node_id="<symbol>")` — check blast radius doesn't overlap
+   - Group REQs by dependency
+   - Launch independent groups as parallel agents (see Subagent Parallel TDD below)
+   - **Announce:** `[SUBAGENT] Mode: parallel (N agents)`
+3. If `false` OR all REQs dependent OR only 1 REQ:
+   - Execute sequentially in main agent
+   - **Announce:** `[SUBAGENT] Mode: sequential`
+
+**The announcement is mandatory.** It lets the user see the decision was made.
+
+### Subagent Parallel TDD (When Decision Gate Says Parallel)
 
 **Config gate:** Read `.doit/config.yaml` `subagent.enabled`. If `false` (default), skip all subagent launches — execute REQs sequentially in main agent.
 
