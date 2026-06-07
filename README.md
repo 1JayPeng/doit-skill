@@ -37,6 +37,7 @@ doit is a **workflow orchestrator** — it relies on specialized tools for each 
 | **Code review** | [code-review](https://github.com/anthropics/claude-code-plugins) | OWASP security, architecture review |
 | **Brevity mode** | [caveman](https://github.com/JuliusBrussee/caveman) | Token-compact responses, commit messages |
 | **Web search** | [Tavily MCP](https://tavily.com) | Internet research for spec grilling (optional) |
+| **Skill creation** | [skill-creator](https://github.com/anthropics/skills) | Skill eval framework, iterative improvement |
 | **Python** | [uv](https://github.com/astral-sh/uv) | Fast Python package manager |
 
 **All tools degrade gracefully.** If a tool is missing, doit skips that step and continues with the remaining capabilities.
@@ -372,6 +373,20 @@ Internet search for spec grilling. [Tavily](https://tavily.com)
 claude mcp add --transport http tavily https://mcp.tavily.com/mcp/?tavilyApiKey=<your-key>
 ```
 
+#### skill-creator
+
+Skill creation and evaluation framework — iterative skill improvement with eval viewer. [GitHub](https://github.com/anthropics/skills)
+
+```bash
+# Install via npx skills CLI
+npx skills add anthropics/skills@skill-creator
+
+# Verify
+npx skills list | grep skill-creator
+```
+
+Used by doit-skill's knowledge distillation module (Phase 9.5.5) to test and iterate on extracted knowledge patterns.
+
 ### Resume Mid-Session
 
 A single `/doit` invocation may not complete the entire workflow. To continue from where you left off, simply type `/doit` again. doit determines the current phase from conversation context, git state, and spec files. MemPalace diary entries and KG facts provide cross-session recovery when filesystem state is insufficient.
@@ -379,6 +394,14 @@ A single `/doit` invocation may not complete the entire workflow. To continue fr
 ---
 
 ## Recent Changes
+
+**2026-06-07** — Knowledge distillation module (Phase 9.5.5):
+- New `learn/` module: structured knowledge extraction at Phase 9.5.5
+- Knowledge injection at Phase 1/2 — injects relevant past sessions before grill
+- Historical data migration from git, mempalace, worklog
+- Multi-layer storage: agentmemory + mempalace + context-mode + filesystem
+- skill-creator integration for eval-driven skill improvement
+- setup.sh: installs skill-creator via npx skills CLI
 
 **2026-06-06** — AgentMemory as default memory layer:
 - New default: AgentMemory (53 MCP tools, 12 hooks, 4 skills, real-time viewer)

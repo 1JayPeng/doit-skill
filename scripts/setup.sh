@@ -360,7 +360,18 @@ else
   echo "=========================================="
   echo ""
 
-# No built-in skills require checking
+# Skill-Creator (from anthropics/skills)
+  if command -v npx >/dev/null 2>&1; then
+    if npx skills list 2>/dev/null | grep -q "skill-creator"; then
+      echo_success "skill-creator already installed"
+    else
+      echo_info "Installing skill-creator..."
+      npx skills add anthropics/skills@skill-creator --non-interactive 2>&1 || echo_warn "Failed to install skill-creator (requires npx skills CLI)"
+    fi
+  else
+    echo_warn "npx not found — skill-creator requires Node.js. Install manually:"
+    echo "     npx skills add anthropics/skills@skill-creator"
+  fi
 fi
 
 # Step 3: Install external tools

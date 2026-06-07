@@ -244,6 +244,33 @@ pip install uv
 claude mcp add --transport http tavily https://mcp.tavily.com/mcp/?tavilyApiKey=<your-key>
 ```
 
+#### skill-creator
+
+技能创建和评估框架 — 迭代优化 skill，带 eval viewer。[GitHub](https://github.com/anthropics/skills)
+
+```bash
+# 通过 npx skills CLI 安装
+npx skills add anthropics/skills@skill-creator
+
+# 验证
+npx skills list | grep skill-creator
+```
+
+用于 doit-skill 的知识沉淀模块（Phase 9.5.5），测试和迭代提取的知识模式。
+
+### 知识沉淀模块
+
+Phase 9.5.5 自动提取结构化知识（决策、错误、代码模式），并在 Phase 1/2 注入相关经验。
+
+**提取时机：** Phase 9.5 完成后，Phase 10 前
+**注入时机：** Phase 1/2 开始前
+**存储：** 多层存储（AgentMemory + MemPalace + Context-Mode + 文件系统）
+
+```
+Session 完成 -> Phase 9.5.5 提取 -> 用户确认 -> 多层存储
+下次 Session -> Phase 1/2 注入 -> 搜索相关经验 -> 注入 top-3
+```
+
 ### 审查 + 简化（不可跳过）
 
 阶段 5 审查代码：重复代码、安全漏洞（OWASP Top 10）、过度抽象、死代码。阶段 6 简化：合并重复逻辑、删除死代码、压平不必要的抽象层、减少代码行数。
@@ -292,6 +319,7 @@ RTK 通过 PreToolUse hook 自动代理所有 Bash 命令，全阶段节省 60-9
 | 7 | E2E 验证循环 | tokensave, context-mode |
 | 8 | Git 提交 + Push | git, agentmemory |
 | 9.5 | 完成总结 + 知识提取 | agentmemory |
+| 9.5.5 | 知识沉淀（结构化学习） | learn/, agentmemory, mempalace, context-mode |
 | 10 | Session Summary | RTK, context-mode, headroom, agentmemory |
 
 ### E2E 验证循环
@@ -352,6 +380,14 @@ cd doit-skill
 **更新：** `git pull && ./scripts/setup.sh`
 
 ## 近期更新
+
+**2026-06-07** - 知识沉淀模块（Phase 9.5.5）：
+- 新增 `learn/` 模块：Phase 9.5.5 结构化知识提取
+- Phase 1/2 知识注入 — 在 grill 前注入相关历史经验
+- 历史数据迁移：从 git、mempalace、worklog 提取
+- 多层存储：agentmemory + mempalace + context-mode + 文件系统
+- skill-creator 集成：评估驱动的技能改进
+- setup.sh：通过 npx skills CLI 安装 skill-creator
 
 **2026-06-06** - AgentMemory 成为默认记忆层：
 - 新默认值：AgentMemory（53 MCP tools, 12 hooks, 4 skills, 实时 viewer）
