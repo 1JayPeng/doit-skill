@@ -15,7 +15,6 @@ New pattern: call `AskUserQuestion` with 2-4 options. User answers without inter
 - Always provide a sensible default as the first option
 - If user doesn't answer -> proceed with default
 - **Exception: grill questions.** Grill questions must be asked first, then defaults apply if user doesn't answer. Skipping grill != user not answering.
-- **Exception: grill questions do NOT use this rule.** Grill questions must be asked first, then unanswered questions use defaults. Skipping grill != user not answering.
 
 ### Applied Everywhere
 

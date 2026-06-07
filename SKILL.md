@@ -66,12 +66,13 @@ Also init `.doit/config.yaml` if not present (default config for doc-capture, co
 | **Commit + Push Mandatory** | 所有代码变更必须提交并推送，没有例外 | [rules.md](rules.md) |
 | **MemPalace 读写对称** | MP 调用与 TokenSave 同级别，可用则必做 | [rules.md](rules.md) |
 | **完整工作流不可跳过** | 每个 phase 必须按顺序完成，唯一合法结束是 Phase 10 | [rules.md](rules.md) — 流程图、禁止行为 |
+| **Grill Enforcement** | Phase 1 必须 grill 5+ 问题(Type F) / 3+ (Type B)，少于最低不进入 Phase 2 | [rules.md](rules.md) |
 | **危险操作保护** | 删除操作必须先 AskUserQuestion 确认 | [rules.md](rules.md) |
 | **Review + Simplify 不可跳过** | 代码变更后必须 Review + Simplify，未审查不提交 | [rules.md](rules.md) — 检查清单 |
 
 ## Principles
 
-Seven principles guide every phase. Six iron rules. See [principles.md](principles.md).
+Twelve principles guide every phase. Eight iron rules first. See [principles.md](principles.md).
 
 | Principle | What it prevents |
 |-----------|------------------|
@@ -80,6 +81,8 @@ Seven principles guide every phase. Six iron rules. See [principles.md](principl
 | **Commit + Push Mandatory (铁律)** | lost work, no git history, no PR trail |
 | **MemPalace 读写对称 (铁律)** | lost context across sessions, repeated research |
 | **完整工作流不可跳过 (铁律)** | skipped phases, degraded quality, bugs shipped |
+| **Grill Enforcement (铁律)** | specs without grilling, missed edge cases, wrong implementations |
+| **危险操作保护 (铁律)** | accidental data loss, destructive operations without confirmation |
 | **Review + Simplify 不可跳过 (铁律)** | unreviewed code, duplication, over-engineering |
 | **Think Before Coding** | wrong assumptions, hidden confusion, missing trade-offs |
 | **Brevity First** | over-engineering, bloated abstractions |

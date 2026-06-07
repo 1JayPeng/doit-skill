@@ -31,6 +31,8 @@ doit is a **workflow orchestrator** — it relies on specialized tools for each 
 | **Session context** | [context-mode](https://github.com/mksglu/context-mode) | Command output indexing, semantic search, token savings |
 | **Cross-session memory** | [AgentMemory](https://github.com/rohitg00/agentmemory) (default) | 53 MCP tools, 12 hooks, real-time viewer — survives restarts |
 | **Cross-session memory** | [MemPalace](https://github.com/MemPalace/mempalace) (fallback) | Specs, decisions, knowledge graph — survives restarts |
+| **Context optimization** | [Headroom](https://github.com/nicholasgriffintn/headroom) | Proxy compression, memory persistence — token savings |
+| **Context optimization** | [lean-ctx](https://leanctx.com) | Lean context window management — token savings |
 | **Token optimization** | [RTK](https://github.com/rtk-ai/rtk) | Auto-wraps Bash commands, saves 60-90% tokens |
 | **Code review** | [code-review](https://github.com/anthropics/claude-code-plugins) | OWASP security, architecture review |
 | **Brevity mode** | [caveman](https://github.com/JuliusBrussee/caveman) | Token-compact responses, commit messages |
@@ -124,18 +126,18 @@ Each phase is mandatory. Phases can't be skipped. The workflow enforces quality 
 
 | Phase | What | Tools |
 |-------|------|-------|
-| -1 | Detect project environment | Built-in, MemPalace |
-| 0 | Classify request (R/S/F/B) | Built-in, caveman, MemPalace |
-| 1 | Spec generation + grill | Tavily MCP, grill-me, MemPalace |
-| 2 | Plan with code graph | tokensave, MemPalace |
-| 3 | Execute TDD + Review+Simplify | RTK, uv, tokensave, context-mode, MemPalace |
+| -1 | Detect project environment | Built-in, agentmemory |
+| 0 | Classify request (R/S/F/B) | Built-in, caveman, agentmemory |
+| 1 | Spec generation + grill | Tavily MCP, grill-me, agentmemory |
+| 2 | Plan with code graph | tokensave, agentmemory |
+| 3 | Execute TDD + Review+Simplify | RTK, uv, tokensave, context-mode, agentmemory |
 | 4 | E2E tests (mandatory) | tokensave, context-mode |
-| 5 | Code review | code-review, tokensave, MemPalace |
+| 5 | Code review | code-review, tokensave, agentmemory |
 | 6 | Review + Simplify (mandatory) | tokensave |
 | 7 | E2E Verification Loop | tokensave, context-mode |
-| 8 | Git commit + Push | git, MemPalace |
-| 9.5 | Completion Summary + Knowledge Extraction | MemPalace |
-| 10 | Auto-Compact | RTK, context-mode, MemPalace |
+| 8 | Git commit + Push | git, agentmemory |
+| 9.5 | Completion Summary + Knowledge Extraction | agentmemory |
+| 10 | Auto-Compact | RTK, context-mode, headroom, agentmemory |
 
 ### E2E Verification Loop
 
@@ -166,9 +168,9 @@ Phase 4 tests the user's full journey — exit codes, stdout, file output, datab
 | L2 | Conflicting param combinations | HITL |
 | L3 | Fuzzy/random input, stability | HITL |
 
-### Four-Layer Memory
+### Five-Layer Memory
 
-doit integrates four memory layers so context survives across sessions:
+doit integrates five memory layers so context survives across sessions:
 
 | Layer | Tool | What It Stores |
 |-------|------|----------------|
@@ -176,6 +178,7 @@ doit integrates four memory layers so context survives across sessions:
 | **Session context** | Context-Mode | Command output, semantic search index — survives tool calls |
 | **Cross-session** | AgentMemory (default) | Semantic search, sessions, governance — survives restarts |
 | **Cross-session** | MemPalace (fallback) | Specs, decisions, knowledge graph, agent diary — survives restarts |
+| **Context optimization** | Headroom | Proxy compression, memory persistence — survives sessions |
 
 **Default: AgentMemory** (53 MCP tools, real-time viewer at localhost:3113). Falls back to MemPalace if AgentMemory is unavailable. Both follow **read-write symmetry**: every phase that writes also reads back in subsequent runs. Phase 0 sweeps 10 parallel calls to reconstruct project context.
 

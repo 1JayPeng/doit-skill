@@ -50,7 +50,7 @@ doit 在"用户提出"和"Agent 编码"之间插入结构化思考：
 
 ## 工具生态
 
-doit 不是一个孤立的 skill，它是**工具编排器**。它整合了 9 个外部工具和 6 个内置技能，形成四层记忆架构：
+doit 不是一个孤立的 skill，它是**工具编排器**。它整合了 9 个外部工具和 6 个内置技能，形成五层记忆架构：
 
 ```
                     /doit
@@ -261,7 +261,7 @@ claude mcp add --transport http tavily https://mcp.tavily.com/mcp/?tavilyApiKey=
 | L2 | 冲突参数组合 | HITL（人工介入） |
 | L3 | 模糊/随机输入、稳定性 | HITL（人工介入） |
 
-### 四层记忆架构
+### 五层记忆架构
 
 | 层级 | 工具 | 持久化范围 |
 |------|------|-----------|
@@ -269,6 +269,7 @@ claude mcp add --transport http tavily https://mcp.tavily.com/mcp/?tavilyApiKey=
 | 会话层 | Context-Mode | 命令输出、语义搜索索引 — 工具调用存活 |
 | 跨会话层 | AgentMemory (默认) | 语义搜索、会话、治理 — 重启存活 |
 | 跨会话层 | MemPalace (备选) | 规格、决策、知识图谱、agent diary — 重启存活 |
+| 上下文优化层 | Headroom | 代理压缩、记忆持久化 — 会话存活 |
 
 **默认: AgentMemory**（53 MCP tools, 12 hooks, 实时 viewer localhost:3113）。如果 AgentMemory 不可用则降级到 MemPalace。两者均遵循**读写对称铁律**：每个 phase 写入的数据，后续运行都会读回。Phase 0 通过 10 个并行调用重建项目上下文。
 
@@ -280,18 +281,18 @@ RTK 通过 PreToolUse hook 自动代理所有 Bash 命令，全阶段节省 60-9
 
 | 阶段 | 内容 | 工具 |
 |------|------|------|
-| -1 | 检测项目环境 | 内置, MemPalace |
-| 0 | 需求分类（R/S/F/B） | 内置, caveman, MemPalace |
-| 1 | 规格生成 + Grill | Tavily MCP, grill-me, MemPalace |
-| 2 | 代码图谱规划 | tokensave, MemPalace |
-| 3 | TDD 执行 + 审查+简化 | RTK, uv, tokensave, context-mode, MemPalace |
+| -1 | 检测项目环境 | 内置, agentmemory |
+| 0 | 需求分类（R/S/F/B） | 内置, caveman, agentmemory |
+| 1 | 规格生成 + Grill | Tavily MCP, grill-me, agentmemory |
+| 2 | 代码图谱规划 | tokensave, agentmemory |
+| 3 | TDD 执行 + 审查+简化 | RTK, uv, tokensave, context-mode, agentmemory |
 | 4 | 端到端测试（不可跳过） | tokensave, context-mode |
-| 5 | 代码审查 | code-review, tokensave, MemPalace |
+| 5 | 代码审查 | code-review, tokensave, agentmemory |
 | 6 | 审视 + 简化（不可跳过） | tokensave |
 | 7 | E2E 验证循环 | tokensave, context-mode |
-| 8 | Git 提交 + Push | git, MemPalace |
-| 9.5 | 完成总结 + 知识提取 | MemPalace |
-| 10 | 自动压缩 | RTK, context-mode, MemPalace |
+| 8 | Git 提交 + Push | git, agentmemory |
+| 9.5 | 完成总结 + 知识提取 | agentmemory |
+| 10 | 自动压缩 | RTK, context-mode, headroom, agentmemory |
 
 ### E2E 验证循环
 

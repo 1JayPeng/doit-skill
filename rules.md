@@ -152,6 +152,39 @@ Phase -1 → Phase 0 → Phase 1 → Phase 2 → Phase 3 → Phase 4 → Phase 5
 **Type S（简单）简化流程：** Phase 0 → 直接执行 → Phase 9.5 → Phase 10。简单变更也需 commit + compact。
 **Type B（Bug）调试流程：** Phase 0 → D0-D6 → Phase 8 → Phase 9.5 → Phase 10.
 
+## 铁律 — Grill Enforcement
+
+**Phase 1 必须 grill 用户想法，最低 5 个问题(Type F) / 3 个(Type B)，少于最低 = 未完成 Phase 1 = 不能进入 Phase 2。**
+
+旧模式：用户说"我要 X" -> agent 直接写 REQs。这产生的 spec 遗漏边界情况、不挑战假设、导致错误实现。
+新模式：用户说"我要 X" -> agent grill 5+ 问题 -> 基于 grill 写 REQs。
+
+**Grill quality > quantity。** 5 个针对用户请求的具体问题胜过 12 个通用问题。每个问题必须：
+- 引用用户请求中的具体细节
+- 解释为什么答案重要（答错的后果）
+- 提供 2-4 个具体选项，每个选项包含后果 + 权衡 + 项目适配度
+
+**Option quality 是强制的，不是可选的：**
+- **Bad:** `label: "Redis", description: "Fast caching"` — 模糊，无上下文
+- **Good:** `label: "Redis cache (Recommended)", description: "In-memory -> sub-ms read. Trade-off: needs Redis infra. 适合: 高读低写场景。"`
+- 每个选项：**命名方案** + **`->` 后果** + **`Trade-off:`** + **`适合:` 项目适配度**
+- 恰好一个 `(Recommended)`，有项目特定的理由
+
+**GRILL CHECKLIST — 所有项目必须在写 REQ 之前完成：**
+- [ ] Challenge assumptions — 至少 1 个问题
+- [ ] Internet search for existing solutions — Tavily MCP or WebSearch
+- [ ] MP search for prior specs/knowledge — `mempalace_search wing="<project>"`
+- [ ] Alternative approaches — 至少 1 个问题
+- [ ] Scope clarification — 至少 1 个问题
+
+**所有 grill 问题必须使用 AskUserQuestion。** 永不停止等待。
+
+### Applied Everywhere
+
+- **Phase 1 (Spec)** — 3+ grill 问题 before any REQ written
+- **Type F (Feature)** — full grill checklist
+- **Type B (Bug)** — grill reproduction steps + scope
+
 ## 铁律 — 危险操作保护
 
 **涉及数据或代码删除的操作，必须先通过 AskUserQuestion 确认，然后执行。**
