@@ -1,0 +1,75 @@
+{
+  "skill_name": "knowledge-distillation",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "After completing a feature to add JWT authentication, extract knowledge decisions: JWT chosen over Session due to mobile compatibility, error: command injection in add-dependency.sh fixed with input validation",
+      "expected_output": "Knowledge record with type=F, status=success, 1 decision, 1 error, auth-related tags",
+      "files": [],
+      "assertions": [
+        {
+          "name": "schema_valid",
+          "description": "Generated record matches schema.json",
+          "type": "json_schema",
+          "check": "required_fields_present"
+        },
+        {
+          "name": "decision_captured",
+          "description": "JWT decision captured with rationale",
+          "type": "contains",
+          "field": "decisions[0].choice",
+          "value": "JWT"
+        },
+        {
+          "name": "error_captured",
+          "description": "Command injection error captured",
+          "type": "contains",
+          "field": "errors[0].error",
+          "value": "injection"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Search for relevant knowledge when user asks 'I need user authentication with OAuth2' in project 'portrait'",
+      "expected_output": "Top-3 relevant past sessions with auth-related decisions and patterns",
+      "files": [],
+      "assertions": [
+        {
+          "name": "relevant_results",
+          "description": "Returns auth-related sessions",
+          "type": "contains_keyword",
+          "keywords": ["auth", "JWT", "OAuth", "session"]
+        },
+        {
+          "name": "top_3_limit",
+          "description": "Returns at most 3 results",
+          "type": "max_count",
+          "max": 3
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Migrate historical knowledge from git commits: 'feat(auth): implement JWT-based authentication', 'fix: command injection in add-dependency.sh'",
+      "expected_output": "2 knowledge records extracted from git history with correct types",
+      "files": [],
+      "assertions": [
+        {
+          "name": "feat_type",
+          "description": "feat commit mapped to Type F",
+          "type": "field_equals",
+          "field": "records[0].type",
+          "value": "F"
+        },
+        {
+          "name": "fix_type",
+          "description": "fix commit mapped to Type B",
+          "type": "field_equals",
+          "field": "records[1].type",
+          "value": "B"
+        }
+      ]
+    }
+  ]
+}
