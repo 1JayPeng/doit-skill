@@ -422,7 +422,7 @@ else
   fi
   if command -v rtk >/dev/null 2>&1; then
     echo_info "Initializing rtk for Claude Code..."
-    rtk init -g 2>/dev/null || true
+    rtk init -g < /dev/null 2>/dev/null || true
     echo_success "rtk installed and initialized"
   fi
 
@@ -528,7 +528,7 @@ CARGO_EOF
   else
     echo_info "Installing agentmemory CLI..."
     npm install -g @agentmemory/agentmemory 2>&1 || echo_warn "Failed to install agentmemory via npm"
-    agentmemory connect claude-code 2>&1 || echo_warn "Failed to connect agentmemory to claude-code"
+    agentmemory connect claude-code < /dev/null 2>&1 || echo_warn "Failed to connect agentmemory to claude-code"
     if grep -rl "agentmemory" "$HOME/.claude/plugins/" > /dev/null 2>&1; then
       echo_success "agentmemory installed"
       _agentmemory_installed=true
@@ -560,12 +560,12 @@ CARGO_EOF
     fi
 
     # MemPalace init (very slow - creates HNSW index)
-    if [ -d ".mempalace" ]; then
+    if [ -f "mempalace.yaml" ] || [ -d ".mempalace" ]; then
       echo_success "mempalace already initialized"
     else
       echo_info "Initializing mempalace (creating HNSW index — may take 1-2 min)..."
       if command -v mempalace >/dev/null 2>&1; then
-        plugin_cmd 600 mempalace init . || echo_warn "Failed to initialize mempalace (run manually: mempalace init .)"
+        plugin_cmd 600 mempalace init . < /dev/null || echo_warn "Failed to initialize mempalace (run manually: mempalace init .)"
       else
         echo_warn "mempalace CLI not found, skipping init"
       fi
@@ -624,9 +624,9 @@ if [ "$SKIP_OPTIONAL" = false ]; then
   if command -v lean-ctx >/dev/null 2>&1; then
     lean-ctx --version 2>&1 || true
     echo_info "Connecting lean-ctx to all AI tools..."
-    lean-ctx onboard 2>&1 || echo_warn "lean-ctx onboard failed"
+    lean-ctx onboard < /dev/null 2>&1 || echo_warn "lean-ctx onboard failed"
     source "$HOME/.bashrc" 2>/dev/null || true
-    lean-ctx init --agent claude 2>&1 || echo_warn "lean-ctx init --agent claude failed (may need manual: claude mcp add lean-ctx lean-ctx)"
+    lean-ctx init --agent claude < /dev/null 2>&1 || echo_warn "lean-ctx init --agent claude failed (may need manual: claude mcp add lean-ctx lean-ctx)"
     echo_success "lean-ctx installed"
   fi
 
