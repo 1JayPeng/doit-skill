@@ -130,7 +130,13 @@ New pattern: user says "I want X" -> agent grills with 5+ questions -> writes RE
 **Grill quality > quantity.** 5 specific questions that reference the user's request beat 12 generic questions. Each question must:
 - Reference a specific detail from the user's request
 - Explain WHY the answer matters (consequence of getting it wrong)
-- Provide 2-3 concrete options
+- Provide 2-4 concrete options, each with consequence + trade-off + project fit
+
+**Option quality is mandatory, not optional:**
+- **Bad:** `label: "Redis", description: "Fast caching"` — vague, no context
+- **Good:** `label: "Redis cache (Recommended)", description: "In-memory -> sub-ms read. Trade-off: needs Redis infra. 适合: 高读低写场景。"`
+- Each option: **named approach** + **`->` consequence** + **`Trade-off:`** + **`适合:` project fit**
+- Exactly one `(Recommended)` with project-specific justification
 
 **GRILL CHECKLIST — all must complete before writing REQs:**
 - [ ] Challenge assumptions — at least 1 question

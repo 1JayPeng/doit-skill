@@ -350,7 +350,8 @@ If the user's prompt includes reference documents (API specs, business rules, co
 - Ask 5+ questions via AskUserQuestion (Type F) or 3+ (Type B). Each question must:
   - Reference a specific detail from the user's request
   - Explain WHY the answer matters (consequence of getting it wrong)
-  - Provide 2-3 concrete options
+  - Provide 2-4 concrete options, each with: **named approach** + **`->` consequence** + **`Trade-off:`** + **`适合:` project fit**
+  - Exactly one option marked `(Recommended)` with project-specific reason
 - Internet search for existing solutions — Tavily MCP or WebSearch
 - MP search for prior specs/knowledge — `mempalace_search wing="<project>"`
 - Write grill summary to `.doit/grill-summary.json` (questions asked, checklist, answers)

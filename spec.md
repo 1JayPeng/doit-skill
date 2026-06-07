@@ -66,9 +66,23 @@ Use `grill-me` skill to pressure-test the idea. Find holes, contradictions, scop
 
 **铁律: Grill questions via AskUserQuestion, never stop and wait.**
 **铁律: Minimum 5 grill questions per feature (Type F), 3 per bug (Type B). < minimum = incomplete Phase 1 = cannot proceed to Phase 2.**
+**铁律: Every grill question MUST provide concrete, actionable options — not open-ended questions.**
 
-**Step 2a: Uncertainty Scan (internal, before generating questions):**
-List 3-5 things you're uncertain about in the user's request. Rate each 1-5 (5 = completely unclear). Generate questions only for items rated >= 3.
+**Option Quality (MANDATORY per question):**
+Each `AskUserQuestion` option MUST contain:
+1. **Named approach** — "JWT Stateless" not "option A"
+2. **Consequence** — what happens: `-> 无服务端状态，移动端天然兼容`
+3. **Trade-off** — what you lose: `Trade-off: 撤销token需黑名单`
+4. **Project fit** — why it fits THIS project: `适合: 本项目移动端优先场景`
+5. **Recommendation** — exactly one `(Recommended)` with project-specific reason
+
+**Bad option:** `label: "Redis", description: "Fast caching with Redis"`
+**Good option:** `label: "Redis cache (Recommended)", description: "In-memory -> sub-ms read, needs Redis infra. Trade-off: cache invalidation. 适合: 高读低写配置查找。"`
+
+**Step 2a: Research + Uncertainty Scan (internal, before generating questions):**
+1. **Research first** — Tavily MCP + MP search + TokenSave for project context
+2. **Uncertainty scan** — List 3-5 things uncertain, rate 1-5. Generate questions for items >= 3.
+3. **Build options from research** — Each option backed by data, not guesswork
 
 **GRILL CHECKLIST — all must complete before writing REQs:**
 - [ ] Challenge assumptions — at least 1 question
@@ -76,13 +90,15 @@ List 3-5 things you're uncertain about in the user's request. Rate each 1-5 (5 =
 - [ ] MP search for prior specs/knowledge — `mempalace_search wing="<project>"`
 - [ ] Alternative approaches — at least 1 question
 - [ ] Scope clarification — at least 1 question
+- [ ] **Every option has consequence + trade-off + project fit**
+- [ ] **Exactly one (Recommended) per question with justification**
 
 **Step 2b: Grill Summary (after grill complete, before REQs):**
 Write `.doit/grill-summary.json`:
 ```json
 {
   "questions_asked": 5,
-  "checklist": {"challenge_assumptions": true, "internet_search": true, "mp_search": true, "alternative_approaches": true, "scope_clarification": true},
+  "checklist": {"challenge_assumptions": true, "internet_search": true, "mp_search": true, "alternative_approaches": true, "scope_clarification": true, "option_quality": true},
   "questions": ["Q1 text", "Q2 text", ...],
   "answers": {"Q1": "user answer or default used"}
 }
@@ -91,15 +107,13 @@ Write `.doit/grill-summary.json`:
 When the grill reveals ambiguity, present it as AskUserQuestion:
 ```
 AskUserQuestion:
-  question: "Grill found ambiguity: Should X handle Y case?"
-  header: "Grill"
+  question: "Grill found ambiguity: Should X handle Y case — 选择影响范围定义和后续扩展？"
+  header: "Scope"
   options:
     - label: "Yes, include Y (Recommended)"
-      description: "Handle Y as part of this feature"
+      description: "Handle Y as part of this feature -> 一次性解决，~2天额外。适合: Y和X共享80%代码路径。"
     - label: "No, out of scope"
-      description: "Defer Y to future work"
-    - label: "Depends, clarify"
-      description: "Need more context"
+      description: "Defer Y to future work -> 当前范围缩小~30%。Trade-off: 下次需要兼容层。适合: Y和X代码路径独立。"
 ```
 
 After asking all grill questions: if user doesn't answer within the same response cycle -> use the recommended default and continue. Grill questions MUST be asked before defaults are applied. Skipping grill questions entirely is NOT equivalent to user not answering.
