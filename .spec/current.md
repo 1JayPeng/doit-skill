@@ -1,149 +1,101 @@
-# Spec: Knowledge Distillation (知识沉淀)
+# Spec: Tool Integration Fix — Make documented tools actually work
 
-**Created:** 2026-06-07
-**Type:** Feature (F)
-**Workflow:** Full pipeline
+## Problem
 
-## Problem Statement
+doit-skill documents headroom, agentmemory, lean-ctx as integrated tools, but:
+- **AgentMemory MCP** was broken — used `npx -y @agentmemory/mcp` (nonexistent package) instead of `agentmemory mcp`
+- **Headroom** MCP connected but only provides CCR tools (compress/retrieve), not memory management
+- **Lean-ctx** wasn't installed at all
+- Documentation described tool capabilities that didn't match reality
 
-doit-skill 执行完每个 session 后，所有经验（决策、错误、解法、代码模式）都丢失了。下次遇到类似问题，重新走一遍试错流程，浪费 token 和时间。
+## Diagnosis Results
 
-## Goal
+| Tool | MCP Tools | CLI Tools | Actual Capability |
+|------|-----------|-----------|-------------------|
+| context-mode | ctx_search, ctx_index, etc. | ctx_batch_execute | Session indexing + semantic search |
+| mempalace | mempalace_search, add_drawer, etc. | mempalace init | Cross-session memory + KG |
+| tokensave | tokensave_context, search, etc. | tokensave init | Code graph analysis |
+| agentmemory | 51 MCP tools (fixed!) | agentmemory CLI | Cross-session semantic memory |
+| headroom | headroom_retrieve, compress, stats | headroom memory list/export | **Proxy compression**, not memory |
+| lean-ctx | lean-ctx MCP (newly installed) | lean-ctx CLI | Context window optimization |
 
-构建知识沉淀模块，自动从 doit 工作流中提取成功路径，并在 Phase 1/2 注入相关经验，加速后续开发。
+## Fixes Applied
 
-## Design Decisions (from Grill)
+### 1. AgentMemory MCP — Fixed
+- **Before**: `npx -y @agentmemory/mcp` (package doesn't exist)
+- **After**: `agentmemory mcp` (uses installed CLI)
+- **File changed**: `~/.claude/plugins/cache/rohitg00-agentmemory/agentmemory/0.9.27/.mcp.json`
+- **Status**: MCP now connected, 51 tools available
 
-| Decision | Choice | Why |
-|----------|--------|-----|
-| Data sources | Full auto extraction | Zero user operation, knowledge accumulates naturally |
-| Reuse scenario | Phase 1+2 injection | Preventive reuse — avoid repeating mistakes before coding |
-| Skill scope | doit-skill built-in module | Seamless integration, setup.sh auto-installs |
-| Storage | Multi-layer (agentmemory + mempalace + context-mode + tokensave) | Each layer plays its strength |
-| Extraction granularity | Session-level summary | Small storage, fast retrieval, 90% cases sufficient |
-| Matching algorithm | Semantic similarity | Flexible, cross-project, existing tools support |
-| Extraction timing | Phase 9.5 trigger | Seamless workflow, user already sees results |
-| Failed sessions | Record with failure markers + root cause | Learn from failures, downgrade in search |
-| Extractor architecture | Hook functions | Zero user operation, integrated with doit phases |
-| Index format | Structured JSON | Searchable, aggregable, schema-evolvable |
-| Matching performance | Real-time embedding | Accurate, existing tools support it |
-| Data quality | Auto-extract + human confirmation | High quality, Phase 9.5 user review |
-| MVP scope | **All phases** + multi-layer storage | User chose full scope over MVP |
-| Migration | Historical data batch extraction | Full history, needs parsing scripts |
-| Testing | Skill-creator eval | Quantifiable verification |
-| Dependencies | Minimal + graceful degradation | Works in most environments |
+### 2. Headroom — Documentation Correction
+- **Reality**: Headroom MCP provides CCR (Compress-Cache-Retrieve), not memory
+- **Memory CLI**: Only list/show/edit/delete/import/export — no `add` command
+- **Correct usage**: Proxy compression via `ANTHROPIC_BASE_URL`, or CCR tools
+- **Doc fix**: Update SKILL.md, README, phases.md to describe actual capability
 
-## Acceptance Criteria
+### 3. Lean-ctx — Installed + Configured
+- **Version**: 3.7.5
+- **Location**: `~/.local/bin/lean-ctx`
+- **MCP**: Connected via `lean-ctx init --agent claude`
+- **Rules**: Installed at `.claude/rules/lean-ctx.md`
 
-### REQ-001: Knowledge Extraction Schema
+## REQ-001: Fix Headroom documentation
 
-Define structured JSON schema for knowledge records:
-```json
-{
-  "session_id": "uuid",
-  "project": "project-name",
-  "timestamp": "ISO-8601",
-  "type": "F|B|S",
-  "status": "success|failed|partial",
-  "branch": "feat/...",
-  "commit": "abc123",
-  "duration_minutes": 30,
-  "reqs": ["REQ-001: ...", "REQ-002: ..."],
-  "decisions": [
-    {"question": "...", "choice": "...", "rationale": "..."}
-  ],
-  "errors": [
-    {"error": "...", "root_cause": "...", "resolution": "..."}
-  ],
-  "code_patterns": [
-    {"pattern": "...", "files": ["..."], "context": "..."}
-  ],
-  "tools_used": ["tokensave", "mempalace", ...],
-  "confidence": 0.85
-}
+Update all references to headroom to reflect it's a **proxy compression** tool, not a memory layer.
+
+Files to change:
+- `SKILL.md` — Memory Layer section: headroom description
+- `README.md` — Prerequisites table + Phase 10 tools
+- `README_ZH.md` — Same
+- `phases.md` — Phase 10 headroom memory commands (these don't exist!)
+- `headroom.md` — Correct the Phase 10 usage examples
+
+## REQ-002: Update Phase 10 to use real tool commands
+
+Phase 10 currently says:
 ```
+headroom memory add --content "<session summary>" --scope SESSION
+```
+This command **does not exist**. Headroom memory has no `add` command.
 
-### REQ-002: Phase 9.5.5 — Knowledge Extraction Hook
+Correct Phase 10 should use:
+- **AgentMemory**: `agentmemory_remember` MCP tool (now works!)
+- **MemPalace**: `mempalace_add_drawer` MCP tool (already works)
+- **Context-Mode**: `ctx_index` MCP tool (already works)
+- **Headroom**: `headroom_compress` for output compression, NOT memory
 
-**Given** Phase 9.5 completion summary is shown to user
-**When** Phase 9.5.5 triggers
-**Then** system:
-1. Reads session context (git diff, worklog, conversation summary)
-2. Generates structured knowledge record per REQ-001 schema
-3. Presents extraction summary to user: `[LEARN] Extracted N items (decisions: X, errors: Y, patterns: Z)`
-4. User can confirm or edit via AskUserQuestion
-5. Saves to multi-layer storage
+## REQ-003: Update setup.sh to install lean-ctx
 
-### REQ-003: Multi-Layer Storage
+Add lean-ctx installation to setup.sh with fallback for network issues.
 
-**Given** a knowledge record is confirmed
-**When** storage is triggered
-**Then** saved to:
-- **AgentMemory** (primary): Full record for semantic search
-- **MemPalace**: Summary in `knowledge_distillation` room + KG facts
-- **Context-Mode**: Indexed for session-level retrieval
-- **Filesystem**: `.doit/knowledge/<session_id>.json` as backup
+## REQ-004: Update doctor.sh to verify lean-ctx
 
-**And** if any layer unavailable → skip that layer, continue with others, log warning
+Add lean-ctx to EXTERNAL_TOOLS and health check.
 
-### REQ-004: Knowledge Injection at Phase 1/2
+## REQ-005: Fix agentmemory MCP in setup.sh
 
-**Given** Phase 1 (Spec) or Phase 2 (Plan) is starting
-**When** knowledge injection hook fires
-**Then**:
-1. Search using user's request text as semantic query
-2. Filter by project name
-3. Apply time decay (recent sessions ranked higher)
-4. Return top-3 most relevant past sessions
-5. Inject into context as `[LEARN] Related past sessions:` with brief summaries
+The setup.sh currently installs agentmemory CLI but the MCP config is in the plugin directory. Document that users need to ensure the plugin's .mcp.json uses `agentmemory mcp` command.
 
-### REQ-005: Historical Data Extraction
+## Design Decisions
 
-**Given** the knowledge distillation module is installed
-**When** first run (no existing `.doit/knowledge/` directory)
-**Then** system offers to extract historical knowledge from:
-- Git commit messages (feat/fix types)
-- Existing MemPalace knowledge rooms
-- `.doit/worklog.json` entries
-
-**And** converts them to structured knowledge format
-
-### REQ-006: Skill Integration with Skill-Creator
-
-**Given** skill-creator is installed from `anthropics/skills@skill-creator`
-**When** creating the knowledge distillation skill
-**Then**:
-1. Uses skill-creator eval framework
-2. Tests extraction accuracy
-3. Tests injection relevance
-4. Tests storage reliability
-5. Skill passes eval before doit-skill integration
-
-### REQ-007: Graceful Degradation
-
-**Given** some memory tools are unavailable
-**When** knowledge extraction or injection runs
-**Then**:
-- Uses available tools: agentmemory > mempalace > filesystem
-- Logs which layers were skipped
-- Completes workflow without blocking
-- If no memory tools → filesystem-only mode
+| Decision | Rationale |
+|----------|-----------|
+| Headroom is proxy compression, not memory | MCP tools are compress/retrieve/stats, not memory CRUD |
+| AgentMemory uses `agentmemory mcp` command | `npx -y @agentmemory/mcp` package doesn't exist |
+| Lean-ctx installed via binary download | Install script may fail on network issues; binary is reliable |
+| Phase 10 memory writes use agentmemory + mempalace | These have actual MCP write tools |
 
 ## Implementation Order
 
-1. REQ-001: Schema definition
-2. REQ-006: Install skill-creator
-3. REQ-002: Phase 9.5.5 extraction hook
-4. REQ-003: Multi-layer storage
-5. REQ-004: Phase 1/2 injection
-6. REQ-005: Historical data extraction
-7. REQ-007: Graceful degradation
-8. Update SKILL.md, phases.md, setup.sh
+1. REQ-001: Fix headroom docs (headroom.md, phases.md, SKILL.md)
+2. REQ-002: Fix Phase 10 commands (phases.md)
+3. REQ-003: Add lean-ctx to setup.sh
+4. REQ-004: Add lean-ctx to doctor.sh
+5. REQ-005: Document agentmemory MCP fix
+6. Update READMEs
 
-## Out of Scope (MVP)
+## Out of Scope
 
-- Real-time extraction during phase execution (only Phase 9.5)
-- Cross-project knowledge transfer (project-scoped for now)
-- Automated quality scoring (manual confirmation in MVP)
-- Knowledge graph relationships between sessions (future)
-- UI dashboard for browsing knowledge (terminal-only)
+- Making headroom do memory management (it doesn't support that via MCP)
+- Installing lean-ctx via official script (network unreliable)
+- Adding new tools beyond what's already documented

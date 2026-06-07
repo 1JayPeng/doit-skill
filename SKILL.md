@@ -20,7 +20,7 @@ Five persistence layers work together:
 - **context-mode** — session analytics (token usage, tool patterns). See [execute.md](execute.md).
 - **agentmemory** — cross-session semantic memory (default). 53 MCP tools, 12 hooks, 4 skills. See [agentmemory.md](agentmemory.md).
 - **mempalace** — cross-session semantic memory (alternative). See [mempalace.md](mempalace.md).
-- **headroom** — context optimization (proxy compression + memory persistence). See [headroom.md](headroom.md).
+- **headroom** — token optimization via CCR (Compress-Cache-Retrieve) proxy compression. See [headroom.md](headroom.md).
 
 **Default memory layer: agentmemory.** If agentmemory is unavailable, falls back to mempalace. If any layer is unavailable, the workflow degrades gracefully using the remaining layers.
 

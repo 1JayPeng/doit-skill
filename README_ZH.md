@@ -296,7 +296,7 @@ Session 完成 -> Phase 9.5.5 提取 -> 用户确认 -> 多层存储
 | 会话层 | Context-Mode | 命令输出、语义搜索索引 — 工具调用存活 |
 | 跨会话层 | AgentMemory (默认) | 语义搜索、会话、治理 — 重启存活 |
 | 跨会话层 | MemPalace (备选) | 规格、决策、知识图谱、agent diary — 重启存活 |
-| 上下文优化层 | Headroom | 代理压缩、记忆持久化 — 会话存活 |
+| Token 优化层 | Headroom | CCR 代理压缩 — token 节省 |
 
 **默认: AgentMemory**（53 MCP tools, 12 hooks, 实时 viewer localhost:3113）。如果 AgentMemory 不可用则降级到 MemPalace。两者均遵循**读写对称铁律**：每个 phase 写入的数据，后续运行都会读回。Phase 0 通过 10 个并行调用重建项目上下文。
 

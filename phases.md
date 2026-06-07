@@ -193,9 +193,9 @@ After Phase 9.5 completion summary, gather session statistics and preserve knowl
    - `rtk gain --history` — per-command savings breakdown
 2. **Context-Mode stats** (if available): `ctx stats` — log session token savings
 3. **Headroom compression** (if available):
-   - `headroom memory add --content "<session summary>" --scope SESSION` — save compressed session to headroom memory
-   - `headroom memory stats` — verify memory was saved
+   - `headroom_stats` (MCP tool) — show compression statistics for session
    - If headroom proxy was running: `headroom proxy stats` — show token savings from proxy compression
+   - Note: Headroom does NOT have `memory add` command. It provides CCR (Compress-Cache-Retrieve) for token optimization, not memory management.
 4. **MemPalace diary** (if available):
    - `mempalace_diary_write agent_name="doit" entry="<compact summary>" topic="compact"`
    - `mempalace_memories_filed_away` → verify auto-save checkpoint was saved
