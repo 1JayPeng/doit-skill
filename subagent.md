@@ -378,7 +378,13 @@ ctx_search(queries=["authentication endpoint"])
 
 ## Conductor Orchestration Mode
 
-**核心范式：** 主代理 = 纯主管（conductor），不做任何实现工作。所有实现交给子代理。主代理负责调度、监督、轮询、汇总、spec 对齐。
+**核心范式：** 主代理 = Project Manager，子代理 = 团队成员。每个子代理有独立 worktree，遵循适配版 doit 工作流。主代理负责 Phase 1-2（Spec + Plan）、Phase 4-10（E2E + Review + Merge + Compact）。子代理负责 Phase 3（Execute）的 TDD 循环。
+
+**参考模型：** 开源团队工作流（Plane、GitHub PR 流程）。子代理 commit → 主代理 review → 主代理 merge。
+
+详见 [subagent-architecture.md](subagent-architecture.md)。
+
+**主代理 = 纯主管（conductor），不做任何实现工作。** 主代理负责调度、监督、轮询、汇总、spec 对齐。
 
 ### Why Conductor Mode
 
@@ -726,6 +732,13 @@ build_conductor_prompt(req, spec, context):
   - 禁止添加未在 spec 中描述的功能
   - 违反后果：Level 2 修正指令
 
+  ### 铁律 8：危险操作保护
+  - 禁止执行任何数据库删除操作（DROP TABLE, TRUNCATE, DELETE 无 WHERE）
+  - 禁止使用 rm -rf / rm -r / rm -f 删除文件
+  - 禁止 git push --force / git reset --hard / git clean -f
+  - 如需删除，先通过 AskUserQuestion 向用户确认
+  - 违反后果：Level 3 杀死重启
+
   ## ===== 自我审计（返回前必须执行） =====
 
   在返回 [Agent Result] 之前，逐项检查：
@@ -738,6 +751,7 @@ build_conductor_prompt(req, spec, context):
   5. 文件范围：我只修改了目标文件？[Y/N]
   6. 后台执行：长时间命令使用了后台执行？[Y/N]
   7. MemPalace：我执行了 MP 读写（如果可用）？[Y/N]
+  8. 危险操作：我没有执行任何未确认的危险操作？[Y/N]
 
   任何 N -> 先修复，再返回。不要带着 N 返回。
 
@@ -751,7 +765,7 @@ build_conductor_prompt(req, spec, context):
   Commit: <hash> (pushed to <branch>)
   Tools Used: [...]
   Iron Rules Violated: [] | [rule_number: detail]
-  Self-Audit: [7/7 PASS] | [X/7 PASS, failed: rule_Y]
+  Self-Audit: [8/8 PASS] | [X/8 PASS, failed: rule_Y]
   Notes: <optional>
   """
 ```
@@ -788,6 +802,195 @@ build_conductor_prompt(req, spec, context):
 - 主代理有更强的能力诱惑（可以直接改代码比调度更快）
 - 主代理跳过监督 -> 子代理质量失控 -> 最终返工成本 > 监督成本
 - 主代理简化铁律注入 -> 子代理不知道规则 -> 违规率上升
+
+### Cross-Review — 交叉审查机制
+
+**核心：** 子代理 A 的代码由子代理 B 审查。主代理协调审查流程。
+
+**为什么交叉审查 > 主代理审查：**
+
+| 维度 | 主代理审查 | 交叉审查 |
+|------|----------|----------|
+| 上下文 | 主代理没写代码，不了解细节 | 审查子代理有完整实现上下文 |
+| 偏见 | 主代理可能跳过审查（赶进度） | 子代理没有进度压力，专注质量 |
+| 并行 | 串行（等主代理） | 并行（A 实现，B 审查） |
+| 质量 | 主代理可能不深入代码 | 子代理专注审查，更深入 |
+
+**交叉审查流程：**
+
+```
+1. 子代理 A 完成 REQ-001 -> commit 到 feat/req-001
+2. 主代理启动子代理 B（审查模式）：
+   Agent({
+     description: "Cross-review REQ-001",
+     prompt: build_reviewer_prompt(REQ-001, reviewer_agent="B"),
+     subagent_type: "general-purpose",
+     isolation: "worktree",  // 只读 worktree
+     run_in_background: true
+   })
+3. 子代理 B 审查 REQ-001 的代码
+4. 子代理 B 返回审查结果：
+   [Review Result]
+   REQ: REQ-001
+   Reviewer: Agent B
+   Status: APPROVE | REQUEST_CHANGES | REJECT
+   Issues: [issue1, issue2, ...]
+   Severity: BLOCKER | MAJOR | MINOR
+   Suggestions: [suggestion1, ...]
+5. 主代理根据审查结果决策：
+   - APPROVE -> 合并 feat/req-001
+   - REQUEST_CHANGES -> 派发修复任务给子代理 A
+   - REJECT -> 杀死重启子代理 A
+```
+
+**审查子代理 Prompt 模板：**
+
+```
+build_reviewer_prompt(req, reviewer_agent):
+  return f"""
+  ## 任务：审查 {req.id} 的实现
+
+  ## 被审查 REQ：
+  {req.description}
+  ## 验收标准：
+  {req.acceptance_criteria}
+
+  ## 审查清单：
+  [ ] 代码实现了验收标准的所有条目？
+  [ ] 代码没有实现验收标准之外的功能？
+  [ ] 测试覆盖了核心功能？
+  [ ] 没有安全漏洞（OWASP Top 10）？
+  [ ] 没有重复代码？
+  [ ] 没有过度抽象？
+  [ ] 没有死代码？
+  [ ] 错误处理合理？
+  [ ] 代码可读性（命名、注释）？
+
+  ## 审查规则：
+  - 你只读代码，不修改代码
+  - 发现问题 -> 记录，不修复
+  - 严重问题（安全、数据丢失）-> REJECT
+  - 小问题（命名、格式）-> REQUEST_CHANGES
+  - 无问题 -> APPROVE
+
+  ## 返回格式：
+  [Review Result]
+  REQ: {req.id}
+  Reviewer: {reviewer_agent}
+  Status: APPROVE | REQUEST_CHANGES | REJECT
+  Issues: [...]
+  Severity: BLOCKER | MAJOR | MINOR
+  Suggestions: [...]
+  """
+```
+
+**交叉审查配对规则：**
+- REQ-001 由 REQ-002 的子代理审查（不同 REQ，无利益冲突）
+- 如果只有 1 个 REQ，主代理审查
+- 如果 REQ 有依赖关系（REQ-002 依赖 REQ-001），依赖方审查被依赖方（REQ-002 审查 REQ-001）
+
+### Worktree Management — Worktree 管理
+
+**子代理 worktree 生命周期：**
+
+```
+1. 主代理创建 worktree：
+   git worktree add .claude/worktrees/req-001 feat/req-001
+
+2. 子代理在 worktree 中工作：
+   - 修改代码
+   - 运行测试
+   - git add + git commit（不 push）
+
+3. 子代理完成 -> 返回 worktree 路径
+
+4. 主代理审查 worktree：
+   git diff main...feat/req-001  # 查看变更
+   git log main..feat/req-001    # 查看提交
+
+5. 主代理合并：
+   git checkout main
+   git merge feat/req-001 --no-edit  # 或 --squash
+
+6. 主代理清理：
+   git worktree remove .claude/worktrees/req-001
+   git branch -d feat/req-001
+```
+
+**为什么子代理不 push：**
+- push 是远程操作，网络不稳定
+- 子代理失败 -> 远程有脏提交
+- 主代理统一 push，保证原子性
+
+**为什么子代理 commit：**
+- commit 是本地操作，快速可靠
+- commit 提供 git 历史，方便回滚
+- commit 让主代理可以 diff 查看变更
+
+### Cross-Review — 交叉审查机制
+
+**目标：** 子代理 A 的代码由子代理 B 审查。避免自己写自己审的质量问题。
+
+**流程：**
+
+```
+1. 子代理 A 完成 REQ-001 -> 返回 worktree 路径
+2. 主代理启动子代理 B（审查角色）：
+   Agent({
+     description: "Cross-review REQ-001",
+     prompt: build_review_prompt(REQ-001, worktree_A_path, spec),
+     subagent_type: "general-purpose",
+     run_in_background: true
+   })
+3. 子代理 B 审查：
+   - 读取 REQ-001 的 diff（git diff main...feat/req-001）
+   - 检查代码质量（重复、安全、架构）
+   - 运行测试（cargo test / pytest）
+   - 返回审查结果
+4. 主代理根据审查结果：
+   - PASS -> 合并 worktree
+   - FAIL -> 派发修复任务给子代理 A（或新子代理）
+```
+
+**审查子代理 prompt 模板：**
+
+```
+build_review_prompt(req, worktree_path, spec):
+  return f"""
+  ## 审查任务：{req.description}
+  ## REQ ID: {req.id}
+  ## Worktree 路径：{worktree_path}
+  ## 验收标准：{req.acceptance_criteria}
+
+  ## 审查步骤：
+  1. 进入 worktree：cd {worktree_path}
+  2. 查看变更：git diff main...HEAD
+  3. 运行测试：[测试命令]
+  4. 检查代码质量：
+     - 重复代码（相同逻辑出现多次）
+     - 安全漏洞（OWASP Top 10）
+     - 过度抽象（3 层函数包 1 个操作）
+     - 死代码（未使用的函数、变量、import）
+  5. 对照验收标准逐项检查
+
+  ## 返回格式：
+  [Review Result]
+  REQ: {req.id}
+  Verdict: PASS | FAIL
+  Issues Found: [] | [issue1, issue2]
+  Test Results: PASS (X/Y) | FAIL (X/Y)
+  Recommendations: [] | [suggestion1, suggestion2]
+  """
+```
+
+**交叉审查 vs 专用审查子代理：**
+
+| 维度 | 交叉审查 | 专用审查子代理 |
+|------|---------|--------------|
+| Token 成本 | 低（复用实现子代理） | 高（额外子代理） |
+| 审查质量 | 中（实现子代理可能不专业） | 高（专用审查子代理） |
+| 复杂度 | 低（主代理协调简单） | 高（需要管理更多子代理） |
+| 推荐场景 | 小项目（<5 REQ） | 大项目（>5 REQ） |
 
 ## Complete Example: Conductor Mode Phase 3
 

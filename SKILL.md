@@ -23,6 +23,17 @@ Four persistence layers work together:
 
 **Default memory layer: agentmemory.** If agentmemory is unavailable, falls back to mempalace. If any layer is unavailable, the workflow degrades gracefully using the remaining layers.
 
+## 铁律 — 工作留痕
+
+**每个 phase 完成后必须记录工作日志。三层存储：agentmemory > mempalace > `.doit/worklog.json`。**
+
+- 记录内容：phase、REQ、描述、耗时、文件变更、决策、阻塞项、测试结果
+- 记录失败不阻塞工作流 → 继续下一个 phase，但 Phase 9.5 声明 `[WARN] worklog failed`
+- 记录要具体 → "实现认证 API" 而非 "写代码"
+- 用途：生成日报/周报/项目报告
+
+See [worklog.md](worklog.md) for format, storage layers, and report generation.
+
 ## Subagent Orchestration
 
 Claude Code's native Agent tool enables parallel task execution across workflow phases. No external plugins required. See [subagent.md](subagent.md) for full patterns.
@@ -45,6 +56,8 @@ Claude Code's native Agent tool enables parallel task execution across workflow 
 **铁律：Conductor 模式不写代码。** 主代理只做调度、监督、轮询、汇总、spec 检查。禁止编写实现代码或修改业务逻辑文件。
 
 **铁律：规则完整注入。** 子代理有独立上下文窗口，不继承 SKILL.md。Conductor prompt 必须注入完整铁律原文，不是简化摘要。子代理 prompt = 子代理的 SKILL.md。详见 [subagent.md](subagent.md) Rule Injection 章节。
+
+**铁律：危险操作保护。** 涉及数据或代码删除的操作（DROP TABLE, rm -rf, git push --force 等），必须先通过 AskUserQuestion 确认。子代理 prompt 必须包含此规则。详见 [dangerous-ops.md](dangerous-ops.md)。
 
 **Cost model:** Each agent = one API call. Parallel agents reduce total time by 50-70% when tasks are independent, but cost 2x-4x tokens.
 
@@ -182,6 +195,19 @@ Phase -1 → Phase 0 → Phase 1 → Phase 2 → Phase 3 → Phase 4 → Phase 5
 
 **Type S（简单）简化流程：** Phase 0 → 直接执行 → Phase 9.5 → Phase 10。简单变更也需 commit + compact。
 **Type B（Bug）调试流程：** Phase 0 → D0-D6 → Phase 8 → Phase 9.5 → Phase 10。
+
+## 铁律 — 危险操作保护
+
+**涉及数据或代码删除的操作，必须先通过 AskUserQuestion 确认，然后执行。**
+
+- **数据库**：DROP TABLE, TRUNCATE, DELETE/UPDATE 无 WHERE → 先确认
+- **文件系统**：rm -rf / rm -r / rm -f → 先确认
+- **Git**：push --force, reset --hard, clean -f → 先确认
+- **代码**：删除包含业务逻辑的源文件 → 先确认
+
+**子代理同样适用。** 子代理 prompt 必须包含此铁律。
+
+See [dangerous-ops.md](dangerous-ops.md) for full patterns and hook configuration.
 
 ## 铁律 — Review + Simplify 不可跳过
 
@@ -333,6 +359,8 @@ If the user's prompt includes reference documents (API specs, business rules, co
 **Step 2: Write spec** — Split grill output into REQ-N items, save to `.spec/current.md`. See [spec.md](spec.md).
 
 **铁律：Grill 最低 5 个问题(Type F) / 3 个(Type B)。** Phase 1 必须至少 5 个 grill 问题（通过 AskUserQuestion）。少于 5 个 = 未完成的 Phase 1 = 不能进入 Phase 2。
+
+**Phase 1 完成后：** 记录工作日志（grill 问题数、用户回答、REQ 数量）。See [worklog.md](worklog.md)。
 
 ## Phase 1 → Phase 2 Gate
 

@@ -147,6 +147,20 @@ New pattern: user says "I want X" -> agent grills with 5+ questions -> writes RE
 - **Type F (Feature)** — full grill checklist
 - **Type B (Bug)** — grill reproduction steps + scope
 
+## 1.65. Dangerous Operations Protection (铁律)
+
+**Any operation that deletes data or code must be confirmed via AskUserQuestion before execution.**
+
+**What counts as dangerous:**
+- **Database:** `DROP TABLE`, `TRUNCATE`, `DELETE`/`UPDATE` without `WHERE`
+- **Filesystem:** `rm -rf`, `rm -r`, `rm -f`
+- **Git:** `push --force`, `reset --hard`, `clean -f`
+- **Code:** deleting source files with business logic
+
+**Subagents inherit this rule.** The subagent prompt must include this iron rule.
+
+See [dangerous-ops.md](dangerous-ops.md) for full patterns and hook configuration.
+
 ## 1.7. Review + Simplify Cannot Be Skipped (铁律)
 
 **After every code change, Review (Phase 5) and Simplify (Phase 6) are mandatory. Unreviewed code cannot be committed.**
