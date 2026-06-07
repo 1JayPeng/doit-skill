@@ -1,6 +1,6 @@
 ---
 name: knowledge-distillation
-description: Extract and reuse knowledge from doit sessions. Automatically captures successful patterns, decisions, errors, and code patterns from completed sessions. Injects relevant past knowledge during Phase 1/2 to prevent repeating mistakes. Use when doit sessions complete (Phase 9.5) for extraction, or when Phase 1/2 starts for injection. Also use for /doit-learn to manually trigger knowledge extraction from historical data.
+description: Extract and reuse knowledge from doit sessions. Automatically captures successful patterns, decisions, errors, and code patterns from completed sessions. Injects relevant past knowledge during Phase 1/2 to prevent repeating mistakes. Use when doit sessions complete (Phase 9.5.5) for extraction, or when Phase 1/2 starts for injection. Also use for /doit-learn to manually trigger knowledge extraction from historical data.
 ---
 
 # Knowledge Distillation
@@ -11,7 +11,7 @@ Capture successful patterns from doit sessions and reuse them to accelerate futu
 
 This module integrates with doit-skill's workflow to automatically:
 
-1. **Extract** knowledge at Phase 9.5 (after completion summary)
+1. **Extract** knowledge at Phase 9.5.5 (after completion summary)
 2. **Store** in multi-layer memory (agentmemory, mempalace, context-mode, filesystem)
 3. **Inject** relevant past knowledge at Phase 1/2 (before grill/planning)
 
@@ -154,7 +154,7 @@ Works with any combination of memory tools:
 ```
 learn/
 ├── SKILL.md          # This file — skill definition
-├── extract.md        # Phase 9.5 extraction logic
+├── extract.md        # Phase 9.5.5 extraction logic
 ├── inject.md         # Phase 1/2 injection logic
 ├── migrate.md        # Historical data migration
 └── schema.json       # Knowledge record JSON schema

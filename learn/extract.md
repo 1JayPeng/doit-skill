@@ -1,4 +1,4 @@
-# Knowledge Extraction — Phase 9.5 Hook
+# Knowledge Extraction — Phase 9.5.5 Hook
 
 **Trigger:** After Phase 9.5 Completion Summary, before Phase 10
 
@@ -182,7 +182,7 @@ Control extraction behavior via `.doit/config.yaml`:
 ```yaml
 knowledge:
   enabled: true              # Enable/disable knowledge extraction
-  auto_extract: true         # Auto-extract at Phase 9.5
+  auto_extract: true         # Auto-extract at Phase 9.5.5
   require_confirmation: true # Ask user before saving
   extract_failed: true       # Also extract failed sessions
   max_records: 1000          # Max records per project (cleanup oldest)
