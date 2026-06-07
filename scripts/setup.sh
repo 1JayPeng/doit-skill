@@ -201,7 +201,9 @@ if [ "$DRY_RUN" = true ]; then
     echo "    • tavily           (claude mcp add --transport http tavily ...)"
     echo "    • caveman          (claude plugin marketplace add JuliusBrussee/caveman)"
 echo "    • code-review      (claude plugin install code-review)"
+    echo "    • agentmemory      (npm install -g @agentmemory/agentmemory)"
     echo "    • mempalace        (claude plugin install --scope user mempalace)"
+    echo "    • headroom         (uv tool install headroom-ai[mcp,proxy])"
     echo "    • lean-ctx         (curl install script)"
   fi
 
@@ -556,40 +558,36 @@ CARGO_EOF
     fi
   fi
 
-  # MemPalace — skip if agentmemory is already installed (二选一)
-  if [ "$_agentmemory_installed" = "true" ]; then
-    echo_info "mempalace skipped — agentmemory already installed (二选一)"
+  # MemPalace — fallback memory layer (installs alongside agentmemory)
+  if grep -rl "mempalace" "$HOME/.claude/plugins/" > /dev/null 2>&1; then
+    echo_success "mempalace already installed (plugin)"
   else
-    if grep -rl "mempalace" "$HOME/.claude/plugins/" > /dev/null 2>&1; then
-      echo_success "mempalace already installed (plugin)"
-    else
-      echo_info "Installing mempalace..."
-      plugin_cmd 120 claude plugin marketplace add MemPalace/mempalace || echo_warn "Failed to add mempalace marketplace"
-      plugin_cmd 180 claude plugin install --scope user mempalace || echo_warn "Failed to install mempalace (install manually: claude plugin install --scope user mempalace)"
-    fi
+    echo_info "Installing mempalace..."
+    plugin_cmd 120 claude plugin marketplace add MemPalace/mempalace || echo_warn "Failed to add mempalace marketplace"
+    plugin_cmd 180 claude plugin install --scope user mempalace || echo_warn "Failed to install mempalace (install manually: claude plugin install --scope user mempalace)"
+  fi
 
-    # MemPalace CLI (uv tool)
+  # MemPalace CLI (uv tool)
+  if command -v mempalace >/dev/null 2>&1; then
+    echo_success "mempalace CLI already installed"
+  else
+    echo_info "Installing mempalace CLI via uv tool..."
+    if command -v uv >/dev/null 2>&1; then
+      plugin_cmd 180 uv tool install mempalace || echo_warn "Failed to install mempalace CLI (install manually: uv tool install mempalace)"
+    else
+      echo_warn "uv not found, skipping mempalace CLI install"
+    fi
+  fi
+
+  # MemPalace init (creates HNSW index — per-project, so only if in a project dir)
+  if [ -f "mempalace.yaml" ] || [ -d ".mempalace" ]; then
+    echo_success "mempalace already initialized"
+  else
+    echo_info "Initializing mempalace (creating HNSW index — may take 1-2 min)..."
     if command -v mempalace >/dev/null 2>&1; then
-      echo_success "mempalace CLI already installed"
+      plugin_cmd 600 mempalace init . < /dev/null || echo_warn "Failed to initialize mempalace (run manually: mempalace init .)"
     else
-      echo_info "Installing mempalace CLI via uv tool..."
-      if command -v uv >/dev/null 2>&1; then
-        plugin_cmd 180 uv tool install mempalace || echo_warn "Failed to install mempalace CLI (install manually: uv tool install mempalace)"
-      else
-        echo_warn "uv not found, skipping mempalace CLI install"
-      fi
-    fi
-
-    # MemPalace init (very slow - creates HNSW index)
-    if [ -f "mempalace.yaml" ] || [ -d ".mempalace" ]; then
-      echo_success "mempalace already initialized"
-    else
-      echo_info "Initializing mempalace (creating HNSW index — may take 1-2 min)..."
-      if command -v mempalace >/dev/null 2>&1; then
-        plugin_cmd 600 mempalace init . < /dev/null || echo_warn "Failed to initialize mempalace (run manually: mempalace init .)"
-      else
-        echo_warn "mempalace CLI not found, skipping init"
-      fi
+      echo_warn "mempalace CLI not found, skipping init"
     fi
   fi
 fi
@@ -601,29 +599,38 @@ if [ "$SKIP_OPTIONAL" = false ]; then
   echo "=========================================="
   echo ""
 
-  # agentmemory server - needs separate terminal
+  # agentmemory server - background process with retry health check
   if curl -s http://localhost:3111/agentmemory/health >/dev/null 2>&1; then
     echo_success "agentmemory server already running"
   else
-    echo_info "agentmemory server not running"
-    echo_info "To start: npx @agentmemory/agentmemory &"
-    echo_info "  (run in a separate terminal, or add '&' to background it)"
-    echo_info "  Viewer: http://localhost:3113"
-    echo_info "  Health: http://localhost:3111/agentmemory/health"
-    echo ""
-    echo_info "Starting agentmemory server in background..."
     if command -v npx >/dev/null 2>&1; then
-      nohup npx @agentmemory/agentmemory >/dev/null 2>&1 &
+      echo_info "Starting agentmemory server in background..."
+      nohup npx @agentmemory/agentmemory > /tmp/agentmemory.log 2>&1 &
       AGENTMEMORY_PID=$!
       echo_info "Started agentmemory server (PID: $AGENTMEMORY_PID)"
-      sleep 5
-      if curl -s http://localhost:3111/agentmemory/health >/dev/null 2>&1; then
-        echo_success "agentmemory server is running"
+
+      # Retry health check: 10s, 20s, 30s
+      _am_started=false
+      for _am_retry in 1 2 3; do
+        sleep $((_am_retry * 3))
+        if curl -s http://localhost:3111/agentmemory/health >/dev/null 2>&1; then
+          _am_started=true
+          break
+        fi
+      done
+      if [ "$_am_started" = true ]; then
+        echo_success "agentmemory server is running (PID: $AGENTMEMORY_PID)"
+        echo_info "  Viewer: http://localhost:3113"
+        echo_info "  Health: http://localhost:3111/agentmemory/health"
       else
-        echo_warn "agentmemory server may not have started yet. Check manually: curl http://localhost:3111/agentmemory/health"
+        echo_warn "agentmemory server health check failed after 15s"
+        echo_info "  Log: tail -f /tmp/agentmemory.log"
+        echo_info "  Health: curl http://localhost:3111/agentmemory/health"
+        echo_info "  Manual start: npx @agentmemory/agentmemory &"
       fi
     else
-      echo_warn "npx not found, skipping agentmemory server start"
+      echo_warn "npx not found — cannot start agentmemory server"
+      echo_info "  Manual start: npx @agentmemory/agentmemory &"
     fi
   fi
 fi
@@ -655,6 +662,40 @@ if [ "$SKIP_OPTIONAL" = false ]; then
     echo_success "lean-ctx rules configured at ~/.claude/rules/lean-ctx.md"
   else
     echo_warn "lean-ctx rules not found — run: lean-ctx init --agent claude"
+  fi
+fi
+
+# Step 3.7: Install headroom (token optimization / CCR proxy compression)
+if [ "$SKIP_OPTIONAL" = false ]; then
+  echo "=========================================="
+  echo "  Step 3.7: Installing headroom"
+  echo "=========================================="
+  echo ""
+
+  if command -v headroom >/dev/null 2>&1; then
+    echo_success "headroom already installed"
+  else
+    echo_info "Installing headroom..."
+    if command -v uv >/dev/null 2>&1; then
+      uv tool install "headroom-ai[mcp,proxy]" 2>&1 || echo_warn "Failed to install headroom via uv"
+    else
+      echo_warn "uv not found — install headroom manually: uv tool install 'headroom-ai[mcp,proxy]'"
+    fi
+  fi
+
+  if command -v headroom >/dev/null 2>&1; then
+    # Configure MCP server
+    if claude mcp list 2>/dev/null | grep -q headroom; then
+      echo_success "headroom MCP already configured"
+    else
+      echo_info "Configuring headroom MCP..."
+      headroom mcp install 2>&1 || echo_warn "Failed to configure headroom MCP (run manually: headroom mcp install)"
+      if claude mcp list 2>/dev/null | grep -q headroom; then
+        echo_success "headroom MCP configured"
+      else
+        echo_warn "headroom MCP not detected — configure manually: headroom mcp install"
+      fi
+    fi
   fi
 fi
 
