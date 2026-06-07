@@ -198,19 +198,146 @@ Six skills ship inside `skills/`, installed with doit:
 
 ### External Tools
 
-All external tools are installed by `setup.sh`. If a tool is missing, doit degrades gracefully:
+All external tools are installed by `setup.sh`. If a tool is missing, doit degrades gracefully.
 
-| Tool | Install | Used In |
-|------|---------|---------|
-| TokenSave | `cargo install tokensave && tokensave install --agent claude` | Phase 2-7 |
-| Context-Mode | `claude plugin marketplace add mksglu/context-mode` | Phase 3-7, 10 |
-| AgentMemory | `claude plugin install agentmemory` | Phase -1, 0, 1, 2, 3, 5, 8, 9.5, 10 (default) |
-| MemPalace | `claude plugin install --scope user mempalace` | Phase -1, 0, 1, 2, 3, 5, 8, 9.5, 10 (fallback) |
-| RTK | `curl -fsSL https://v6.gh-proxy.org/https://raw.githubusercontent.com/rtk-ai/rtk/refs/heads/master/install.sh \| sh` | All phases (auto-wrap) |
-| caveman | `claude plugin marketplace add JuliusBrussee/caveman` | Phase 0+, 10 |
-| code-review | `claude plugin install code-review` | Phase 5 |
-| uv | `pip install uv` | Phase 3 |
-| Tavily MCP | Remote, API key only | Phase 1 |
+#### RTK (Rust Token Killer)
+
+Token-optimized CLI proxy — saves 60-90% tokens on all Bash commands. [GitHub](https://github.com/rtk-ai/rtk)
+
+```bash
+# 1. Install binary to $HOME/.local/bin/rtk
+curl -fsSL https://v6.gh-proxy.org/https://raw.githubusercontent.com/rtk-ai/rtk/refs/heads/master/install.sh | sh
+
+# 2. Add $HOME/.local/bin to PATH (install script does NOT do this)
+export PATH="$HOME/.local/bin:$PATH"
+# Persist for future shells:
+grep -q 'export PATH=.*\$HOME/.local/bin' ~/.bashrc 2>/dev/null || \
+  echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
+
+# 3. Initialize for Claude Code (installs hooks + RTK.md globally)
+rtk init -g
+```
+
+#### Rust (required by TokenSave)
+
+```bash
+# Install via rustup (Tsinghua mirror for China)
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs \
+  | RUSTUP_DIST_SERVER=https://mirrors.tuna.tsinghua.edu.cn/rustup \
+    RUSTUP_UPDATE_ROOT=https://mirrors.tuna.tsinghua.edu.cn/rustup/rustup \
+    sh -s -- -y
+source "$HOME/.cargo/env"
+
+# Configure cargo mirror (USTC) — optional, speeds up downloads in China
+mkdir -p ~/.cargo
+cat > ~/.cargo/config.toml <<'EOF'
+[source.crates-io]
+replace-with = 'ustc'
+[source.ustc]
+registry = "sparse+https://mirrors.ustc.edu.cn/crates.io-index/"
+EOF
+```
+
+#### TokenSave
+
+Code graph MCP server — symbol lookup, impact analysis, call graphs. [GitHub](https://github.com/aovestdipaperino/tokensave)
+
+```bash
+# 1. Install (requires Rust)
+cargo install tokensave
+
+# 2. Configure for Claude Code
+tokensave install --agent claude
+
+# 3. Initialize in project
+tokensave init
+```
+
+#### Context-Mode
+
+Context window management — command output indexing, semantic search. [GitHub](https://github.com/mksglu/context-mode)
+
+```bash
+# Install as Claude Code plugin
+claude plugin marketplace add mksglu/context-mode
+claude plugin install context-mode@context-mode
+```
+
+#### Headroom
+
+Context optimization — proxy compression + memory persistence. [GitHub](https://github.com/nicholasgriffintn/headroom)
+
+```bash
+# 1. Install via uv
+uv tool install "headroom-ai[mcp,proxy]"
+
+# 2. Register MCP server
+headroom mcp install
+```
+
+#### AgentMemory (default memory layer)
+
+Cross-session semantic memory — 53 MCP tools, 12 hooks, real-time viewer. [GitHub](https://github.com/rohitg00/agentmemory)
+
+```bash
+# 1. Install plugin
+claude plugin marketplace add rohitg00/agentmemory
+claude plugin install agentmemory
+
+# 2. Start memory server
+npx @agentmemory/agentmemory &
+```
+
+#### MemPalace (fallback memory layer)
+
+Cross-session semantic memory — specs, decisions, knowledge graph, agent diary. [GitHub](https://github.com/MemPalace/mempalace)
+
+```bash
+# 1. Install plugin
+claude plugin marketplace add MemPalace/mempalace
+claude plugin install --scope user mempalace
+
+# 2. Install CLI (optional, for mempalace init)
+uv tool install mempalace
+
+# 3. Initialize in project
+mempalace init .
+```
+
+#### caveman
+
+Brevity mode — token-compact responses, commit messages. [GitHub](https://github.com/JuliusBrussee/caveman)
+
+```bash
+# Install as Claude Code plugin
+claude plugin marketplace add JuliusBrussee/caveman
+claude plugin install caveman@caveman
+```
+
+#### code-review
+
+Code review — OWASP security, architecture review. [GitHub](https://github.com/anthropics/claude-code-plugins)
+
+```bash
+claude plugin install code-review
+```
+
+#### uv
+
+Fast Python package manager. [GitHub](https://github.com/astral-sh/uv)
+
+```bash
+pip install uv
+```
+
+#### Tavily MCP
+
+Internet search for spec grilling. [Tavily](https://tavily.com)
+
+```bash
+# Add to .mcp.json (requires API key):
+claude mcp add --transport http tavily https://mcp.tavily.com/mcp/?tavilyApiKey=<your-key>
+```
 
 ### Resume Mid-Session
 
