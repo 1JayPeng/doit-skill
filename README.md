@@ -12,7 +12,7 @@ Type `/doit <what you want>` in Claude Code. doit handles the rest: spec, plan, 
 [DOIT] Phase 1: Grilling idea with internet research...
 ...
 [DOIT] Phase 8: Committed + pushed to origin/feat/auth
-[DOIT] Phase 10: Context compacted
+[DOIT] Phase 10: Session summary complete
 ```
 
 No manual phase orchestration. No tool juggling. `/doit` dispatches every phase, calls every tool, and ships code.
@@ -137,7 +137,7 @@ Each phase is mandatory. Phases can't be skipped. The workflow enforces quality 
 | 7 | E2E Verification Loop | tokensave, context-mode |
 | 8 | Git commit + Push | git, agentmemory |
 | 9.5 | Completion Summary + Knowledge Extraction | agentmemory |
-| 10 | Auto-Compact | RTK, context-mode, headroom, agentmemory |
+| 10 | Session Summary | RTK, context-mode, headroom, agentmemory |
 
 ### E2E Verification Loop
 

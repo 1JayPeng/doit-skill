@@ -104,7 +104,7 @@ See [commit.md](commit.md) for commit message conventions and push strategies.
 - **Phase 3 (Execute)** — commit after each REQ completes (intermediate safety)
 - **Phase 8 (Commit + Push)** — final commit with full message, push to remote
 - **Debug (D6)** — commit fix + regression test, push to remote
-- **Any code change** — commit before compacting context
+- **Any code change** — commit before ending session
 
 ## 铁律 — MemPalace 读写对称
 
@@ -135,7 +135,7 @@ Phase -1 → Phase 0 → Phase 1 → Phase 2 → Phase 3 → Phase 4 → Phase 5
 - **禁止**跳过 Phase 5-6（Review + Simplify）直接提交 — 没有审查不提交
 - **禁止**跳过 Phase 7（E2E 验证）直接提交 — 简化后必须重新验证
 - **禁止**跳过 Phase 8（Commit + Push）说"完成" — 未提交等于丢失
-- **禁止**跳过 Phase 10（Compact）结束对话 — 不压缩上下文
+- **禁止**跳过 Phase 10（Session Summary）结束对话 — 不记录统计信息
 
 **Phase 完成后必须继续，不能停在中间：**
 - Phase 3 完成 → 立即 Phase 4，不要停
@@ -147,9 +147,9 @@ Phase -1 → Phase 0 → Phase 1 → Phase 2 → Phase 3 → Phase 4 → Phase 5
 - Phase 9 完成 → 立即 Phase 9.5，不要停
 - Phase 9.5 完成 → 立即 Phase 10，不要停
 
-**唯一合法结束状态是 Phase 10 compact。** 如果要说"完成"而上下文还没压缩，说明你没做完。
+**唯一合法结束状态是 Phase 10 完成。** 如果要说"完成"而 Phase 10 还没执行，说明你没做完。
 
-**Type S（简单）简化流程：** Phase 0 → 直接执行 → Phase 9.5 → Phase 10。简单变更也需 commit + compact。
+**Type S（简单）简化流程：** Phase 0 → 直接执行 → Phase 9.5 → Phase 10。简单变更也需 commit + session summary。
 **Type B（Bug）调试流程：** Phase 0 → D0-D6 → Phase 8 → Phase 9.5 → Phase 10.
 
 ## 铁律 — Grill Enforcement

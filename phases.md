@@ -112,7 +112,7 @@ If MemPalace unavailable (any call errors) → skip all MP steps silently for th
 
 ## Phase 9.5 — Completion Summary + Knowledge Extraction
 
-**Before compact, tell the user what was done and what to do next.** This is the last visible output before context compression. See [commit.md](shared/commit.md) Gate section for format.
+**Before Phase 10, tell the user what was done and what to do next.** This is the last visible output before session ends. See [commit.md](shared/commit.md) Gate section for format.
 
 Must include:
 - Branch, commit hash, change summary
@@ -151,15 +151,15 @@ mempalace_kg_add subject="<project>" predicate="has_db" object="<db schema>" val
 **If nothing extracted:** Announce `[KNOWLEDGE] No new knowledge to extract this session` — don't skip silently.
 **MP unavailable:** Skip silently. Filesystem remains primary.
 
-## Phase 10 — Auto-Compact
+## Phase 10 — Session Summary
 
-After Phase 9.5 completion summary, automatically trigger context compression to reduce token usage for the next session:
+After Phase 9.5 completion summary, gather session statistics and preserve knowledge:
 
 1. **RTK token report** (if available):
    - `rtk gain` — show total session token savings
    - `rtk gain --history` — per-command savings breakdown
 2. **Context-Mode stats** (if available): `ctx stats` — log session token savings
-3. **Headroom compression** (if available, replaces /compact):
+3. **Headroom compression** (if available):
    - `headroom memory add --content "<session summary>" --scope SESSION` — save compressed session to headroom memory
    - `headroom memory stats` — verify memory was saved
    - If headroom proxy was running: `headroom proxy stats` — show token savings from proxy compression
@@ -169,10 +169,9 @@ After Phase 9.5 completion summary, automatically trigger context compression to
    - `mempalace_kg_stats` → verify KG was populated. If still 0 entities after Phase 8, add facts NOW:
      - `mempalace_kg_add subject="<project>" predicate="shipped" object="<feature>" valid_from="<today>"`
    - `mempalace_kg_timeline entity="<project>"` → log project timeline for future reference
-5. **Caveman compress** (if available): Run `/caveman:compress CLAUDE.md` to compress CLAUDE.md using caveman's built-in compression skill. Falls back to step 6 if caveman unavailable.
-6. **MANDATORY: Run `/compact`** — execute the Claude Code built-in compaction command. Type `/compact` as a user message. Do NOT skip. Do NOT say "done" without compacting.
+5. **Caveman compress** (if available): Run `/caveman:compress CLAUDE.md` to compress CLAUDE.md using caveman's built-in compression skill.
 
-**This phase always runs last.** It ensures the conversation context is compressed before the session ends, reducing token overhead for resumed conversations.
+**This phase always runs last.** It gathers session statistics and preserves knowledge for future sessions.
 
 ## Resume — Cross-Session Recovery
 
@@ -216,7 +215,7 @@ This recovers what was done in prior sessions without relying on filesystem stat
   [x] Phase 0     Classify → detect in-progress work
   [x] Resume from detected phase → complete remaining phases
   [x] Phase 9.5   Completion Summary (user-facing)
-  [x] Phase 10    Auto-Compact
+  [x] Phase 10    Session Summary
 
 [Phase Gate] Type F flow (full):
   [x] Phase -1    Detect Environment + Config
@@ -233,14 +232,14 @@ This recovers what was done in prior sessions without relying on filesystem stat
   [x] Phase 8     Commit + Push
   [x] Phase 9     Cleanup intermediate files
   [x] Phase 9.5   Completion Summary (user-facing)
-  [x] Phase 10    Auto-Compact
+  [x] Phase 10    Session Summary
   [x] Doc Capture (if user prompt has docs)
 
 [Phase Gate] Type S flow (simple):
   [x] Phase 0   Classify
   [x] Execute directly
   [x] Phase 9.5 Completion Summary (user-facing)
-  [x] Phase 10  Auto-Compact
+  [x] Phase 10  Session Summary
   [x] Doc Capture (if user prompt has docs)
 
 [Phase Gate] Type B flow (bug):
@@ -248,7 +247,7 @@ This recovers what was done in prior sessions without relying on filesystem stat
   [x] D0-D6     Debug workflow (debug.md)
   [x] Phase 8   Commit + Push
   [x] Phase 9.5 Completion Summary (user-facing)
-  [x] Phase 10  Auto-Compact
+  [x] Phase 10  Session Summary
 ```
 
 **After Phase 3 completes:** always continue to Phase 4. Never stop at "tests pass, done."
@@ -256,6 +255,6 @@ This recovers what was done in prior sessions without relying on filesystem stat
 **After Phase 7 completes:** always continue to Phase 8. Every feature ships committed + pushed.
 **After Phase 8 completes:** always continue to Phase 9. Clean up intermediate files.
 **After Phase 9 completes:** always continue to Phase 9.5. Present completion summary to user.
-**After Phase 9.5 completes:** always continue to Phase 10. Compact conversation context.
+**After Phase 9.5 completes:** always continue to Phase 10. Gather session statistics and preserve knowledge.
 
-**The only valid end state is Phase 10 compact.** If you're about to say "done" or "completed" and context has not been compacted, you haven't finished.
+**The only valid end state is Phase 10 complete.** If you're about to say "done" or "completed" and Phase 10 has not run, you haven't finished.

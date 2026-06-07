@@ -188,13 +188,13 @@ Remove all intermediate workflow files. See [commit.md](shared/commit.md) step 8
 
 Present completion summary to user → Extract knowledge (code/api/db/flow) → MemPalace → Announce extraction count.
 
-### Phase 10 — Auto-Compact
+### Phase 10 — Session Summary
 
-**[LOAD] [phases.md](phases.md)#phase-10 — 压缩步骤：RTK report, Context-Mode stats, Headroom compression, MemPalace diary, Caveman compress, /compact。**
+**[LOAD] [phases.md](phases.md)#phase-10 — 步骤：RTK report, Context-Mode stats, Headroom compression, MemPalace diary, Caveman compress。**
 
-RTK token report → Context-Mode stats → Headroom compression → MemPalace diary + KG → Caveman compress → **MANDATORY: `/compact`**.
+RTK token report → Context-Mode stats → Headroom compression → MemPalace diary + KG → Caveman compress
 
-**This phase always runs last.** It ensures the conversation context is compressed before the session ends, reducing token overhead for resumed conversations.
+**This phase always runs last.** It gathers session statistics and preserves knowledge for future sessions.
 
 ## Error Handling
 
@@ -225,6 +225,6 @@ Spec in git (`feature/xxx` branch). Workflow progress tracked by git branch, com
 **After Phase 7 completes:** always continue to Phase 8. Every feature ships committed + pushed.
 **After Phase 8 completes:** always continue to Phase 9. Clean up intermediate files.
 **After Phase 9 completes:** always continue to Phase 9.5. Present completion summary to user.
-**After Phase 9.5 completes:** always continue to Phase 10. Compact conversation context.
+**After Phase 9.5 completes:** always continue to Phase 10. Gather session statistics and preserve knowledge.
 
-**The only valid end state is Phase 10 compact.** If you're about to say "done" or "completed" and context has not been compacted, you haven't finished.
+**The only valid end state is Phase 10 complete.** If you're about to say "done" or "completed" and Phase 10 has not run, you haven't finished.

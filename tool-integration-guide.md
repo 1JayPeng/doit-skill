@@ -368,9 +368,9 @@ doit 内置三种后台任务机制，按任务时长自动选择：
 
 ---
 
-### Phase 10：自动压缩
+### Phase 10：Session Summary
 
-**目的：** 压缩对话上下文，报告 token 节省。
+**目的：** 收集 session 统计信息，保存知识。
 
 | 工具 | 具体调用 | 目的 |
 |------|---------|------|
@@ -380,7 +380,6 @@ doit 内置三种后台任务机制，按任务时长自动选择：
 | **MemPalace** | `mempalace_diary_write agent_name="doit"` | 写日记 |
 | **MemPalace** | `mempalace_memories_filed_away` | 验证自动保存 |
 | **MemPalace** | `mempalace_kg_timeline entity="<project>"` | 项目时间线 |
-| **Claude Code** | `/compact` | 压缩对话上下文 |
 
 ---
 
@@ -450,11 +449,10 @@ Phase 9   清理
   ├─ MemPalace: diary_write
   └─ RTK: 自动包装所有 shell 命令
 
-Phase 10  自动压缩
+Phase 10  Session Summary
   ├─ RTK: gain + gain --history
   ├─ Context-Mode: ctx stats
-  ├─ MemPalace: diary_write + memories_filed_away + kg_timeline
-  └─ Claude Code: /compact
+  └─ MemPalace: diary_write + memories_filed_away + kg_timeline
 ```
 
 ---

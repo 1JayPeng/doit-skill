@@ -292,7 +292,7 @@ RTK 通过 PreToolUse hook 自动代理所有 Bash 命令，全阶段节省 60-9
 | 7 | E2E 验证循环 | tokensave, context-mode |
 | 8 | Git 提交 + Push | git, agentmemory |
 | 9.5 | 完成总结 + 知识提取 | agentmemory |
-| 10 | 自动压缩 | RTK, context-mode, headroom, agentmemory |
+| 10 | Session Summary | RTK, context-mode, headroom, agentmemory |
 
 ### E2E 验证循环
 
