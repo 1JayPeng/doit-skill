@@ -99,3 +99,54 @@ The setup.sh currently installs agentmemory CLI but the MCP config is in the plu
 - Making headroom do memory management (it doesn't support that via MCP)
 - Installing lean-ctx via official script (network unreliable)
 - Adding new tools beyond what's already documented
+
+---
+
+## REQ-006: Enforce mandatory tool usage in SKILL.md
+
+**Problem:** SKILL.md describes tools as references ("See X.md") but doesn't force execution. Model skips:
+- Subagent launches (0 calls despite `subagent.enabled: true`)
+- MP sweep 10 parallel calls (0 executed)
+- Worklog writes (0 of 9 checkpoints)
+- tokensave_context (rarely called in Phase 2)
+
+**Fix:** Add **executable enforcement** to SKILL.md phase descriptions:
+
+| Phase | Mandatory Tool | Current Text | New Text |
+|-------|---------------|--------------|----------|
+| Phase 0 | MP sweep 10 calls | `[LOAD] phases.md#phase-0` | Same + "Execute ALL 10 MP calls NOW. Do not skip." |
+| Phase 1 | Knowledge inject + grill | `[LOAD] phases.md#phase-1` | Same + "Call learn/inject.md search BEFORE grill questions" |
+| Phase 2 | tokensave_context | `See plan.md` | "Call tokensave_context with task description BEFORE reading plan.md" |
+| Phase 3 | Subagent check + worklog | `See execute.md` | "Read subagent config gate. If enabled AND multiple independent REQs, launch parallel agents. Write worklog after each REQ." |
+| Phase 4-8 | Worklog | Implicit | "Write worklog after phase completion. Use agentmemory_remember > mempalace > filesystem." |
+| Phase 10 | Memory write | MP diary + KG | Same + "Also write to agentmemory_remember for semantic search" |
+
+**Key insight:** The problem is NOT missing documentation. The documentation exists. The problem is the model treats `[LOAD]` as "read for reference" not "execute these tool calls." Fix: add explicit tool call instructions in SKILL.md phase index, not just [LOAD] directives.
+
+## REQ-007: Add worklog enforcement to execute.md
+
+Add a worklog write template at the end of each REQ section in execute.md:
+
+```markdown
+**After completing this REQ (MANDATORY):**
+1. Write worklog entry:
+   - agentmemory_remember content="<worklog JSON>" (primary)
+   - mempalace_add_drawer wing="<project>" room="worklog" content="<summary>" (fallback)
+   - Fallback: append to .doit/worklog.json
+2. If worklog write fails, announce `[WARN] worklog failed` and continue
+```
+
+## REQ-008: Add subagent decision gate to execute.md
+
+Before Phase 3 execution, add a mandatory decision block:
+
+```markdown
+**Subagent Decision Gate (execute before first REQ):**
+1. Read `.doit/config.yaml` `subagent.enabled`
+2. If `true` AND spec has >= 2 independent REQs (no dependencies between them):
+   - Group REQs by dependency
+   - Launch independent groups as parallel agents
+   - Use Conductor mode for supervision
+3. If `false` OR all REQs dependent: execute sequentially
+4. Announce decision: `[SUBAGENT] Mode: parallel (N agents)` or `[SUBAGENT] Mode: sequential`
+```

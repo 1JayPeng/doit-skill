@@ -99,7 +99,9 @@ Per-phase application:
 
 ## Phase Index
 
-每个 phase 的描述包含 [LOAD] 指令。**执行前必须读取指定文件。** 这确保模型知道何时加载什么 prompt，任何步骤都不能被跳过。
+每个 phase 的描述包含 **[CALL]** 指令 — 必须执行的 MCP 工具调用，和 **[LOAD]** 指令 — 必须读取的文件。
+
+**[CALL] = 工具调用，必须执行。[LOAD] = 文件读取，必须阅读后执行。** 两者都不可跳过。
 
 ### Phase 0 — Classify Request
 
@@ -116,7 +118,23 @@ If caveman not found → `[WARN] caveman not installed -> verbose mode`. If gril
 
 **[LOAD] [phases.md](phases.md)#phase-0 — Step 2 (Auto-classify), Step 2.5 (MP sweep 10 并行调用), Type-specific 逻辑。**
 
-Sync remote → Load skills → Auto-classify (R/S/F/B) → Memory Context Sweep → Doc capture.
+**[CALL] Phase 0 必须执行的工具（Type F/B，Type S 可跳过）：**
+```
+mempalace_reconnect                                    # 刷新索引
+mempalace_diary_read agent_name="doit" last_n=5        # 最近日记
+mempalace_kg_query entity="<project>"                  # KG 查询
+mempalace_kg_timeline entity="<project>"               # KG 时间线
+mempalace_search query="<关键词>" wing="<project>" limit=5  # 语义搜索
+mempalace_search wing="<project>" room="knowledge_code" limit=3
+mempalace_search wing="<project>" room="knowledge_api" limit=3
+mempalace_search wing="<project>" room="knowledge_db" limit=3
+mempalace_search wing="<project>" room="knowledge_flow" limit=3
+mempalace_search wing="sessions" room="general" limit=3  # 用户反馈
+mempalace_search wing="sessions" room="problems" limit=3  # 用户反馈
+```
+**如果 agentmemory 可用，额外调用：** `agentmemory_recall query="<用户请求>" limit=5`
+
+Sync remote → Load skills → Auto-classify (R/S/F/B) → **Execute ALL 10 MP calls in parallel** → Doc capture.
 
 ### Doc Capture (Pre-Phase)
 
@@ -128,7 +146,12 @@ If the user's prompt includes reference documents (API specs, business rules, co
 
 **[LOAD] [learn/inject.md](learn/inject.md) — 知识注入：搜索相关历史 session、注入 top-3 到上下文。**
 
-Knowledge injection (past sessions) → Grill FIRST (5+ AskUserQuestion with structured options) → Internet search → MP search → Write spec → Create branch → Gate check.
+**[CALL] Phase 1 必须执行的工具：**
+1. `agentmemory_recall query="<用户请求>" limit=3` — 搜索相关历史（如果可用）
+2. `mempalace_search query="<用户请求>" wing="<project>" limit=3` — 项目知识搜索
+3. `mempalace_search query="<用户请求>" wing="sessions" room="general" limit=3` — 用户反馈
+
+Knowledge injection (past sessions) → Grill FIRST (5+ AskUserQuestion with structured options) → Internet search → **MP search calls above** → Write spec → Create branch → Gate check.
 
 **铁律：Grill 最低 5 个问题(Type F) / 3 个(Type B)。** 少于最低 = 未完成的 Phase 1 = 不能进入 Phase 2。
 
@@ -136,40 +159,62 @@ Knowledge injection (past sessions) → Grill FIRST (5+ AskUserQuestion with str
 
 **[LOAD] [learn/inject.md](learn/inject.md) — 知识注入：搜索相关历史案例、注入 top-3。**
 
-Knowledge injection → Search relevant past sessions → Inject top-3 into context.
-Check TokenSave code graph. Map impact at symbol and coupling level. Produce implementation order. See [plan.md](plan.md).
-**Phase 2 完成后：** 记录工作日志（影响分析结果、实现顺序、预计工时）。See [worklog.md](worklog.md)。
+**[CALL] Phase 2 必须执行的工具：**
+1. `tokensave_context task="<用户请求>"` — 代码图谱分析（PRIMARY，必调）
+2. `agentmemory_recall query="<用户请求> implementation" limit=3` — 相关实现历史
+
+Knowledge injection → **tokensave_context first** → Check TokenSave code graph. Map impact at symbol and coupling level. Produce implementation order. See [plan.md](plan.md).
+**Phase 2 完成后：** **[CALL] 工作日志** `agentmemory_remember content="<worklog JSON>"` → Fallback: `mempalace_add_drawer` → Fallback: `.doit/worklog.json`. See [worklog.md](worklog.md)。
 
 ### Phase 3 — Execute
 
-TDD loop per acceptance criteria. See [execute.md](execute.md). Start each REQ with tokensave_context for code understanding. RTK for all shell commands. uv for Python. Context-Mode for context management. Interactive spec alignment after each TDD cycle. Per-REQ review+simplify built in. Full e2e happens after Phase 6.
-**Phase 3 完成后：** 记录工作日志（每个 REQ 的 TDD 结果、耗时、文件变更）。See [worklog.md](worklog.md)。
+**[CALL] Phase 3 必须执行的工具：**
+1. **Subagent decision gate** — Read `.doit/config.yaml` `subagent.enabled`. If `true` AND >= 2 independent REQs: launch parallel agents. Announce: `[SUBAGENT] Mode: parallel (N agents)` or `[SUBAGENT] Mode: sequential`
+2. `tokensave_context task="<REQ description>"` — Before each REQ, get code context
+3. `ctx_batch_execute` — For parallel Bash calls
+4. **After each REQ:** `[CALL] 工作日志` `agentmemory_remember content="<worklog JSON>"` → Fallback: `mempalace_add_drawer` → Fallback: `.doit/worklog.json`
+
+TDD loop per acceptance criteria. See [execute.md](execute.md). **Start each REQ with tokensave_context.** RTK for all shell commands. uv for Python. Context-Mode for context management. Interactive spec alignment after each TDD cycle. Per-REQ review+simplify built in. Full e2e happens after Phase 6.
+**Phase 3 完成后：** **[CALL] 工作日志** `agentmemory_remember content="<worklog JSON>"` → Fallback: `mempalace_add_drawer` → Fallback: `.doit/worklog.json`. See [worklog.md](worklog.md)。
 
 ### Phase 4 — E2E (initial)
 
+**[CALL] Phase 4 必须执行的工具：** `ctx_batch_execute` — Run E2E tests in parallel
+
 End-to-end tests in real env. See [e2e.md](e2e.md). L0+L1 auto, L2+L3 HITL. Run after Phase 3 unit tests complete.
-**Phase 4 完成后：** 记录工作日志（E2E 测试结果、覆盖率）。See [worklog.md](worklog.md)。
+**Phase 4 完成后：** **[CALL] 工作日志** `agentmemory_remember content="<worklog JSON>"` → Fallback: `mempalace_add_drawer` → Fallback: `.doit/worklog.json`. See [worklog.md](worklog.md)。
 
 ### Phase 5 — Review
 
+**[CALL] Phase 5 必须执行的工具：**
+1. `tokensave_context task="<review scope>"` — Code graph analysis
+2. `tokensave_dead_code` — Find unused symbols
+3. `tokensave_complexity` — Find complex functions
+
 Feature-level review. Merge duplicate logic. Minimal refactor. See [review.md](review.md).
 If caveman skill available, run `/caveman-review` for caveman-style code review before tokensave analysis.
-**Phase 5 完成后：** 记录工作日志（Review 发现的问题、严重程度）。See [worklog.md](worklog.md)。
+**Phase 5 完成后：** **[CALL] 工作日志** `agentmemory_remember content="<worklog JSON>"` → Fallback: `mempalace_add_drawer` → Fallback: `.doit/worklog.json`. See [worklog.md](worklog.md)。
 
 ### Phase 6 — Review + Simplify
 
+**[CALL] Phase 6 必须执行的工具：** `tokensave_diff_context files=["<changed files>"]` — Impact analysis
+
 Review what you wrote. Find duplicates, over-engineering, missed README updates. Simplify. See [review-simplify.md](review-simplify.md). **NEVER skip this step.** After this, enters Phase 7 E2E Verification loop.
-**Phase 6 完成后：** 记录工作日志（Simplify 删除的代码行数、合并的函数数）。See [worklog.md](worklog.md)。
+**Phase 6 完成后：** **[CALL] 工作日志** `agentmemory_remember content="<worklog JSON>"` → Fallback: `mempalace_add_drawer` → Fallback: `.doit/worklog.json`. See [worklog.md](worklog.md)。
 
 ### Phase 7 — E2E Verification Loop
 
+**[CALL] Phase 7 必须执行的工具：** `ctx_batch_execute` — Re-run E2E tests
+
 Re-run e2e tests after Review + Simplify. Compare actual output against spec REQs (not just test assertions). If mismatch → fix code to match spec, not test to match code. Loop until e2e passes AND output matches spec. See [shared/e2e-verify.md](shared/e2e-verify.md).
-**Phase 7 完成后：** 记录工作日志（E2E 验证结果、循环次数）。See [worklog.md](worklog.md)。
+**Phase 7 完成后：** **[CALL] 工作日志** `agentmemory_remember content="<worklog JSON>"` → Fallback: `mempalace_add_drawer` → Fallback: `.doit/worklog.json`. See [worklog.md](worklog.md)。
 
 ### Phase 8 — Commit + Push
 
+**[CALL] Phase 8 必须执行的工具：** `agentmemory_recall query="commit style" limit=3` — Learn commit message style
+
 Stage changed files, commit with meaningful message matching project's commit style, update spec status, and push to remote. See [commit.md](commit.md).
-**Phase 8 完成后：** 记录工作日志（最终 commit hash、变更统计 +X/-Y 行）。See [worklog.md](worklog.md)。
+**Phase 8 完成后：** **[CALL] 工作日志** `agentmemory_remember content="<worklog JSON>"` → Fallback: `mempalace_add_drawer` → Fallback: `.doit/worklog.json`. See [worklog.md](worklog.md)。
 If caveman skill available, run `/caveman-commit` for caveman-style commit message generation.
 
 **Auto-push (no confirmation needed):** read `.doit/config.yaml` commit.branch:
@@ -191,7 +236,11 @@ Remove all intermediate workflow files. See [commit.md](shared/commit.md) step 8
 
 **[LOAD] [phases.md](phases.md)#phase-9.5 — 完成总结格式、知识提取清单、KG facts。**
 
-Present completion summary to user → Extract knowledge (code/api/db/flow) → MemPalace → Announce extraction count.
+**[CALL] Phase 9.5 必须执行的工具：**
+1. `mempalace_check_duplicate` + `mempalace_add_drawer` — Extract knowledge to code/api/db/flow rooms
+2. `agentmemory_remember content="<knowledge JSON>"` — Save to agentmemory for semantic search
+
+Present completion summary to user → **Extract knowledge via MP + agentmemory calls** → Announce extraction count.
 
 ### Phase 9.5.5 — Knowledge Distillation
 
@@ -205,7 +254,15 @@ Extract structured session knowledge → User confirmation → Save to agentmemo
 
 **[LOAD] [phases.md](phases.md)#phase-10 — 步骤：RTK report, Context-Mode stats, Headroom compression, MemPalace diary, Caveman compress。**
 
-RTK token report → Context-Mode stats → Headroom compression → MemPalace diary + KG → Caveman compress
+**[CALL] Phase 10 必须执行的工具：**
+1. `rtk gain` — Token savings report
+2. `ctx_stats` — Context-Mode session stats
+3. `headroom_stats` — Compression stats (if available)
+4. `mempalace_diary_write agent_name="doit" entry="<summary>"` — Session diary
+5. `agentmemory_remember content="<session summary JSON>"` — **Semantic search index**
+6. `mempalace_kg_stats` — Verify KG populated. If 0 entities: add facts NOW.
+
+RTK token report → Context-Mode stats → Headroom compression → **agentmemory + MemPalace diary** → Caveman compress
 
 **This phase always runs last.** It gathers session statistics and preserves knowledge for future sessions.
 
