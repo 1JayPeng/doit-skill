@@ -199,7 +199,7 @@ if [ "$DRY_RUN" = true ]; then
     echo "    • rust               (rustup, Tsinghua mirror)"
     echo "    • tokensave        (cargo install tokensave)"
     echo "    • tavily           (claude mcp add --transport http tavily ...)"
-    echo "    • caveman          (claude plugin marketplace add JuliusBrussee/caveman)"
+    echo "    • caveman          (claude plugin + hooks + statusline config)"
 echo "    • code-review      (claude plugin install code-review)"
     echo "    • agentmemory      (npm install -g @agentmemory/agentmemory)"
     echo "    • mempalace        (claude plugin install --scope user mempalace)"
@@ -501,23 +501,71 @@ CARGO_EOF
     fi
   fi
 
-# Caveman (token-compact mode)
+# Caveman (token-compact mode + statusline)
   if [ -d "$SKILL_DIR/caveman" ]; then
     echo_success "caveman already installed (project skill)"
   elif [ -d "$HOME/.claude/skills/caveman" ]; then
     echo_success "caveman found in global skills"
   elif grep -rl "caveman" "$HOME/.claude/plugins/" > /dev/null 2>&1; then
     echo_success "caveman already installed (plugin)"
-  elif grep -rl "caveman" "$HOME/.claude/hooks/" > /dev/null 2>&1; then
-    echo_success "caveman already installed (hooks)"
   else
-    echo_info "Installing caveman (marketplace -> plugin -> curl fallback)..."
+    echo_info "Installing caveman (marketplace -> plugin -> npx fallback)..."
     if plugin_cmd 120 claude plugin marketplace add JuliusBrussee/caveman && \
        plugin_cmd 180 claude plugin install caveman@caveman; then
       echo_success "caveman installed (claude plugin)"
     else
-      echo_warn "claude plugin install failed, trying curl fallback..."
-      curl -fsSL https://v6.gh-proxy.org/https://raw.githubusercontent.com/JuliusBrussee/caveman/main/install.sh 2>/dev/null | bash || echo_warn "Failed to install caveman"
+      echo_warn "claude plugin install failed, trying npx installer..."
+      if npx -y "github:JuliusBrussee/caveman" --all 2>&1; then
+        echo_success "caveman installed (npx installer)"
+      else
+        echo_warn "Failed to install caveman"
+      fi
+    fi
+  fi
+
+  # Caveman statusline hook — install hooks + configure settings.json
+  if grep -rl "caveman-statusline" "$HOME/.claude/hooks/" > /dev/null 2>&1; then
+    echo_success "caveman statusline hooks already installed"
+  else
+    echo_info "Installing caveman hooks (statusline)..."
+    if npx -y "github:JuliusBrussee/caveman" --with-hooks --skip-skills 2>&1; then
+      echo_success "caveman statusline hooks installed"
+    else
+      echo_warn "caveman hook install failed — statusline not configured"
+    fi
+  fi
+
+  # Configure caveman statusline in settings.json (replace existing if present)
+  _claude_settings="$HOME/.claude/settings.json"
+  if [ -f "$_claude_settings" ]; then
+    _current_sl=$(python3 -c "
+import json, sys
+try:
+    with open('$_claude_settings') as f:
+        d = json.load(f)
+    sl = d.get('statusLine', {})
+    cmd = sl.get('command', '') if isinstance(sl, dict) else str(sl)
+    print(cmd)
+except: pass
+" 2>/dev/null)
+    if echo "$_current_sl" | grep -q 'caveman-statusline'; then
+      echo_success "caveman statusline already configured in settings.json"
+    else
+      echo_info "Configuring caveman statusline in settings.json..."
+      _hooks_dir="$HOME/.claude/hooks"
+      _sl_script="$_hooks_dir/caveman-statusline.sh"
+      if [ -f "$_sl_script" ]; then
+        python3 -c "
+import json
+with open('$_claude_settings') as f:
+    d = json.load(f)
+d['statusLine'] = {'type': 'command', 'command': 'bash \"$_sl_script\"'}
+with open('$_claude_settings', 'w') as f:
+    json.dump(d, f, indent=2, ensure_ascii=False)
+" 2>/dev/null && echo_success "caveman statusline configured" || echo_warn "Failed to configure caveman statusline"
+      else
+        echo_warn "caveman-statusline.sh not found at $_sl_script — install hooks first"
+      fi
     fi
   fi
 

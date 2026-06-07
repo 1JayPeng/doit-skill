@@ -217,6 +217,12 @@ mempalace init .
 # 作为 Claude Code 插件安装
 claude plugin marketplace add JuliusBrussee/caveman
 claude plugin install caveman@caveman
+
+# 安装 hooks（状态栏徽章）
+npx -y "github:JuliusBrussee/caveman" --with-hooks --skip-skills
+
+# 配置 settings.json 中的 statusLine
+# setup.sh 会自动完成 — 将 statusLine 设置为 caveman-statusline.sh
 ```
 
 #### code-review

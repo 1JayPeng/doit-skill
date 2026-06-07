@@ -346,6 +346,12 @@ Brevity mode — token-compact responses, commit messages. [GitHub](https://gith
 # Install as Claude Code plugin
 claude plugin marketplace add JuliusBrussee/caveman
 claude plugin install caveman@caveman
+
+# Install hooks (statusline badge)
+npx -y "github:JuliusBrussee/caveman" --with-hooks --skip-skills
+
+# Configure statusline in settings.json
+# setup.sh does this automatically — it sets statusLine to caveman-statusline.sh
 ```
 
 #### code-review
