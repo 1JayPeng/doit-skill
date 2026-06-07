@@ -15,7 +15,7 @@ if [ -z "$SKILL_DIR" ]; then
 fi
 BUNDLED_SKILLS=("grill-me" "tdd" "diagnose" "prototype" "handoff" "improve-codebase-architecture")
 BUILTIN_SKILLS=()
-EXTERNAL_TOOLS=("context-mode" "rtk" "uv" "rust" "tokensave" "tavily" "caveman" "code-review" "agentmemory" "mempalace" "headroom")
+EXTERNAL_TOOLS=("context-mode" "rtk" "uv" "rust" "tokensave" "tavily" "caveman" "code-review" "agentmemory" "mempalace" "headroom" "lean-ctx")
 SHARED_FILES=("shared/review-simplify.md" "shared/e2e-verify.md" "shared/commit.md")
 SYMLINK_TARGETS=("review-simplify.md:shared/review-simplify.md" "commit.md:shared/commit.md")
 
@@ -221,6 +221,20 @@ for tool in "${EXTERNAL_TOOLS[@]}"; do
             else
                 echo "  ℹ️  headroom MCP not configured"
                 echo "  💡 Configure: headroom mcp install"
+            fi
+            ;;
+        "lean-ctx")
+            if command -v lean-ctx >/dev/null 2>&1; then
+                echo "  ✅ lean-ctx installed"
+            else
+                echo "  ℹ️  lean-ctx not installed (recommended)"
+                echo "  💡 Install: curl -fsSL https://leanctx.com/install.sh | sh"
+            fi
+            if [ -f "$HOME/.claude/rules/lean-ctx.md" ]; then
+                echo "  ✅ lean-ctx rules configured"
+            else
+                echo "  ℹ️  lean-ctx rules not configured"
+                echo "  💡 Configure: lean-ctx init --agent claude"
             fi
             ;;
     esac

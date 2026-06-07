@@ -151,6 +151,31 @@ uv tool install "headroom-ai[mcp,proxy]"
 headroom mcp install
 ```
 
+#### lean-ctx
+
+上下文优化 — 精简上下文窗口管理 + AI Agent 集成。[Website](https://leanctx.com)
+
+```bash
+# 1. 安装二进制
+curl -fsSL https://leanctx.com/install.sh | sh
+
+# 2. 验证
+lean-ctx --version
+
+# 3. 连接所有 AI 工具
+lean-ctx onboard
+source ~/.bashrc
+lean-ctx init --agent claude
+
+# 4. 手动回退（如果步骤 3 未配置 Claude Code）
+claude mcp add lean-ctx lean-ctx
+
+# 5. 验证
+lean-ctx doctor
+```
+
+安装后使用规则出现在 `~/.claude/rules/lean-ctx.md`。
+
 #### AgentMemory（默认记忆层）
 
 跨会话语义记忆 — 53 MCP tools, 12 hooks, 实时 viewer。[GitHub](https://github.com/rohitg00/agentmemory)

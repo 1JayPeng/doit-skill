@@ -200,8 +200,9 @@ if [ "$DRY_RUN" = true ]; then
     echo "    • tokensave        (cargo install tokensave)"
     echo "    • tavily           (claude mcp add --transport http tavily ...)"
     echo "    • caveman          (claude plugin marketplace add JuliusBrussee/caveman)"
-    echo "    • code-review      (claude plugin install code-review)"
+echo "    • code-review      (claude plugin install code-review)"
     echo "    • mempalace        (claude plugin install --scope user mempalace)"
+    echo "    • lean-ctx         (curl install script)"
   fi
 
   echo "  Options (configurable at install):"
@@ -603,6 +604,36 @@ if [ "$SKIP_OPTIONAL" = false ]; then
     else
       echo_warn "npx not found, skipping agentmemory server start"
     fi
+  fi
+fi
+
+# Step 3.6: Install lean-ctx (context optimization)
+if [ "$SKIP_OPTIONAL" = false ]; then
+  echo "=========================================="
+  echo "  Step 3.6: Installing lean-ctx"
+  echo "=========================================="
+  echo ""
+
+  if command -v lean-ctx >/dev/null 2>&1; then
+    echo_success "lean-ctx already installed"
+  else
+    echo_info "Installing lean-ctx..."
+    curl -fsSL https://leanctx.com/install.sh 2>/dev/null | sh || echo_warn "Failed to install lean-ctx"
+  fi
+
+  if command -v lean-ctx >/dev/null 2>&1; then
+    lean-ctx --version 2>&1 || true
+    echo_info "Connecting lean-ctx to all AI tools..."
+    lean-ctx onboard 2>&1 || echo_warn "lean-ctx onboard failed"
+    source "$HOME/.bashrc" 2>/dev/null || true
+    lean-ctx init --agent claude 2>&1 || echo_warn "lean-ctx init --agent claude failed (may need manual: claude mcp add lean-ctx lean-ctx)"
+    echo_success "lean-ctx installed"
+  fi
+
+  if [ -f "$HOME/.claude/rules/lean-ctx.md" ]; then
+    echo_success "lean-ctx rules configured at ~/.claude/rules/lean-ctx.md"
+  else
+    echo_warn "lean-ctx rules not found — run: lean-ctx init --agent claude"
   fi
 fi
 

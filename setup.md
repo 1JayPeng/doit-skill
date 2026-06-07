@@ -111,6 +111,31 @@ headroom proxy
 ANTHROPIC_BASE_URL=http://127.0.0.1:8787 claude
 ```
 
+## lean-ctx (Context Optimization)
+
+Lean context window management with AI agent integration. [Website](https://leanctx.com)
+
+```bash
+# 1. Install binary
+curl -fsSL https://leanctx.com/install.sh | sh
+
+# 2. Verify
+lean-ctx --version
+
+# 3. Connect all AI tools
+lean-ctx onboard
+source ~/.bashrc
+lean-ctx init --agent claude
+
+# 4. Manual fallback (if step 3 doesn't configure Claude Code)
+claude mcp add lean-ctx lean-ctx
+
+# 5. Verify
+lean-ctx doctor
+```
+
+After installation, usage rules appear at `~/.claude/rules/lean-ctx.md`.
+
 ## AgentMemory (Default Memory Layer)
 
 Cross-session semantic memory — 53 MCP tools, 12 hooks, real-time viewer. [GitHub](https://github.com/rohitg00/agentmemory)
