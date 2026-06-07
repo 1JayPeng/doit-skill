@@ -15,11 +15,12 @@ Spec-driven TDD workflow. Every feature passes through 10 phases. Nothing ships 
 
 ## Memory Layer
 
-Four persistence layers work together:
+Five persistence layers work together:
 - **tokensave** — code graph (symbols, call edges, dependencies). See [plan.md](plan.md).
 - **context-mode** — session analytics (token usage, tool patterns). See [execute.md](execute.md).
 - **agentmemory** — cross-session semantic memory (default). 53 MCP tools, 12 hooks, 4 skills. See [agentmemory.md](agentmemory.md).
 - **mempalace** — cross-session semantic memory (alternative). See [mempalace.md](mempalace.md).
+- **headroom** — context optimization (proxy compression + memory persistence). See [headroom.md](headroom.md).
 
 **Default memory layer: agentmemory.** If agentmemory is unavailable, falls back to mempalace. If any layer is unavailable, the workflow degrades gracefully using the remaining layers.
 
@@ -186,9 +187,9 @@ Present completion summary to user → Extract knowledge (code/api/db/flow) → 
 
 ### Phase 10 — Auto-Compact
 
-**[LOAD] [phases.md](phases.md)#phase-10 — 压缩步骤：RTK report, Context-Mode stats, MemPalace diary, Caveman compress, /compact。**
+**[LOAD] [phases.md](phases.md)#phase-10 — 压缩步骤：RTK report, Context-Mode stats, Headroom compression, MemPalace diary, Caveman compress, /compact。**
 
-RTK token report → Context-Mode stats → MemPalace diary + KG → Caveman compress → **MANDATORY: `/compact`**.
+RTK token report → Context-Mode stats → Headroom compression → MemPalace diary + KG → Caveman compress → **MANDATORY: `/compact`**.
 
 **This phase always runs last.** It ensures the conversation context is compressed before the session ends, reducing token overhead for resumed conversations.
 

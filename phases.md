@@ -159,14 +159,18 @@ After Phase 9.5 completion summary, automatically trigger context compression to
    - `rtk gain` — show total session token savings
    - `rtk gain --history` — per-command savings breakdown
 2. **Context-Mode stats** (if available): `ctx stats` — log session token savings
-3. **MemPalace diary** (if available):
+3. **Headroom compression** (if available, replaces /compact):
+   - `headroom memory add --content "<session summary>" --scope SESSION` — save compressed session to headroom memory
+   - `headroom memory stats` — verify memory was saved
+   - If headroom proxy was running: `headroom proxy stats` — show token savings from proxy compression
+4. **MemPalace diary** (if available):
    - `mempalace_diary_write agent_name="doit" entry="<compact summary>" topic="compact"`
    - `mempalace_memories_filed_away` → verify auto-save checkpoint was saved
    - `mempalace_kg_stats` → verify KG was populated. If still 0 entities after Phase 8, add facts NOW:
      - `mempalace_kg_add subject="<project>" predicate="shipped" object="<feature>" valid_from="<today>"`
    - `mempalace_kg_timeline entity="<project>"` → log project timeline for future reference
-4. **Caveman compress** (if available): Run `/caveman:compress CLAUDE.md` to compress CLAUDE.md using caveman's built-in compression skill. Falls back to step 5 if caveman unavailable.
-5. **MANDATORY: Run `/compact`** — execute the Claude Code built-in compaction command. Type `/compact` as a user message. Do NOT skip. Do NOT say "done" without compacting.
+5. **Caveman compress** (if available): Run `/caveman:compress CLAUDE.md` to compress CLAUDE.md using caveman's built-in compression skill. Falls back to step 6 if caveman unavailable.
+6. **MANDATORY: Run `/compact`** — execute the Claude Code built-in compaction command. Type `/compact` as a user message. Do NOT skip. Do NOT say "done" without compacting.
 
 **This phase always runs last.** It ensures the conversation context is compressed before the session ends, reducing token overhead for resumed conversations.
 

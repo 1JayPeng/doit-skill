@@ -8,8 +8,13 @@ Everything `doit` depends on. Copy this to replicate the full environment.
 Token-optimized CLI proxy. 60-90% savings on dev operations. [GitHub](https://github.com/rtk-ai/rtk)
 
 ```bash
-# Install
+# Install (binary goes to $HOME/.local/bin)
 curl -fsSL https://v6.gh-proxy.org/https://raw.githubusercontent.com/rtk-ai/rtk/refs/heads/master/install.sh | sh
+
+# Ensure $HOME/.local/bin is in PATH (install script doesn't do this)
+export PATH="$HOME/.local/bin:$PATH"
+# Persist for future shells:
+echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
 
 # Initialize for Claude Code
 rtk init -g
@@ -18,6 +23,8 @@ rtk init -g
 rtk --version       # should show rtk X.Y.Z
 rtk gain            # should work
 ```
+
+**Note:** The install script only downloads the binary to `$HOME/.local/bin/rtk`. It does NOT add this directory to PATH or run `rtk init -g`. Both steps are required for Claude Code integration. `setup.sh` handles this automatically.
 
 ### Rust (required by TokenSave)
 Systems programming language. Required for building TokenSave from source. [Rust](https://www.rust-lang.org)
@@ -79,6 +86,31 @@ claude plugin install context-mode@context-mode
 - `ctx_fetch_and_index` — fetch and index web content
 - `ctx_search` — semantic search across indexed content
 
+## Headroom (Context Optimization)
+
+Proxy compression + memory persistence for token optimization. [GitHub](https://github.com/nicholasgriffintn/headroom)
+
+```bash
+# Install via uv tool
+uv tool install "headroom-ai[mcp,proxy]"
+
+# Register MCP server
+headroom mcp install
+
+# Verify
+headroom --version
+claude mcp list | grep headroom
+```
+
+**Optional proxy mode** (continuous token optimization):
+```bash
+# Start proxy
+headroom proxy
+
+# Use with Claude Code
+ANTHROPIC_BASE_URL=http://127.0.0.1:8787 claude
+```
+
 ## Tavily MCP (Internet Search)
 
 Remote MCP. Streamable HTTP transport — no install needed.
@@ -111,10 +143,11 @@ doit uses a **bundled dependency model**. Core skills ship inside `skills/` and 
 | Tool | Install | Used In |
 |------|---------|---------|
 | Context-Mode | `claude plugin marketplace add mksglu/context-mode` | Phase 1-6 |
-| RTK | `curl -fsSL https://v6.gh-proxy.org/https://raw.githubusercontent.com/rtk-ai/rtk/refs/heads/master/install.sh | sh` | Phase 3 |
+| RTK | `curl ... \| sh` + `rtk init -g` (see above) | All phases (auto-wrap) |
 | uv | `pip install uv` | Phase 3 |
 | Rust | `curl ... \| rustup ...` (see above) | Prerequisite for TokenSave |
 | TokenSave | `cargo install tokensave && tokensave install --agent claude` | Phase 2, 3, 5, 6 |
+| Headroom | `uv tool install "headroom-ai[mcp,proxy]"` + `headroom mcp install` | Phase 10 |
 | caveman | `claude plugin marketplace add JuliusBrussee/caveman && claude plugin install caveman@caveman` (curl fallback) | Phase 0+ |
 | code-review | `claude plugin install code-review` | Phase 5 |
 | Tavily MCP | Remote, API key only | Phase 1 |

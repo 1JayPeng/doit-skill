@@ -15,7 +15,7 @@ if [ -z "$SKILL_DIR" ]; then
 fi
 BUNDLED_SKILLS=("grill-me" "tdd" "diagnose" "prototype" "handoff" "improve-codebase-architecture")
 BUILTIN_SKILLS=()
-EXTERNAL_TOOLS=("context-mode" "rtk" "uv" "rust" "tokensave" "tavily" "caveman" "code-review" "mempalace" "agentmemory")
+EXTERNAL_TOOLS=("context-mode" "rtk" "uv" "rust" "tokensave" "tavily" "caveman" "code-review" "mempalace" "agentmemory" "headroom")
 SHARED_FILES=("shared/review-simplify.md" "shared/e2e-verify.md" "shared/commit.md")
 SYMLINK_TARGETS=("review-simplify.md:shared/review-simplify.md" "commit.md:shared/commit.md")
 
@@ -199,6 +199,20 @@ for tool in "${EXTERNAL_TOOLS[@]}"; do
             else
                 echo "  ℹ️  agentmemory server not running"
                 echo "  💡 Start: npx @agentmemory/agentmemory &"
+            fi
+            ;;
+        "headroom")
+            if command -v headroom >/dev/null 2>&1; then
+                echo "  ✅ headroom installed"
+            else
+                echo "  ℹ️  headroom not installed (recommended)"
+                echo "  💡 Install: uv tool install 'headroom-ai[mcp,proxy]'"
+            fi
+            if claude mcp list 2>/dev/null | grep -q headroom; then
+                echo "  ✅ headroom MCP configured"
+            else
+                echo "  ℹ️  headroom MCP not configured"
+                echo "  💡 Configure: headroom mcp install"
             fi
             ;;
     esac

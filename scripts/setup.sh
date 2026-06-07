@@ -398,6 +398,21 @@ else
   fi
 
   # RTK
+  # Ensure $HOME/.local/bin is in PATH — rtk installs there, but the install script
+  # does NOT modify shell profile. Without this, command -v rtk fails even after
+  # successful download, and rtk init -g gets skipped.
+  if ! echo "$PATH" | grep -q "$HOME/.local/bin"; then
+    export PATH="$HOME/.local/bin:$PATH"
+  fi
+
+  # Persist PATH for future shells (idempotent)
+  for _profile in "$HOME/.bashrc" "$HOME/.zshrc" "$HOME/.profile"; do
+    if [ -f "$_profile" ]; then
+      grep -q 'export PATH=.*\.local/bin' "$_profile" 2>/dev/null || \
+        echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$_profile"
+    fi
+  done
+
   if command -v rtk >/dev/null 2>&1; then
     echo_success "rtk already installed"
   else
@@ -407,6 +422,7 @@ else
   if command -v rtk >/dev/null 2>&1; then
     echo_info "Initializing rtk for Claude Code..."
     rtk init -g 2>/dev/null || true
+    echo_success "rtk installed and initialized"
   fi
 
   # UV
