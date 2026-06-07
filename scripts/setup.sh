@@ -6,7 +6,8 @@
 # Supports:
 #   --skip-optional    Skip optional skills and external tools
 
-set -e
+# No set -e: we handle errors explicitly. set -e + 2>/dev/null = silent death.
+trap 'echo_error "Installation interrupted by user. Partial install may be in place." && exit 130' INT
 
 # Configuration
 # Claude Code loads skills from project-local .claude/skills/ (not ~/.claude/skills/)
@@ -167,6 +168,9 @@ _ask_tavily() {
     echo ""
     echo -n "Tavily API Key (for web search, or press Enter to skip): "
     read -r TAVILY_API_KEY < /dev/tty || true
+  else
+    # No TTY available — skip silently
+    echo_warn "No TTY available, skipping Tavily API key prompt (set TAVILY_API_KEY env var instead)"
   fi
 }
 if [ "$tavily_already_configured" = false ]; then
@@ -216,7 +220,7 @@ TEMP_DIR=$(mktemp -d)
 DOIT_DIR="$TEMP_DIR/doit-skill"
 
 echo_info "Cloning doit-skill repository..."
-if ! git clone --depth 1 "$REPO_URL" "$DOIT_DIR" 2>/dev/null; then
+if ! git clone --depth 1 "$REPO_URL" "$DOIT_DIR"; then
   echo_error "Failed to clone repository: $REPO_URL"
   echo_error "Check your network connection, or try again later."
   exit 1
@@ -377,14 +381,15 @@ else
     echo_success "context-mode already installed (plugin)"
   else
     echo_info "context-mode is a Claude Code plugin"
-    echo_warn "Install manually: claude plugin marketplace add mksglu/context-mode"
+    echo_warn "Install manually:"
+    echo "     claude plugin marketplace add mksglu/context-mode"
     echo "     claude plugin install context-mode@context-mode"
   fi
 
 # Tavily MCP (web search) - only if API key provided via env or interactive
   if [ -n "$TAVILY_API_KEY" ]; then
     echo_info "Installing Tavily MCP with your API key..."
-    claude mcp add --transport http tavily "https://mcp.tavily.com/mcp/?tavilyApiKey=$TAVILY_API_KEY" 2>/dev/null || echo_warn "Failed to install Tavily MCP (install manually: claude mcp add --transport http tavily https://mcp.tavily.com/mcp/?tavilyApiKey=<your-key>)"
+    claude mcp add --transport http tavily "https://mcp.tavily.com/mcp/?tavilyApiKey=$TAVILY_API_KEY" || echo_warn "Failed to install Tavily MCP (install manually: claude mcp add --transport http tavily https://mcp.tavily.com/mcp/?tavilyApiKey=<your-key>)"
     if claude mcp list 2>/dev/null | grep -q tavily; then
       echo_success "tavily MCP configured"
     else
@@ -397,7 +402,7 @@ else
     echo_success "rtk already installed"
   else
     echo_info "Installing rtk..."
-    curl -fsSL https://v6.gh-proxy.org/https://raw.githubusercontent.com/rtk-ai/rtk/refs/heads/master/install.sh 2>/dev/null | sh 2>/dev/null || echo_warn "Failed to install rtk"
+    curl -fsSL https://v6.gh-proxy.org/https://raw.githubusercontent.com/rtk-ai/rtk/refs/heads/master/install.sh 2>/dev/null | sh || echo_warn "Failed to install rtk"
   fi
   if command -v rtk >/dev/null 2>&1; then
     echo_info "Initializing rtk for Claude Code..."
@@ -409,7 +414,7 @@ else
     echo_success "uv already installed"
   else
     echo_info "Installing uv..."
-    pip install uv 2>/dev/null || pip3 install uv 2>/dev/null || echo_warn "Failed to install uv"
+    pip install uv 2>&1 || pip3 install uv 2>&1 || echo_warn "Failed to install uv"
   fi
 
   # Rust (required by tokensave)
@@ -420,7 +425,7 @@ else
     curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs 2>/dev/null \
       | RUSTUP_DIST_SERVER=https://mirrors.tuna.tsinghua.edu.cn/rustup \
         RUSTUP_UPDATE_ROOT=https://mirrors.tuna.tsinghua.edu.cn/rustup/rustup \
-        sh -s -- -y 2>/dev/null \
+        sh -s -- -y \
       || echo_warn "Failed to install Rust via rustup"
 
     # Source cargo env for current shell
@@ -454,12 +459,12 @@ CARGO_EOF
   if command -v tokensave >/dev/null 2>&1; then
     echo_success "tokensave already installed"
   else
-    echo_info "Installing tokensave..."
+    echo_info "Installing tokensave (compiling Rust — may take several minutes)..."
     if command -v cargo >/dev/null 2>&1; then
-      cargo install tokensave 2>/dev/null || echo_warn "Failed to install tokensave via cargo"
+      cargo install tokensave || echo_warn "Failed to install tokensave via cargo"
       if command -v tokensave >/dev/null 2>&1; then
         echo_info "Configuring tokensave for Claude Code..."
-        tokensave install --agent claude 2>/dev/null || true
+        tokensave install --agent claude || true
       fi
     else
       echo_warn "cargo not found — tokensave requires Rust. Install via: cargo install tokensave"
@@ -477,12 +482,12 @@ CARGO_EOF
     echo_success "caveman already installed (hooks)"
   else
     echo_info "Installing caveman (marketplace -> plugin -> curl fallback)..."
-    if plugin_cmd 120 claude plugin marketplace add JuliusBrussee/caveman 2>/dev/null && \
-       plugin_cmd 180 claude plugin install caveman@caveman 2>/dev/null; then
+    if plugin_cmd 120 claude plugin marketplace add JuliusBrussee/caveman && \
+       plugin_cmd 180 claude plugin install caveman@caveman; then
       echo_success "caveman installed (claude plugin)"
     else
       echo_warn "claude plugin install failed, trying curl fallback..."
-      curl -fsSL https://v6.gh-proxy.org/https://raw.githubusercontent.com/JuliusBrussee/caveman/main/install.sh 2>/dev/null | bash 2>/dev/null || echo_warn "Failed to install caveman"
+      curl -fsSL https://v6.gh-proxy.org/https://raw.githubusercontent.com/JuliusBrussee/caveman/main/install.sh 2>/dev/null | bash || echo_warn "Failed to install caveman"
     fi
   fi
 
@@ -495,7 +500,7 @@ CARGO_EOF
     echo_success "code-review already installed (plugin)"
   else
     echo_info "Installing code-review..."
-    plugin_cmd 180 claude plugin install code-review 2>/dev/null || echo_warn "Failed to install code-review (install manually: claude plugin install code-review)"
+    plugin_cmd 180 claude plugin install code-review || echo_warn "Failed to install code-review (install manually: claude plugin install code-review)"
   fi
 
   # MemPalace
@@ -503,8 +508,8 @@ CARGO_EOF
     echo_success "mempalace already installed (plugin)"
   else
     echo_info "Installing mempalace..."
-    plugin_cmd 120 claude plugin marketplace add MemPalace/mempalace 2>/dev/null || echo_warn "Failed to add mempalace marketplace"
-    plugin_cmd 180 claude plugin install --scope user mempalace 2>/dev/null || echo_warn "Failed to install mempalace (install manually: claude plugin install --scope user mempalace)"
+    plugin_cmd 120 claude plugin marketplace add MemPalace/mempalace || echo_warn "Failed to add mempalace marketplace"
+    plugin_cmd 180 claude plugin install --scope user mempalace || echo_warn "Failed to install mempalace (install manually: claude plugin install --scope user mempalace)"
   fi
 
   # MemPalace CLI (uv tool)
@@ -513,7 +518,7 @@ CARGO_EOF
   else
     echo_info "Installing mempalace CLI via uv tool..."
     if command -v uv >/dev/null 2>&1; then
-      plugin_cmd 180 uv tool install mempalace 2>/dev/null || echo_warn "Failed to install mempalace CLI (install manually: uv tool install mempalace)"
+      plugin_cmd 180 uv tool install mempalace || echo_warn "Failed to install mempalace CLI (install manually: uv tool install mempalace)"
     else
       echo_warn "uv not found, skipping mempalace CLI install"
     fi
@@ -523,9 +528,9 @@ CARGO_EOF
   if [ -d ".mempalace" ]; then
     echo_success "mempalace already initialized"
   else
-    echo_info "Initializing mempalace (this may take a while)..."
+    echo_info "Initializing mempalace (creating HNSW index — may take 1-2 min)..."
     if command -v mempalace >/dev/null 2>&1; then
-      plugin_cmd 600 mempalace init . 2>/dev/null || echo_warn "Failed to initialize mempalace (run manually: mempalace init .)"
+      plugin_cmd 600 mempalace init . || echo_warn "Failed to initialize mempalace (run manually: mempalace init .)"
     else
       echo_warn "mempalace CLI not found, skipping init"
     fi
@@ -544,8 +549,8 @@ if [ "$SKIP_OPTIONAL" = false ]; then
     echo_success "agentmemory already installed (plugin)"
   else
     echo_info "Installing agentmemory plugin..."
-    plugin_cmd 120 claude plugin marketplace add rohitg00/agentmemory 2>/dev/null || echo_warn "Failed to add agentmemory marketplace"
-    plugin_cmd 180 claude plugin install agentmemory 2>/dev/null || echo_warn "Failed to install agentmemory (install manually: claude plugin install agentmemory)"
+    plugin_cmd 120 claude plugin marketplace add rohitg00/agentmemory || echo_warn "Failed to add agentmemory marketplace"
+    plugin_cmd 180 claude plugin install agentmemory || echo_warn "Failed to install agentmemory (install manually: claude plugin install agentmemory)"
   fi
 
   # agentmemory server - needs separate terminal
