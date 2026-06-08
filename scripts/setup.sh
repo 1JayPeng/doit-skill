@@ -368,7 +368,7 @@ else
       echo_success "skill-creator already installed"
     else
       echo_info "Installing skill-creator..."
-      npx skills add anthropics/skills@skill-creator --non-interactive 2>&1 || echo_warn "Failed to install skill-creator (requires npx skills CLI)"
+      npx skills add anthropics/skills@skill-creator -y -g --non-interactive 2>&1 || echo_warn "Failed to install skill-creator (requires npx skills CLI)"
     fi
   else
     echo_warn "npx not found — skill-creator requires Node.js. Install manually:"
@@ -633,7 +633,11 @@ with open('$_claude_settings', 'w') as f:
   else
     echo_info "Initializing mempalace (creating HNSW index — may take 1-2 min)..."
     if command -v mempalace >/dev/null 2>&1; then
-      plugin_cmd 600 mempalace init . < /dev/null || echo_warn "Failed to initialize mempalace (run manually: mempalace init .)"
+      plugin_cmd 600 mempalace init . --yes || echo_warn "Failed to initialize mempalace (run manually: mempalace init . --yes)"
+      if [ -f "mempalace.yaml" ]; then
+        echo_info "Mining mempalace index..."
+        mempalace mine . 2>&1 || echo_warn "Failed to mine mempalace (run manually: mempalace mine .)"
+      fi
     else
       echo_warn "mempalace CLI not found, skipping init"
     fi
@@ -651,9 +655,9 @@ if [ "$SKIP_OPTIONAL" = false ]; then
   if curl -s http://localhost:3111/agentmemory/health >/dev/null 2>&1; then
     echo_success "agentmemory server already running"
   else
-    if command -v npx >/dev/null 2>&1; then
+    if command -v agentmemory >/dev/null 2>&1; then
       echo_info "Starting agentmemory server in background..."
-      nohup npx @agentmemory/agentmemory > /tmp/agentmemory.log 2>&1 &
+      nohup agentmemory server > /tmp/agentmemory.log 2>&1 &
       AGENTMEMORY_PID=$!
       echo_info "Started agentmemory server (PID: $AGENTMEMORY_PID)"
 
@@ -674,10 +678,10 @@ if [ "$SKIP_OPTIONAL" = false ]; then
         echo_warn "agentmemory server health check failed after 15s"
         echo_info "  Log: tail -f /tmp/agentmemory.log"
         echo_info "  Health: curl http://localhost:3111/agentmemory/health"
-        echo_info "  Manual start: npx @agentmemory/agentmemory &"
+        echo_info "  Manual start: agentmemory server &"
       fi
     else
-      echo_warn "npx not found — cannot start agentmemory server"
+      echo_warn "agentmemory CLI not found — cannot start agentmemory server"
       echo_info "  Manual start: npx @agentmemory/agentmemory &"
     fi
   fi
