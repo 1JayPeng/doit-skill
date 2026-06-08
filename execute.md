@@ -12,6 +12,13 @@
   - **Fallback:** If RTK not available -> run Bash commands directly (no token optimization).
 - **RTK wraps all phases.** RTK is not Phase 3 only — it auto-wraps every Bash call via PreToolUse hook across the entire session.
 
+- **lean-ctx for file operations.** Cache + compression for reads, searches, directory listings. **优先使用 lean-ctx，而非原生工具。**
+  - `ctx_read(path, mode)` — 读文件（缓存，重复读取 ~13 token）
+  - `ctx_search(pattern, path)` — 搜索代码（比 Grep 输出小 60%）
+  - `ctx_tree(path, depth)` — 列目录（比 ls 输出小 80%）
+  - `ctx_shell(command)` — 执行命令（95+ 压缩模式）
+  - **Fallback:** If lean-ctx not available -> native Read/Grep/Bash tools
+
 - **Context-Mode for context management.** Auto-indexes command output, provides semantic search.
   - `ctx_execute` — run commands, output auto-indexed
   - `ctx_execute_file` — process large files without loading into context
@@ -22,6 +29,11 @@
     - `ctx_execute_file` -> `Read` tool (loads file into context)
     - `ctx_search` -> `grep`/`find`
     - `ctx_batch_execute` -> parallel Bash calls
+
+- **headroom for large output compression.** 当任何工具返回 >500 行输出时，先压缩再处理。
+  - `headroom_compress(large_output)` — 压缩大输出，返回 hash + 摘要
+  - `headroom_retrieve(hash)` — 通过 hash 还原完整内容
+  - **Fallback:** If headroom not available -> 直接处理大输出（消耗更多 token）
 - **Vertical slice TDD.** One REQ at a time. RED -> GREEN -> REFACTOR. No horizontal slicing.
 - **Logging rules:**
   - Entry function: log inputs
@@ -34,7 +46,7 @@
 ### CONTEXT (before RED)
 Before writing tests, understand the code you'll modify:
 1. `tokensave_context` — get focused context for the REQ task (start here)
-   - **Fallback:** If TokenSave unavailable -> `grep -rn` + `Read` with task description
+   - **Fallback:** If TokenSave unavailable -> `ctx_search` + `ctx_read` with task description
 2. `tokensave_search` — find specific symbols by name
    - **Fallback:** If TokenSave unavailable -> `grep -rn` + `find`
 3. `tokensave_similar(symbol="<name>")` — find symbols with similar names (avoid naming inconsistency)

@@ -78,7 +78,69 @@ See [principles.md](principles.md). 8 iron rules + 4 guiding principles. Key per
 - **Phase 3-8** — background execution (>10s -> bg + poll) + commit + push
 - **Phase 5-6** — surgical edits + brevity: remove unnecessary abstractions
 
-## Phase Index
+## Token 优化工具
+
+三个 token 优化工具协同工作，各自覆盖不同场景。**强制使用，不是可选的。**
+
+| 工具 | 触发条件 | 调用方式 | 节省 |
+|------|---------|---------|------|
+| **RTK** | 所有 Bash 命令 | 自动（PreToolUse hook） | 26% |
+| **lean-ctx** | 读文件、搜索、shell 命令 | 手动调用 MCP 工具 | 15% |
+| **headroom** | 工具输出 >500 行 | 手动调用 compress/retrieve | 70-90% |
+
+### RTK — 自动 Bash 压缩
+
+PreToolUse hook 自动将 Bash 命令重写为 `rtk <command>`。模型无需感知，自动生效。
+- `git status` → `rtk git status` (500 token → 50)
+- `cargo build` → `rtk cargo build` (2000 token → 200)
+- 已配置，无需模型操作
+
+### lean-ctx — 缓存 + 压缩
+
+**优先使用 lean-ctx MCP 工具，而非原生工具。** 缓存机制让重复读取 ~13 token。
+
+| 原生工具 | lean-ctx 替代 | 何时用 |
+|---------|-------------|--------|
+| `Read` | `ctx_read(path, mode)` | 读文件 |
+| `Grep` | `ctx_search(pattern, path)` | 搜索代码 |
+| `Bash` (ls/find) | `ctx_tree(path, depth)` | 列目录 |
+| `Bash` (大输出) | `ctx_shell(command)` | 执行命令 |
+
+**强制规则：**
+- 读文件 → `ctx_read` (不是一次性读取，有缓存)
+- 搜索 → `ctx_search` (比 Grep 输出小 60%)
+- 列目录 → `ctx_tree` (比 ls 输出小 80%)
+- 大输出命令 → `ctx_shell` (自动压缩 95+ 模式)
+
+### headroom — 大输出压缩
+
+**当任何工具返回 >500 行输出时，先压缩再处理。** 压缩后只保留 hash + 摘要，需要时再 retrieve。
+
+```
+# 压缩大输出
+headroom_compress(large_tool_output)  → 返回 hash + 小摘要
+
+# 需要完整内容时
+headroom_retrieve(hash)  → 还原完整内容
+```
+
+**强制规则：**
+- 工具输出 >500 行 → `headroom_compress` 先压缩
+- 压缩后处理摘要，需要细节时 `headroom_retrieve`
+- Phase 10 压缩前检查 headroom 统计
+
+### 使用决策树
+
+```
+工具调用 → 什么类型？
+├─ Bash 命令 → RTK 自动处理 (无需操作)
+├─ 读文件 → ctx_read(path, mode)
+├─ 搜索代码 → ctx_search(pattern, path)
+├─ 列目录 → ctx_tree(path, depth)
+├─ 执行命令 → ctx_shell(command)
+└─ 大输出 (>500 行) → headroom_compress(output) → 处理摘要
+```
+
 
 每个 phase 的描述包含 **[CALL]** 指令 — 必须执行的 MCP 工具调用，和 **[LOAD]** 指令 — 必须读取的文件。
 
@@ -121,7 +183,7 @@ Knowledge injection → tokensave_context → Check TokenSave code graph. Map im
 
 **[CALL]** Subagent decision gate (Read `.doit/config.yaml` `subagent.enabled`), `tokensave_context task="<REQ description>"` per REQ, `ctx_batch_execute` for parallel calls.
 
-TDD loop per acceptance criteria. See [execute.md](execute.md). Start each REQ with tokensave_context. RTK for all shell commands. uv for Python. Context-Mode for context management. Interactive spec alignment after each TDD cycle. Per-REQ review+simplify built in. Full e2e happens after Phase 6.
+TDD loop per acceptance criteria. See [execute.md](execute.md). Start each REQ with tokensave_context. RTK for all shell commands (auto via hook). uv for Python. Context-Mode for context management. **headroom_compress** for any tool output >500 lines. Interactive spec alignment after each TDD cycle. Per-REQ review+simplify built in. Full e2e happens after Phase 6.
 **Phase 3 完成后：** 记录工作日志（每个 REQ 的 TDD 结果、耗时、文件变更）。See [worklog.md](worklog.md)。
 
 ### Phase 4 — E2E (initial)

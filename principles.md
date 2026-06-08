@@ -193,6 +193,27 @@ New pattern: code change → Review (find duplication, security issues, architec
 - **禁止**perfunctory Review ("looks good") — must find specific issues
 - **禁止**Simplify 后不重新运行 E2E (Phase 7) — simplification can break functionality
 
+## 1.75. Token Optimization Tools (铁律)
+
+**Always use token optimization tools. RTK (auto), lean-ctx (file ops), headroom (large output).**
+
+Old pattern: `Read` a file -> 500 tokens. `Read` again -> 500 tokens. `Bash git status` -> 300 tokens. Total wasted: thousands per session.
+New pattern: `ctx_read` -> first time full, subsequent ~13 tokens. `rtk git status` -> 50 tokens. `headroom_compress` -> 70-90% reduction.
+
+- **Bash commands** → RTK auto-wraps via PreToolUse hook (no action needed)
+- **Read file** → `ctx_read(path, mode)` (cached, repeated reads ~13 tokens)
+- **Search code** → `ctx_search(pattern, path)` (60% less output than Grep)
+- **List directory** → `ctx_tree(path, depth)` (80% less output than ls)
+- **Large tool output (>500 lines)** → `headroom_compress(output)` → process summary, `headroom_retrieve(hash)` for details
+
+This is not optional. Token optimization is a first-class concern. Every session should save 20-40% tokens through these tools.
+
+### Applied Everywhere
+
+- **Phase 3 (Execute)** — ctx_read for file reads, ctx_search for code search, headroom for large test output
+- **Phase 5-6 (Review)** — ctx_read for reviewing changes, headroom for complexity reports
+- **Phase 10 (Summary)** — rtk gain, ctx_stats, headroom_stats for session token report
+
 ## 2. Think Before Coding
 
 **Don't assume. Don't hide confusion. Present trade-offs.**
