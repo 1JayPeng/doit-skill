@@ -32,9 +32,8 @@ Old pattern: run `cargo build --release` in Bash, sit idle for 5 min. Wastes tim
 New pattern: launch in background -> set up completion signal -> do other work -> auto-resume when notified.
 
 - **<10s** → direct Bash call (foreground OK)
-- **10s–5min** → `Bash run_in_background=true` OR shell `&` + log file + `[START]`/`[END]` markers
-- **>5min** → tmux named session + Monitor + auto-continuation
-- **No background mechanism** → `ScheduleWakeup` to poll periodically
+- **10s–30min** → shell `&` + log file + `/loop` directive (recommended) + ScheduleWakeup
+- **>30min** → tmux named session + Monitor + auto-continuation
 
 - **Always set up a completion signal** — `[END]` marker in log, Monitor check, or ScheduleWakeup callback
 - **Never say "waiting for X..." then go silent** — poll or do other work

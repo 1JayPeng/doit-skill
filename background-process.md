@@ -10,8 +10,8 @@ Standardized three-tier patterns for running long-running commands with observab
 
 ```
 □ 1. 估计运行时间：这个命令预计需要多久？
-□ 2. 选择执行级别：前台(<10s) / 后台(10s-5min) / tmux(>5min)
-□ 3. 设置完成信号：[END] 标记 + Monitor 或 ScheduleWakeup
+□ 2. 选择执行级别：前台(<10s) / 后台+loop(推荐) / tmux(多阶段pipeline)
+□ 3. 设置完成信号：[END] 标记 + /loop 轮询
 □ 4. 设置超时：timeout = 2x 估计时间（默认 300s）
 □ 5. 计划后续工作：后台任务启动后，继续做什么？
 ```
@@ -22,9 +22,9 @@ Standardized three-tier patterns for running long-running commands with observab
 
 | 违例 | 正确做法 |
 |------|---------|
-| 运行 `cargo build --release` 后沉默等待 | 后台启动 + Monitor + 继续其他工作 |
-| `tail -f` 日志文件来"看进度" | 设置 Monitor 自动检查 `[END]` |
-| 启动后台任务后不设轮询 | 每个后台任务必须有 Monitor 或 ScheduleWakeup |
+| 运行 `cargo build --release` 后沉默等待 | 后台启动 + `/loop` + 继续其他工作 |
+| `tail -f` 日志文件来"看进度" | `/loop` 自动检查 `[END]` |
+| 启动后台任务后不设轮询 | 每个后台任务必须有 `/loop` 或 Monitor |
 | 在长对话中忘记后台任务 | 用户问进度 → 立即检查 `.scratch/logs/` 和 `tmux list-sessions` |
 | 不设 timeout | 所有后台任务必须有 timeout，默认 300s |
 
@@ -34,7 +34,12 @@ Standardized three-tier patterns for running long-running commands with observab
 |------|------|-----------|
 | **Foreground** | <10s, simple commands | Direct Bash call |
 | **Background** | 10s-5min, no interactive need | Shell `&` + log file + `[START]`/`[END]` markers |
+| **Loop** | 10s-30min, needs intelligent polling | `/loop` directive + ScheduleWakeup — native, context-aware |
 | **Tmux + Monitor** | >5min, multi-phase, or needs auto-continuation | Named tmux session + Claude Code monitor + auto-resume |
+
+**推荐优先级:** Loop > Tmux+Monitor > Background > Foreground (按复杂度递减)
+
+Loop 是 Claude Code 原生指令，比 Monitor 更简洁 — 自动保存上下文、智能调整轮询间隔、支持条件退出。
 
 ## Tier 1: Foreground
 
@@ -64,6 +69,132 @@ Check results:
 ```bash
 tail -1 .scratch/logs/<name>.log
 # Expected: [END] 2026-05-30 12:34:56 — exit_code=0
+```
+
+## Tier 2.5: Loop (Native Polling)
+
+**推荐用于大多数轮询场景。** `/loop` 是 Claude Code 原生指令，自动管理上下文和轮询节奏。
+
+### 核心优势 vs Monitor
+
+| | `/loop` | Monitor |
+|---|---|---|
+| 上下文 | 自动保存完整上下文 | 只传递 monitor 事件 |
+| 轮询间隔 | 智能调整（ScheduleWakeup） | 固定 interval |
+| 条件退出 | loop 内判断完成就 stop | 只能等 interval 触发 |
+| 并行工作 | loop 期间主 agent 可继续工作 | Monitor 是独立的 |
+| 设置复杂度 | 1 行 | tmux + log + Monitor 配置 |
+
+### Basic Loop — 轮询后台任务
+
+```bash
+# Step 1: Launch task in background
+(
+  echo "[START] $(date '+%Y-%m-%d %H:%M:%S') — cargo build --release"
+  cargo build --release
+  EXIT_CODE=$?
+  echo "[END] $(date '+%Y-%m-%d %H:%M:%S') — exit_code=$EXIT_CODE"
+  exit $EXIT_CODE
+) > .scratch/logs/build.log 2>&1 &
+```
+
+```
+/loop 检查 .scratch/logs/build.log 是否出现 [END] 标记，如果完成则读取结果并报告退出码
+```
+
+Loop 会自动轮询，检测到 `[END]` 后停止并处理结果。
+
+### Loop with ScheduleWakeup — 智能间隔
+
+```
+ScheduleWakeup delaySeconds=120 reason="polling build completion — cache miss ok after 5min" prompt="/loop 检查 build 是否完成"
+```
+
+**间隔选择指南:**
+- **<5min 任务**: 30-60s 间隔
+- **5-15min 任务**: 120-180s 间隔
+- **>15min 任务**: 300-600s 间隔
+- **不确定**: 120s 默认
+
+**避免 300s 精确值** — 缓存 TTL 正好 5min。选 270s（缓存内）或 360s（承担缓存 misses）。
+
+### Loop 条件退出模式
+
+```
+/loop 检查 E2E 测试是否完成:
+1. grep '\[END\]' .scratch/logs/e2e.log
+2. 如果找到 [END]: 读取 exit_code -> 如果 0 则 "PASS, 进入 Phase 7" -> 停止循环
+3. 如果没找到: ScheduleWakeup 120s 继续轮询
+4. 如果超过 30min: 报告超时 -> 停止循环
+```
+
+### Loop + 并行工作模式
+
+```bash
+# 启动后台任务
+( cargo test --all > .scratch/logs/test.log 2>&1; echo "[END] exit_code=$?" >> .scratch/logs/test.log ) &
+```
+
+```
+/loop 轮询测试进度
+```
+
+主 agent 在 loop 期间可以继续其他工作（读文档、准备下一个 phase、写文档）。Loop 完成后自动通知。
+
+### Loop vs Monitor 决策指南
+
+| 场景 | 推荐 | 原因 |
+|------|------|------|
+| 简单轮询（单个命令） | `/loop` | 设置简单，上下文自动保存 |
+| 需要复杂监控逻辑 | Monitor | Monitor 可以执行复杂检查脚本 |
+| 多阶段 pipeline | Tmux + Monitor | 需要多 session 协调 |
+| 长时间不确定任务 | `/loop` + ScheduleWakeup | 智能间隔调整 |
+| 需要用户可见进度 | `/loop` | 更容易报告进度 |
+
+### Loop 完整示例: Phase 3 长构建
+
+```bash
+# 1. 后台启动
+mkdir -p .scratch/logs
+(
+  echo "[START] $(date '+%Y-%m-%d %H:%M:%S') — cargo build --release"
+  cargo build --release
+  EXIT_CODE=$?
+  echo "[END] $(date '+%Y-%m-%d %H:%M:%S') — exit_code=$EXIT_CODE"
+  exit $EXIT_CODE
+) > .scratch/logs/build.log 2>&1 &
+```
+
+```
+/loop 检查 .scratch/logs/build.log 完成状态:
+- grep '\[END\]' .scratch/logs/build.log
+- 如果完成: tail -1 读取结果，报告退出码，停止循环
+- 如果未完成: ScheduleWakeup delaySeconds=60 继续
+```
+
+### Loop 完整示例: Phase 4 E2E
+
+```bash
+# 1. 启动 E2E server + 测试
+(
+  echo "[START] $(date '+%Y-%m-%d %H:%M:%S') — E2E server"
+  uv run python -m uvicorn main:app --host 127.0.0.1 --port 8765 &
+  SERVER_PID=$!
+  sleep 10
+  echo "[START] $(date '+%Y-%m-%d %H:%M:%S') — E2E tests"
+  uv run pytest tests/e2e/ -v --tb=short
+  EXIT_CODE=$?
+  kill $SERVER_PID 2>/dev/null || true
+  echo "[END] $(date '+%Y-%m-%d %H:%M:%S') — exit_code=$EXIT_CODE"
+  exit $EXIT_CODE
+) > .scratch/logs/e2e.log 2>&1 &
+```
+
+```
+/loop 检查 E2E 测试完成:
+1. grep '\[END\]' .scratch/logs/e2e.log
+2. 完成 -> 读取结果 -> 停止
+3. 未完成 -> ScheduleWakeup 120s
 ```
 
 ## Tier 3: Tmux + Monitor (Auto-Resume)
