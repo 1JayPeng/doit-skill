@@ -98,7 +98,7 @@ See [background-process.md](background-process.md) for full three-tier patterns.
 - **绝不"完成"却不提交** — 未提交的工作等于丢失的工作
 - **绝不跳过推送** — 本地提交不防会话丢失
 
-See [commit.md](commit.md) for commit message conventions and push strategies.
+See [shared/commit.md](shared/commit.md) for commit message conventions and push strategies.
 
 ### Applied Everywhere
 
@@ -224,4 +224,55 @@ See [dangerous-ops.md](dangerous-ops.md) for full patterns and hook configuratio
 - **禁止**跳过 Review 直接 commit
 - **禁止**跳过 Simplify 直接提交 — "以后再说" = 永远不会做
 - **禁止**走过场的 Review（"看起来不错"）— 必须找出具体的问题
+
+---
+
+## 通用编码原则
+
+### Think Before Coding
+
+**不假设。不隐藏困惑。展示权衡。**
+
+- 明确陈述假设 — 不确定时提问而非猜测
+- 呈现多种解释 — 模糊时不沉默选择
+- 提出更简单方案 — 如果有
+- 困惑时停止 — 指出不清楚之处
+
+**应用于：** Phase 1 grill, Phase 2 多方案探索, Phase 0 分类不清时提问
+
+### Brevity First
+
+**用最少的代码解决问题。不过度设计。**
+
+- 不添加需求之外的功能
+- 不为一次性代码创建抽象
+- 不添加未请求的"灵活性"
+- 不处理不可能发生的场景
+- 200 行能变 50 行，就改
+
+**应用于：** Phase 3 最小实现, Phase 6 合并冗余, Phase 5 消除重复
+
+### Surgical Edits
+
+**只改必须改的。只清理自己制造的混乱。**
+
+- 不"改进"相邻代码、注释、格式
+- 不重构未坏的东西
+- 匹配现有风格
+- 发现无关死代码 -> 提及，不删除
+- 自己的变更产生孤儿代码 -> 清理
+
+**应用于：** Phase 3 只改 Phase 2 确定的文件, Debug 最小变更
+
+### Goal-Driven Execution
+
+**定义成功标准。循环验证直到达成。**
+
+| 不做... | 转化为... |
+|-------------|-----------------|
+| "添加验证" | "写无效输入测试，让它们通过" |
+| "修复 bug" | "写复现测试，让它通过" |
+| "重构 X" | "确保重构前后测试都通过" |
+
+**应用于：** Phase 3 每 REQ 可测试验证, Phase 4 真实断言, Phase 7 对比 spec REQ
 - **禁止**Simplify 后不重新运行 E2E（Phase 7）— 简化可能破坏功能

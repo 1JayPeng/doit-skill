@@ -123,7 +123,7 @@ Run `rtk gain --history` to show per-command token savings history.
 
 ### 6. Phase 6 Next (MANDATORY)
 
-**After Phase 5 completes, you MUST run Phase 6 Review+Simplify.** See [review-simplify.md](review-simplify.md).
+**After Phase 5 completes, you MUST run Phase 6 Review+Simplify.** See [shared/review-simplify.md](shared/review-simplify.md).
 This is where you check your own work for:
 - Code that works but is over-engineered
 - Missed README/CLAUDE.md updates
