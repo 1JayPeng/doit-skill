@@ -304,24 +304,14 @@ Include all detected layers that are relevant:
 
 ### 8b. Inject Skill Load Rules into CLAUDE.md
 
-Ensure CLAUDE.md includes instructions to load caveman when doit runs. Check:
+**DEPRECATED — merged into Step 10.** Step 10 now writes the complete progressive disclosure Skill Loading section. This step is kept for backward compatibility with old CLAUDE.md that only have "Skill Load Rules" but not "Skill Loading". Check:
 
 ```bash
-grep -i "skill load\|caveman.*doit\|load.*caveman" CLAUDE.md 2>/dev/null
+grep -i "## skill loading\|## skill load rules" CLAUDE.md 2>/dev/null
 ```
 
-If no match found, append after `## Environment` section:
-
-```markdown
-## Skill Load Rules
-
-When the user invokes `/doit` (doit-skill), automatically load the caveman skill first:
-- Call `Skill skill="caveman"` to enable terse mode for the entire session
-- This runs before Phase 0 classification
-- Caveman stays active until user explicitly disables it
-```
-
-**If CLAUDE.md already has a Skill Load Rules section:** skip. No overwrite.
+If CLAUDE.md has "Skill Load Rules" but not "Skill Loading", rename the section header and update content per Step 10 template.
+**If CLAUDE.md already has a Skill Loading section:** skip. No overwrite.
 
 ### 9. Inject Background Task Rules into CLAUDE.md
 
@@ -420,7 +410,7 @@ Phase -1 → 0 → 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 → 9 → 9.5 →
 
 ### 10. Inject Skill Loading Rules into CLAUDE.md
 
-Write or update `## Skill Loading` section in CLAUDE.md. This ensures caveman loads even if the agent skips SKILL.md Step 1. Check first:
+Write or update `## Skill Loading` section in CLAUDE.md with progressive disclosure rules. Check first:
 
 ```bash
 grep -i "## skill loading\|## 技能加载" CLAUDE.md 2>/dev/null
@@ -429,13 +419,20 @@ grep -i "## skill loading\|## 技能加载" CLAUDE.md 2>/dev/null
 If no match found, inject after `## Environment` section (or append if Environment section doesn't exist):
 
 ```markdown
-## Skill Loading
+## Skill Loading — Progressive Disclosure
 
-**Mandatory: Always load doit skill for every task, every session, every command.** The doit workflow is the primary development framework for this project. Regardless of what the user asks, the doit skill must be loaded first.
+Skills load on-demand by phase. See SKILL.md Skill Router for full lifecycle.
 
-Skills to load on every session:
-- **doit** — spec-driven TDD workflow. **Always active, every task.** Load via `Skill skill="doit"` tool call at session start.
-- **caveman** — terse response mode. Load via `Skill skill="caveman"` tool call. If unavailable, proceed in verbose mode.
+| Phase | Skill | Note |
+|-------|-------|------|
+| -1 | doit | Always loaded first |
+| 0 | caveman | [LOAD:session] — stays loaded |
+| 1 | grill-me | [LOAD:phase-1] → [RELEASE:phase-1] |
+| 3 | tdd | [LOAD:phase-3] → [RELEASE:phase-3] (Type F/B only) |
+| 0 | diagnose | [LOAD:phase-0] (Type B only) |
+
+**[RELEASE]** = skill context released + ctx_compress to free window.
+caveman stays loaded for entire session (behavior type). grill-me/tdd/diagnose release after their phase.
 ```
 
 **If CLAUDE.md already has a Skill Loading section:** skip. No overwrite.

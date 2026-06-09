@@ -2,6 +2,23 @@
 
 **本文件包含 Phase 的详细执行步骤。SKILL.md 仅保留索引 + [LOAD] 指令。执行对应 phase 前，模型必须读取本节。**
 
+**指令集:** **[LOAD]** = 必须读取的文件。**[LOAD:phase-N]** = phase 专用 skill 加载（如 [LOAD:phase-1] grill-me）。**[RELEASE:phase-N]** = skill 释放 + ctx_compress 压缩上下文。**[CALL]** = 必须执行的 MCP 工具调用。
+
+## 指令集 — Progressive Disclosure
+
+**[LOAD]** = 必须读取的文件（与原有语义不变）。
+**[LOAD:phase-N] skill-name** = 在 phase N 开始时加载指定 skill（`Skill skill="skill-name"`）。
+**[RELEASE:phase-N] skill-name** = 在 phase N 结束时释放指定 skill + 调用 `ctx_compress` 压缩上下文。
+**[LOAD:session] skill-name** = 加载后全程驻留，不参与 [RELEASE]（仅 behavior 型 skill 使用）。
+
+| 指令 | 语义 | 示例 |
+|------|------|------|
+| `[LOAD:phase-1] grill-me` | Phase 1 开始时加载 grill-me skill | `Skill skill="grill-me"` |
+| `[RELEASE:phase-1] grill-me` | Phase 1 结束后释放 + ctx_compress | 上下文释放 |
+| `[LOAD:session] caveman` | Phase 0 加载，全程驻留 | 不释放 |
+
+**Skill 加载策略:** grill-me 不在 Phase 0 加载。它在 Phase 1 开始时 [LOAD:phase-1] 加载，Phase 1 结束时 [RELEASE:phase-1] 释放。caveman 全程驻留。
+
 ## Phase 0 — Classify Request (完整流程)
 
 **Step 0 — Sync with remote (MANDATORY, before anything else).** If the project has a git remote, pull latest:
@@ -12,17 +29,20 @@ fi
 ```
 **Why:** avoids working on stale code, prevents conflicts. `|| true` so network errors don't block.
 
-**Step 1 — Load doit + caveman + grill-me skills for the entire session.** Call the Skill tool to load all three. These are Tool calls, not code comments:
+**Step 1 — Load doit + caveman skills. [LOAD:session] caveman.** Call the Skill tool for doit + caveman only. **Do NOT load grill-me here.** grill-me loads at Phase 1 start via [LOAD:phase-1].
 
 ```
 Skill skill="doit"
 Skill skill="caveman"
-Skill skill="grill-me"
 ```
 
 If caveman skill is not found, announce `[WARN] caveman not installed -> verbose mode` and continue.
-If grill-me skill is not found, announce `[WARN] grill-me not installed -> basic grill mode` and continue. **grill-me is required for Phase 1 grill protocol.** Without it, the model only has a 3-line reminder to "grill" — which it tends to skip.
 CLAUDE.md `## Skill Loading` section (written by Phase -1) also enforces this, so even if this step is skipped, the CLAUDE.md instruction should trigger skill load.
+
+**分类驱动额外 skill 加载:**
+- Type F → Phase 1 开始时 [LOAD:phase-1] grill-me, Phase 3 开始时 [LOAD:phase-3] tdd
+- Type B → 现在 [LOAD:phase-0] diagnose
+- Type R/S → 无额外 skill
 
 **Step 2 — Auto-classify.** Read [classifier.md](classifier.md). Four types:
 
@@ -94,8 +114,8 @@ Before asking grill questions, inject relevant past knowledge to inform decision
 
 If no knowledge found → proceed with standard grill. If knowledge tools unavailable → skip injection.
 
-**Step 1: Grill FIRST (before writing any REQs):**
-- Load grill-me skill: `Skill skill="grill-me"`
+**Step 1: [LOAD:phase-1] grill-me → Grill FIRST (before writing any REQs):**
+- `Skill skill="grill-me"` — 加载 grill 协议指令
 - **Uncertainty scan:** List 3-5 things you're uncertain about in the user's request. Rate 1-5. Focus questions on items >= 3.
 - Ask 5+ questions via AskUserQuestion (Type F) or 3+ (Type B). Each question must:
   - Reference a specific detail from the user's request
@@ -112,6 +132,8 @@ If no knowledge found → proceed with standard grill. If knowledge tools unavai
 **铁律：Grill 最低 5 个问题(Type F) / 3 个(Type B)。** Phase 1 必须至少 5 个 grill 问题（通过 AskUserQuestion）。少于 5 个 = 未完成的 Phase 1 = 不能进入 Phase 2。
 
 **Phase 1 完成后：** 记录工作日志（grill 问题数、用户回答、REQ 数量）。See [worklog.md](worklog.md)。
+
+**[RELEASE:phase-1] grill-me** — grill 协议完成，释放 grill-me skill 上下文。执行 `ctx_compress` 压缩上下文窗口。
 
 ### Phase 1 → Phase 2 Gate
 
