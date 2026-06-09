@@ -368,7 +368,7 @@ else
       echo_success "skill-creator already installed"
     else
       echo_info "Installing skill-creator..."
-      npx skills add anthropics/skills@skill-creator -y -g --non-interactive 2>&1 || echo_warn "Failed to install skill-creator (requires npx skills CLI)"
+      npx skills add anthropics/skills@skill-creator -y --non-interactive 2>&1 || echo_warn "Failed to install skill-creator locally (try manually: npx skills add anthropics/skills@skill-creator)"
     fi
   else
     echo_warn "npx not found — skill-creator requires Node.js. Install manually:"
