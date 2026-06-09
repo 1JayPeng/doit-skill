@@ -1,6 +1,0 @@
-subagent:
-  enabled: true
-doc-capture:
-  enabled: true
-commit:
-  branch: branch

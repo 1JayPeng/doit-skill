@@ -144,6 +144,22 @@ if [ -t 0 ] && [ -t 1 ]; then
   esac
 fi
 
+# Write ~/.doit/config.yaml from user choices (idempotent — only create if not present)
+mkdir -p "$HOME/.doit"
+if [ ! -f "$HOME/.doit/config.yaml" ]; then
+  cat > "$HOME/.doit/config.yaml" <<CONFIG_EOF
+subagent:
+  enabled: ${SUBAGENT_ENABLED}
+doc-capture:
+  enabled: ${DOC_CAPTURE}
+commit:
+  branch: branch
+CONFIG_EOF
+  echo_success "Created ~/.doit/config.yaml"
+else
+  echo_success "~/.doit/config.yaml already exists (keeping current settings)"
+fi
+
 # Check if Tavily is already configured (script doubles as update, don't re-ask)
 tavily_already_configured=false
 if claude mcp list 2>/dev/null | grep -q tavily; then
