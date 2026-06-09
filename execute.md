@@ -187,52 +187,10 @@ After each REQ completes, if MemPalace is active:
 
 ### Background Process Management (铁律)
 
-**铁律: 长时间任务必须后台执行 + 轮询。不允许空等。** See [principles.md](principles.md) Principle 0.5.
-**铁律: 所有代码变更必须提交并推送。没有例外。** See [principles.md](principles.md) Principle 1.
+**铁律: 长时间任务必须后台执行 + 轮询。不允许空等。** See [rules.md](rules.md).
+**铁律: 所有代码变更必须提交并推送。没有例外。** See [rules.md](rules.md).
 
-For long-running commands, use the three-tier approach from [background-process.md](background-process.md):
-
-**Tier 1 — Foreground** (<10s):
-```bash
-cargo check
-```
-
-**Tier 2 — Background with log file** (10s-5min):
-```bash
-mkdir -p .scratch/logs
-(
-  echo "[START] $(date '+%Y-%m-%d %H:%M:%S') — cargo test --all"
-  cargo test --all
-  EXIT_CODE=$?
-  echo "[END] $(date '+%Y-%m-%d %H:%M:%S') — exit_code=$EXIT_CODE"
-  exit $EXIT_CODE
-) > .scratch/logs/test.log 2>&1 &
-```
-
-**Tier 3 — Tmux + Monitor** (>5min, auto-continuation):
-```bash
-tmux new-session -d -s "doit-build"
-tmux send-keys -t "doit-build" '(
-  echo "[START] $(date "+%Y-%m-%d %H:%M:%S") — cargo build --release"
-  cargo build --release
-  EXIT_CODE=$?
-  echo "[END] $(date "+%Y-%m-%d %H:%M:%S") — exit_code=$EXIT_CODE"
-  exit $EXIT_CODE
-) > .scratch/logs/build.log 2>&1' Enter
-
-Monitor "Watch build completion" \
-  "grep -q '\[END\]' .scratch/logs/build.log" \
-  --interval 30
-```
-
-When the monitor fires, Claude Code reads the log, checks the exit code, and **automatically continues to the next phase** without human intervention.
-
-**No Monitor available?** Use `ScheduleWakeup` to poll periodically:
-```
-ScheduleWakeup delaySeconds=120 reason="polling build completion" prompt="check .scratch/logs/build.log for [END] marker"
-```
-
-See [background-process.md](background-process.md) for full patterns including multi-phase pipelines.
+完整三级模式见 [background-process.md](background-process.md)。
 
 ### Subagent Decision Gate (MANDATORY — Execute Before First REQ)
 

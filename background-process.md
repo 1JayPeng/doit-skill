@@ -1,6 +1,6 @@
 # Background Process Management
 
-**铁律: 长时间任务必须有轮询。不允许空等。这是铁律，不是建议。** This is Principle 0.5 in [principles.md](principles.md).
+**铁律: 长时间任务必须有轮询。不允许空等。这是铁律，不是建议。** See [rules.md](rules.md).
 
 Standardized three-tier patterns for running long-running commands with observable exit signals, automatic monitoring, and phase-continuation.
 
