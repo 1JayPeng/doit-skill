@@ -18,6 +18,7 @@ caveman: Phase 0 [LOAD:session] 不释放 | grill-me: Phase 1 [LOAD:phase-1] 结
 Non-Interruptive Q | Background >10s | Commit+Push | MP 读写对称 | 工作流不可跳过 | Grill 5+/3+ | 危险操作确认 | Review+Simplify
 **[CALL]** = MCP。**[LOAD]** = 读文件。**[LOAD:phase-N]** = 加载 skill。**[RELEASE:phase-N]** = 释放 + ctx_compress。
 5 层: tokensave, context-mode, agentmemory(default), mempalace, headroom。RTK 自动 Bash, lean-ctx MCP 优先, headroom >500 行。
+**Subagent: 默认启用** (`subagent.enabled: true`)。Phase 3 决策门控强制并行独立 REQ。[execute.md](execute.md)
 
 ## Phase Index
 

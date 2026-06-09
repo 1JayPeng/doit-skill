@@ -158,75 +158,116 @@ Must include:
 
 ### Knowledge Extraction (MANDATORY after completion summary)
 
-After presenting the completion summary, extract reusable knowledge from this session into MemPalace. This is NOT optional.
+**[CALL] Execute these MCP tool calls. No skip. No "if available" rationalization.**
 
-**Extraction checklist:**
-- [ ] Code patterns written this session -> `knowledge_code`
-- [ ] APIs discovered/used -> `knowledge_api`
-- [ ] DB schemas created/modified -> `knowledge_db`
-- [ ] Data flows/architecture decisions -> `knowledge_flow`
-
-**Process:**
-1. Review `git diff --stat` — what code was written?
-2. Scan conversation for API discussions, DB schemas, architecture decisions
-3. For each knowledge item found: `mempalace_check_duplicate` -> `mempalace_add_drawer`
-4. Announce: `[KNOWLEDGE] Extracted N items (code: X, api: Y, db: Z, flow: W)`
-
-**Knowledge entry format:**
+**Step 1 — Gather data:**
 ```
-mempalace_add_drawer wing="<project>" room="knowledge_code" content="<structured summary, 2-5 lines>" source_file="<file path>"
+[CALL] ctx_shell("git diff --stat HEAD~1..HEAD") — what files changed?
+[CALL] ctx_shell("git log -1 --format='%s'") — commit message
 ```
 
-**KG facts for extracted knowledge (if applicable):**
+**Step 2 — Extract knowledge items (execute ALL, even if empty):**
+For each category, construct the knowledge entry from the session data:
 ```
-mempalace_kg_add subject="<project>" predicate="has_api" object="<api name>" valid_from="<today>"
-mempalace_kg_add subject="<project>" predicate="has_db" object="<db schema>" valid_from="<today>"
+[CALL] mempalace_check_duplicate content="<code patterns from this session>"
+[CALL] mempalace_add_drawer wing="<project>" room="knowledge_code" content="<patterns>" source_file="<file>"
+[CALL] mempalace_add_drawer wing="<project>" room="knowledge_api" content="<APIs discovered>"
+[CALL] mempalace_add_drawer wing="<project>" room="knowledge_db" content="<DB changes>"
+[CALL] mempalace_add_drawer wing="<project>" room="knowledge_flow" content="<architecture decisions>"
 ```
 
-**If nothing extracted:** Announce `[KNOWLEDGE] No new knowledge to extract this session` — don't skip silently.
-**MP unavailable:** Skip silently. Filesystem remains primary.
+**Step 3 — KG facts:**
+```
+[CALL] mempalace_kg_add subject="<project>" predicate="shipped" object="<feature>" valid_from="<today>"
+[CALL] mempalace_kg_stats — verify KG populated
+```
+
+**Step 4 — Announce:**
+```
+[KNOWLEDGE] Extracted N items (code: X, api: Y, db: Z, flow: W)
+```
+
+**If nothing to extract for a category:** Skip that category silently. But still run KG stats and announce.
+**If ALL categories empty:** Announce `[KNOWLEDGE] No new knowledge this session` — don't skip the announcement.
+**MP unavailable:** Fall back to `[CALL] agentmemory_remember content="<extraction>"` — don't skip entirely.
 
 ## Phase 9.5.5 — Knowledge Distillation (结构化知识沉淀)
 
 **[LOAD] [learn/extract.md](learn/extract.md) — 完整提取流程、用户确认、多层存储。**
 
-After Phase 9.5 knowledge extraction, distill structured session knowledge for future reuse:
+**[CALL] Execute these MCP tool calls. No skip.**
 
-1. **Gather session data**: Git diff, worklog, spec, grill decisions
-2. **Generate knowledge record**: Per [learn/schema.json](learn/schema.json)
-3. **User confirmation**: Present summary, ask for confirmation/edit
-4. **Multi-layer storage**:
-   - AgentMemory: Full structured record for semantic search
-   - MemPalace: Summary in `knowledge_distillation` room + KG facts
-   - Context-Mode: Indexed for session-level retrieval
-   - Filesystem: `.doit/knowledge/<id>.json` backup
-5. **Report**: `[KNOWLEDGE] Saved to: agentmemory ✓, mempalace ✓, context-mode ✓, filesystem ✓`
+1. **[CALL] Gather session data:**
+```
+[CALL] ctx_shell("git log -1 --format='%H %s'")
+[CALL] ctx_shell("git diff --stat HEAD~1..HEAD")
+[CALL] ctx_shell("cat .doit/worklog.json 2>/dev/null")
+[CALL] ctx_shell("cat .spec/current.md 2>/dev/null")
+[CALL] ctx_shell("cat .doit/grill-summary.json 2>/dev/null")
+```
 
-**Failed sessions also extracted** with `status: "failed"` and root cause analysis. These teach what NOT to do.
+2. **[CALL] Generate knowledge record** — construct JSON per [learn/schema.json](learn/schema.json)
 
-**Graceful degradation**: If any layer unavailable, skip that layer and continue. Filesystem always available as fallback.
+3. **[CALL] Multi-layer storage (execute ALL):**
+```
+[CALL] agentmemory_recall query="<summary>" limit=1 — check duplicates
+[CALL] agentmemory_remember content="<full JSON record>" — save to AgentMemory
+[CALL] mempalace_check_duplicate content="<summary>" — check MP duplicates
+[CALL] mempalace_add_drawer wing="<project>" room="knowledge_distillation" content="<summary>"
+[CALL] mempalace_kg_add subject="<project>" predicate="shipped" object="<feature>" valid_from="<today>"
+[CALL] ctx_index content="<full JSON>" source="knowledge:<project>:<date>"
+```
+
+4. **[CALL] Filesystem backup:**
+```
+[CALL] ctx_shell("mkdir -p .doit/knowledge && echo '<JSON>' > .doit/knowledge/<date>-<short-id>.json")
+```
+
+5. **Report:** `[KNOWLEDGE] Saved to: agentmemory ✓, mempalace ✓, context-mode ✓, filesystem ✓`
+
+**Failed session?** Still extract with `status: "failed"` + root cause. These teach what NOT to do.
+**Layer fails?** Skip that layer, continue. Filesystem always available as final fallback.
+**ALL layers fail:** `[WARN] Knowledge extraction failed — saved to .doit/knowledge/`
 
 ## Phase 10 — Session Summary
 
-After Phase 9.5 completion summary, gather session statistics and preserve knowledge:
+**[CALL] Execute ALL. Don't skip with "if available" rationalization.**
 
-1. **RTK token report** (if available):
-   - `rtk gain` — show total session token savings
-   - `rtk gain --history` — per-command savings breakdown
-2. **Context-Mode stats** (if available): `ctx stats` — log session token savings
-3. **Headroom compression** (if available):
-   - `headroom_stats` (MCP tool) — show compression statistics for session
-   - If headroom proxy was running: `headroom proxy stats` — show token savings from proxy compression
-   - Note: Headroom does NOT have `memory add` command. It provides CCR (Compress-Cache-Retrieve) for token optimization, not memory management.
-4. **MemPalace diary** (if available):
-   - `mempalace_diary_write agent_name="doit" entry="<compact summary>" topic="compact"`
-   - `mempalace_memories_filed_away` → verify auto-save checkpoint was saved
-   - `mempalace_kg_stats` → verify KG was populated. If still 0 entities after Phase 8, add facts NOW:
-     - `mempalace_kg_add subject="<project>" predicate="shipped" object="<feature>" valid_from="<today>"`
-   - `mempalace_kg_timeline entity="<project>"` → log project timeline for future reference
-5. **Caveman compress** (if available): Run `/caveman:compress CLAUDE.md` to compress CLAUDE.md using caveman's built-in compression skill.
+1. **[CALL] RTK token report:**
+```
+[CALL] ctx_shell("rtk gain") — total session token savings
+[CALL] ctx_shell("rtk gain --history") — per-command savings breakdown
+```
+RTK unavailable → `[WARN] RTK not installed` and continue.
+
+2. **[CALL] Context-Mode stats:**
+```
+[CALL] ctx stats — log session token savings
+```
+
+3. **[CALL] Headroom compression:**
+```
+[CALL] headroom_stats (MCP tool) — show compression statistics for session
+```
+
+4. **[CALL] MemPalace diary:**
+```
+[CALL] mempalace_diary_write agent_name="doit" entry="<compact summary>" topic="compact"
+[CALL] mempalace_memories_filed_away — verify auto-save checkpoint
+[CALL] mempalace_kg_stats — verify KG populated
+```
+**If KG still 0 entities → add facts NOW:**
+```
+[CALL] mempalace_kg_add subject="<project>" predicate="shipped" object="<feature>" valid_from="<today>"
+```
+```
+[CALL] mempalace_kg_timeline entity="<project>" — log project timeline
+```
+
+5. **[CALL] Caveman compress:** Run `/caveman:compress CLAUDE.md` to compress CLAUDE.md.
 
 **This phase always runs last.** It gathers session statistics and preserves knowledge for future sessions.
+**MANDATORY: End with `/compact` to compress conversation context.**
 
 ## Resume — Cross-Session Recovery
 

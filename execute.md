@@ -120,18 +120,26 @@ After RED->GREEN->REFACTOR completes, **before moving to next REQ**:
 
 ### Worklog Write (MANDATORY after each REQ)
 
-**[CALL] Write worklog after every REQ completion. Three-layer storage: agentmemory > mempalace > filesystem.**
+**[CALL] Execute these MCP tool calls after every REQ completion. No skip.**
 
-1. **Primary:** `agentmemory_remember content="<worklog JSON>"` — semantic search index
-2. **Fallback:** `mempalace_add_drawer wing="<project>" room="worklog" content="<summary>"`
-3. **Final fallback:** Append to `.doit/worklog.json`
+```
+[CALL] agentmemory_remember content="<worklog JSON>" — primary semantic search index
+```
+If agentmemory fails:
+```
+[CALL] mempalace_add_drawer wing="<project>" room="worklog" content="<summary>"
+```
+If both fail, final fallback:
+```
+[CALL] ctx_shell("echo '<worklog JSON>' >> .doit/worklog.json")
+```
 
 **Worklog JSON format:**
 ```json
 {"phase":3,"req":"REQ-00X","desc":"<what was done>","files":["<changed_file>"],"duration":"<approx>","tests":"pass/fail","decision":"<key decision>"}
 ```
 
-**If worklog write fails:** Announce `[WARN] worklog failed` and continue. Never block the workflow on worklog failure.
+**If all layers fail:** Announce `[WARN] worklog failed` and continue. Never block the workflow on worklog failure.
 
 **Full Phase 6 review-simplify runs after Phase 5.** Shared source: [shared/review-simplify.md](shared/review-simplify.md)
 
@@ -194,24 +202,26 @@ After each REQ completes, if MemPalace is active:
 
 ### Subagent Decision Gate (MANDATORY — Execute Before First REQ)
 
-**[CALL] This gate runs once before Phase 3 execution. No skip.**
+**[CALL] This gate runs once before Phase 3 execution. No skip. No rationalizing.**
 
-1. Read `.doit/config.yaml` `subagent.enabled`
-2. If `true` AND spec has >= 2 independent REQs (no dependencies between them):
-   - `tokensave_context(task="<REQ description>")` — verify no code dependencies
-   - `tokensave_impact(node_id="<symbol>")` — check blast radius doesn't overlap
-   - Group REQs by dependency
-   - Launch independent groups as parallel agents (see Subagent Parallel TDD below)
-   - **Announce:** `[SUBAGENT] Mode: parallel (N agents)`
+1. Read `.doit/config.yaml` `subagent.enabled` — **default is `true`**
+2. If `true`:
+   - **[CALL] `tokensave_context(task="<spec summary>")`** — get code graph for ALL REQs
+   - **[CALL] `tokensave_impact(node_id="<symbol>")`** — check blast radius for each REQ's target symbols
+   - Group REQs by dependency (files modified, symbols touched)
+   - **If >= 2 independent REQs exist → LAUNCH parallel agents NOW.** Do not defer. Do not say "I'll do it later."
+     - Each independent REQ → one `Agent({isolation: "worktree", run_in_background: true})` call
+     - See [subagent.md Conductor Mode](subagent.md) for full prompt template
+   - **Announce:** `[SUBAGENT] Mode: parallel (N agents)` — list which REQs → which agent
 3. If `false` OR all REQs dependent OR only 1 REQ:
    - Execute sequentially in main agent
-   - **Announce:** `[SUBAGENT] Mode: sequential`
+   - **Announce:** `[SUBAGENT] Mode: sequential (reason: ...)` — explain why
 
-**The announcement is mandatory.** It lets the user see the decision was made.
+**铁律: If `subagent.enabled: true` AND 2+ independent REQs exist → parallel launch is mandatory, not optional.** Skipping parallel launch when conditions are met = workflow violation. The announcement is mandatory — lets the user see the decision was made.
 
 ### Subagent Parallel TDD (When Decision Gate Says Parallel)
 
-**Config gate:** Read `.doit/config.yaml` `subagent.enabled`. If `false` (default), skip all subagent launches — execute REQs sequentially in main agent.
+**Config gate:** Read `.doit/config.yaml` `subagent.enabled`. If `true` (default), launch parallel subagents for independent REQs. If `false`, execute sequentially.
 
 **When:** 2+ REQs have no code dependencies (verified via tokensave code graph). Parallel execution can save 50-70% time.
 

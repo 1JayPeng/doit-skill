@@ -135,12 +135,12 @@ if [ -t 0 ] && [ -t 1 ]; then
 fi
 
 # Ask about subagent orchestration (interactive, skip if piped/non-tty)
-SUBAGENT_ENABLED="false"
+SUBAGENT_ENABLED="true"
 if [ -t 0 ] && [ -t 1 ]; then
-  read -r -p "Enable subagent orchestration (parallel, token-intensive)? [y/N] " answer
-  case "${answer:-N}" in
-    [yY][eE][sS]|[yY]) SUBAGENT_ENABLED="true" ;;
-    *) SUBAGENT_ENABLED="false" ;;
+  read -r -p "Enable subagent orchestration (parallel, faster)? [Y/n] " answer
+  case "${answer:-Y}" in
+    [nN][oO]|[nN]) SUBAGENT_ENABLED="false" ;;
+    *) SUBAGENT_ENABLED="true" ;;
   esac
 fi
 
@@ -225,7 +225,7 @@ echo "    • code-review      (claude plugin install code-review)"
 
   echo "  Options (configurable at install):"
   echo "    • doc-capture    (persist reference docs, default: enabled)"
-  echo "    • subagent       (parallel orchestration, default: disabled)"
+  echo "    • subagent       (parallel orchestration, default: enabled)"
   echo "    • --global       install to ~/.claude/skills/ instead of .claude/skills/"
 
   echo ""
