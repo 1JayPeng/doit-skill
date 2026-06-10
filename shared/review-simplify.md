@@ -89,6 +89,12 @@ Apply these simplifications **without changing behavior**:
 
 **Simplify boundary**: stop when you're just renaming for the sake of it. "Does this reduce code I have to read?" is the test.
 
+**⚠️ 批量编辑铁律 — 防止重复清理循环：**
+- **先搜全量，再一次性编辑。** 任何清理操作（删变量、改引用、去 import、改排除列表），先用 `tokensave_field_sites` 或 `ctx_search` 找出文件中**所有**位置，然后用 `tokensave_multi_str_replace` 或单次 Edit 的 `replace_all` 一次性改完。
+- **禁止分次清理同一类事物。** 不要"清理一处 → 检查 → 再清理一处"。一次找全 → 一次改完 → 验证完毕。
+- **连续 2 次同类编辑 = 停止。** 如果刚对同一文件做了同类编辑（如两次都删 `context_cols`），说明第一次没搜全。改用 `tokensave_field_sites` 找全，然后批量处理。
+- **验证替代重复。** 编辑完成后用 `ctx_search` 确认无残留，直接下一步。不要反复"检查剩余引用"而不做实际变更。
+
 ### 3. MemPalace Decision Check
 
 **[MP-READ] If simplification contradicts a prior decision, find and update it:**

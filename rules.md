@@ -312,3 +312,56 @@ See [dangerous-ops.md](dangerous-ops.md) for full patterns and hook configuratio
 
 **应用于：** Phase 3 每 REQ 可测试验证, Phase 4 真实断言, Phase 7 对比 spec REQ
 - **禁止**Simplify 后不重新运行 E2E（Phase 7）— 简化可能破坏功能
+
+## 铁律 — 无命令不调用 Bash
+
+**每个 Bash/ctx_shell/ctx_execute 调用必须有完整的 command 参数。空 command = 工具调用失败。**
+
+旧模式：思考"让我运行导出" → 生成 Bash 调用但忘记填 command → InputValidationError → 重试 → 再失败。
+新模式：先拼出完整命令 → 再调用工具。命令在思考阶段就已确定。
+
+**强制检查（每次调用前）：**
+- **command 参数非空？** — 空字符串或纯空白 → 禁止调用，先想清楚要运行什么
+- **命令完整可执行？** — 包含命令名 + 必要参数，不是"let me run..."或"export"这样的占位符
+- **命令在思考阶段已拼好？** — 思考输出里出现完整的命令文本，再复制到 tool call 中
+
+**禁止行为：**
+- **禁止**先调用 Bash 再想命令 — 命令必须在思考阶段确定
+- **禁止**用自然语言占位（"let me run the export"）代替实际命令
+- **禁止**重试时不修正 command — 如果第一次失败了是因为空 command，第二次必须填入实际命令
+
+### Applied Everywhere
+
+- **Phase 3 (Execute)** — 所有测试命令、构建命令、uv 命令
+- **Phase 8 (Commit)** — git 命令必须有完整参数
+- **Any phase** — 所有 shell 操作
+
+## 铁律 — 不重复相同操作
+
+**每次编辑前，检查最近 3 次操作。如果连续 2 次对同一文件做同类操作，停止。**
+
+旧模式：清理 context_cols → 检查剩余引用 → 继续清理 context_cols → 再检查 → 循环 8 次。每次 Thought 不同但动作相同。
+新模式：一次编辑完成所有同类变更 → 验证 → 如果还有，用批量编辑一次性处理 → 停止。
+
+**强制检查（每次 Edit 前）：**
+- **最近 3 次操作里，对同一文件的同类编辑出现了几次？**
+  - 0-1 次 → 正常执行
+  - 2 次 → 最后一次了。用 `tokensave_field_sites` 或 `ctx_search` 一次性找出所有位置，然后用 `tokensave_multi_str_replace` 批量完成
+  - 3+ 次 → **停止**。问题不是一次编辑能解决的。重新评估：是否需要全局搜索替换？是否已清理完毕但没验证？
+
+**一次编辑原则：**
+- 一次 Edit = 一个完整意图的全部变更，不是分批多次
+- 清理类操作（删变量、改引用、去 import）→ 先搜全量 → 一次批量编辑
+- 如果 Edit 完成后还需要同类编辑 → 说明第一次没搜全 → 用 `ctx_search` 或 `tokensave_field_sites` 找全 → 再一次性改完
+
+**验证替代重复：**
+- 编辑完成后 → `ctx_search` 或 `tokensave_field_sites` 验证是否还有残留
+- 有残留 → 批量处理
+- 无残留 → 进入下一步，不重复"检查"动作
+
+### Applied Everywhere
+
+- **Phase 3 (Execute)** — 实现时的代码变更
+- **Phase 5 (Review)** — 审查时的重复代码合并
+- **Phase 6 (Simplify)** — 清理死代码、合并重复逻辑
+- **Debug (D6)** — 修复 bug 时的文件修改
