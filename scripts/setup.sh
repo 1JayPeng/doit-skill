@@ -375,11 +375,15 @@ else
 
 # Skill-Creator (from anthropics/skills)
   if command -v npx >/dev/null 2>&1; then
-    if npx skills list 2>/dev/null | grep -q "skill-creator"; then
-      echo_success "skill-creator already installed"
+    if [ -d "$HOME/.agents/skills/skill-creator" ]; then
+      echo_success "skill-creator already installed (~/.agents/skills/)"
+    elif [ -d "$SKILL_DIR/skill-creator" ]; then
+      echo_success "skill-creator already installed (project skill)"
+    elif npx skills list 2>/dev/null | grep -q "skill-creator"; then
+      echo_success "skill-creator already installed (skills list)"
     else
       echo_info "Installing skill-creator..."
-      npx skills add anthropics/skills@skill-creator -y --non-interactive 2>&1 || echo_warn "Failed to install skill-creator locally (try manually: npx skills add anthropics/skills@skill-creator)"
+      npx skills add anthropics/skills@skill-creator -g -y 2>&1 || echo_warn "Failed to install skill-creator (try manually: npx skills add anthropics/skills@skill-creator)"
     fi
   else
     echo_warn "npx not found — skill-creator requires Node.js. Install manually:"

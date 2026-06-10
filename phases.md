@@ -67,21 +67,21 @@ mempalace_reconnect
 mempalace_diary_read agent_name="doit" last_n=5
 mempalace_kg_query entity="<project>"
 mempalace_kg_timeline entity="<project>"
-mempalace_search query="<用户请求关键词>" wing="<project>" limit=5
+mempalace_search query="<用户请求关键词>" wing="<project>" limit=5 max_distance=0.7
 ```
 
 **Knowledge rooms (4):**
 ```
-mempalace_search wing="<project>" room="knowledge_code" limit=3
-mempalace_search wing="<project>" room="knowledge_api" limit=3
-mempalace_search wing="<project>" room="knowledge_db" limit=3
-mempalace_search wing="<project>" room="knowledge_flow" limit=3
+mempalace_search wing="<project>" room="knowledge_code" limit=3 max_distance=0.7
+mempalace_search wing="<project>" room="knowledge_api" limit=3 max_distance=0.7
+mempalace_search wing="<project>" room="knowledge_db" limit=3 max_distance=0.7
+mempalace_search wing="<project>" room="knowledge_flow" limit=3 max_distance=0.7
 ```
 
 **Sessions feedback (2, captures user feedback stored in sessions wing):**
 ```
-mempalace_search wing="sessions" room="general" limit=3
-mempalace_search wing="sessions" room="problems" limit=3
+mempalace_search wing="sessions" room="general" limit=3 max_distance=0.7
+mempalace_search wing="sessions" room="problems" limit=3 max_distance=0.7
 ```
 **Why:** `sessions/technical` (3500+ drawers) is auto-save noise — excluded. `sessions/general` and `sessions/problems` contain structured user feedback (auto-compact, no-repeated-actions, etc.) that applies across all projects.
 
@@ -90,10 +90,21 @@ mempalace_search wing="sessions" room="problems" limit=3
 **Type-specific sweep:**
 - **Type F (feature):** All 8 calls above + sessions feedback 2 = 10 total
 - **Type S (simple):** Only core 4 calls, skip knowledge rooms + sessions
-- **Type B (bug):** Core 4 + sessions 2 + `mempalace_search wing="<project>" room="knowledge_code" limit=3` + `mempalace_search query="<bug 关键词> error" wing="<project>" room="bugs" limit=5`
-- **Type R (resume):** Core 4 + sessions 2 + `mempalace_search query="<project> resume in-progress" wing="<project>" limit=3`
+- **Type B (bug):** Core 4 + sessions 2 + `mempalace_search wing="<project>" room="knowledge_code" limit=3 max_distance=0.7` + `mempalace_search query="<bug 关键词> error" wing="<project>" room="bugs" limit=5 max_distance=0.7`
+- **Type R (resume):** Core 4 + sessions 2 + `mempalace_search query="<project> resume in-progress" wing="<project>" limit=3 max_distance=0.7`
 
 **KG empty detection:** If `mempalace_kg_query` returns 0 relationships AND `mempalace_kg_timeline` returns empty, note `[WARN] KG empty — Phase 8 MUST populate it`. This means prior sessions failed to write KG facts.
+
+**Search relevance gate (CRITICAL):** `mempalace_search` returns results even when similarity is near zero. After each search, check the `similarity` field:
+- `similarity >= 0.3` → relevant, use the content
+- `similarity < 0.3` → NOT relevant, treat as if empty (`[]`). Do NOT use the content, do NOT hallucinate that it's related.
+- `results: []` (empty array) → no data, proceed without MP context
+
+**Why:** A wing with skill docs (e.g., `myskill/skills`) will match any query with similarity ~0.0-0.1. The model sees "5 results returned" and assumes they are relevant — they are not. This causes the model to wait for MP context that doesn't exist, blocking the workflow.
+
+**Per-call rule:** After processing MP search results, explicitly note:
+- `[MP] <N> relevant results from <wing>/<room>` (if any result has similarity >= 0.3)
+- `[MP-EMPTY] <wing>/<room> no relevant data` (if all results < 0.3 or empty array)
 
 If MemPalace unavailable (any call errors) → skip all MP steps silently for this session. Filesystem remains primary.
 

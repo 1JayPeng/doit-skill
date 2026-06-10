@@ -35,7 +35,7 @@ Returns `{ total_drawers, wings, rooms, protocol, aaak_dialect }`. If it errors,
 
 | Tool | Returns | When to Use |
 |------|---------|-------------|
-| `mempalace_search` | **Full drawer content** + similarity | **Primary retrieval tool**. Use instead of list_drawers. Supports `wing`, `room`, `limit` filters. |
+| `mempalace_search` | **Full drawer content** + similarity | **Primary retrieval tool**. Use instead of list_drawers. Supports `wing`, `room`, `limit`, `max_distance` filters. Always use `max_distance=0.7`. |
 | `mempalace_list_drawers` | **Preview only** + pagination | When you need drawer IDs for update/delete. NOT for reading content. |
 | `mempalace_get_drawer` | Full content + metadata by ID | When you have a specific drawer_id (e.g., from list_drawers) |
 | `mempalace_get_aaak_spec` | AAAK compression spec | When writing compressed entries |
@@ -176,11 +176,20 @@ mempalace_memories_filed_away -> { filed: true, message_count: N, timestamp: "..
 
 **7. ALWAYS filter by `wing` in `mempalace_search`.** The `sessions` wing (auto-save) typically contains 80-95% of all drawers and is pure noise for project context. Every `mempalace_search` MUST include `wing="<project>"`. Searching without wing filter means 90%+ of results are auto-saved session dumps.
 
-**8. KG is mandatory, not optional.** `mempalace_kg_add` in Phase 8 is NOT optional. Every completed feature MUST add at least one KG fact. Empty KG (0 entities) means the project has no structured memory — Phase 0 `kg_query` and `kg_timeline` will return nothing, wasting 2 of 4 sweep calls. If KG is empty, Phase 8 MUST populate it.
+**8. ALWAYS check `similarity` score after `mempalace_search`.** The tool returns results even when similarity is near zero. After each search:
+- `similarity >= 0.3` → relevant, use the content. Note: `[MP] <N> relevant results from <wing>/<room>`
+- `similarity < 0.3` → NOT relevant, treat as empty (`[]`). Do NOT use the content. Note: `[MP-EMPTY] <wing>/<room> no relevant data`
+- `results: []` (empty array) → no data, proceed without MP context
 
-**9. Sessions wing: technical = noise, general/problems = signal.** The auto-save hook writes to `sessions/technical` (3500+ drawers, raw conversation dumps — exclude). However, `sessions/general` and `sessions/problems` contain structured user feedback (auto-compact, no-repeated-actions) that applies across ALL projects. Phase 0 sweep includes `mempalace_search wing="sessions" room="general"` and `room="problems"` to capture this feedback. Do NOT search `sessions/technical`.
+**Why:** A wing with skill docs (e.g., `myskill/skills`) matches any query with similarity ~0.0-0.1. The model sees "5 results" and assumes relevance — they are not. This blocks the workflow waiting for MP context that doesn't exist.
 
-**10. Periodic cleanup.** When `mempalace_status` shows sessions wing > 80% of total drawers, run `mempalace_sync wing="sessions"` (dry-run first) to prune stale session drawers. This improves search quality for all projects sharing the MemPalace instance.
+**Fix:** Always pass `max_distance=0.7` to filter low-quality results at the tool level, AND check the returned similarity scores as a second line of defense.
+
+**11. KG is mandatory, not optional.** `mempalace_kg_add` in Phase 8 is NOT optional. Every completed feature MUST add at least one KG fact. Empty KG (0 entities) means the project has no structured memory — Phase 0 `kg_query` and `kg_timeline` will return nothing, wasting 2 of 4 sweep calls. If KG is empty, Phase 8 MUST populate it.
+
+**12. Sessions wing: technical = noise, general/problems = signal.** The auto-save hook writes to `sessions/technical` (3500+ drawers, raw conversation dumps — exclude). However, `sessions/general` and `sessions/problems` contain structured user feedback (auto-compact, no-repeated-actions) that applies across ALL projects. Phase 0 sweep includes `mempalace_search wing="sessions" room="general"` and `room="problems"` to capture this feedback. Do NOT search `sessions/technical`.
+
+**13. Periodic cleanup.** When `mempalace_status` shows sessions wing > 80% of total drawers, run `mempalace_sync wing="sessions"` (dry-run first) to prune stale session drawers. This improves search quality for all projects sharing the MemPalace instance.
 
 ## Fallback
 
