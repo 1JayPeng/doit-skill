@@ -160,36 +160,31 @@ else
   echo_success "~/.doit/config.yaml already exists (keeping current settings)"
 fi
 
-# Check if Tavily is already configured (script doubles as update, don't re-ask)
-tavily_already_configured=false
-if claude mcp list 2>/dev/null | grep -q tavily; then
-  tavily_already_configured=true
-  echo_success "tavily MCP already configured"
-elif [ -f .env ] && grep -q 'TAVILY_API_KEY' .env 2>/dev/null; then
-  tavily_already_configured=true
-  echo_success "tavily API key found in .env"
+# Tavily API Key: always read .env first (before checking MCP list)
+# This ensures .env key is available even when old MCP config already exists
+TAVILY_API_KEY="${TAVILY_API_KEY:-}"
+if [ -f .env ] && grep -q 'TAVILY_API_KEY' .env 2>/dev/null; then
   TAVILY_API_KEY=$(grep 'TAVILY_API_KEY' .env | cut -d'=' -f2- | tr -d '"' | tr -d "'")
+  echo_success "tavily API key found in .env"
+elif claude mcp list 2>/dev/null | grep -q tavily; then
+  echo_success "tavily MCP already configured"
 elif grep -q 'tavily' ~/.claude/settings.json 2>/dev/null; then
-  tavily_already_configured=true
   echo_success "tavily configured in settings.json"
 fi
 
 # Ask about Tavily API Key only if not already configured
-TAVILY_API_KEY="${TAVILY_API_KEY:-}"
-_ask_tavily() {
-  if [ -t 0 ] && [ -t 1 ]; then
-    read -r -p "Tavily API Key (for web search, or press Enter to skip): " TAVILY_API_KEY
-  elif [ -e /dev/tty ]; then
-    # Pipe install (curl | bash) — /dev/tty gives real terminal
-    echo ""
-    echo -n "Tavily API Key (for web search, or press Enter to skip): "
-    read -r TAVILY_API_KEY < /dev/tty || true
-  else
-    # No TTY available — skip silently
-    echo_warn "No TTY available, skipping Tavily API key prompt (set TAVILY_API_KEY env var instead)"
-  fi
-}
-if [ "$tavily_already_configured" = false ]; then
+if [ -z "$TAVILY_API_KEY" ]; then
+  _ask_tavily() {
+    if [ -t 0 ] && [ -t 1 ]; then
+      read -r -p "Tavily API Key (for web search, or press Enter to skip): " TAVILY_API_KEY
+    elif [ -e /dev/tty ]; then
+      echo ""
+      echo -n "Tavily API Key (for web search, or press Enter to skip): "
+      read -r TAVILY_API_KEY < /dev/tty || true
+    else
+      echo_warn "No TTY available, skipping Tavily API key prompt (set TAVILY_API_KEY env var instead)"
+    fi
+  }
   _ask_tavily 2>/dev/null
 fi
 
@@ -419,6 +414,8 @@ else
 # Tavily MCP (web search) - only if API key provided via env or interactive
   if [ -n "$TAVILY_API_KEY" ]; then
     echo_info "Installing Tavily MCP with your API key..."
+    # Remove existing tavily first — claude mcp add fails if name already exists
+    claude mcp remove tavily 2>/dev/null || true
     claude mcp add --transport http tavily "https://mcp.tavily.com/mcp/?tavilyApiKey=$TAVILY_API_KEY" || echo_warn "Failed to install Tavily MCP (install manually: claude mcp add --transport http tavily https://mcp.tavily.com/mcp/?tavilyApiKey=<your-key>)"
     if claude mcp list 2>/dev/null | grep -q tavily; then
       echo_success "tavily MCP configured"
