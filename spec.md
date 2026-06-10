@@ -1,5 +1,7 @@
 # Phase 1: Spec Generation
 
+**[Think Before Coding]** Challenge assumptions before writing any code. Grill the user's idea, present alternatives, expose hidden complexity.
+
 ## Input
 
 Raw user request (natural language, any length).

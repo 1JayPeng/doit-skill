@@ -199,6 +199,42 @@ Phase -1 → Phase 0 → Phase 1 → Phase 2 → Phase 3 → Phase 4 → Phase 5
 
 See [dangerous-ops.md](dangerous-ops.md) for full patterns and hook configuration.
 
+## 铁律 — 减少暂停对话
+
+**能一次对话完成的，不拆成多次。减少中断、减少等待、减少用户反复确认。**
+
+旧模式：每个阶段结束都停下来等用户确认 -> 一个功能需要 10 轮对话 -> 用户疲劳、上下文丢失。
+新模式：按工作流连续执行 -> 关键决策点用 AskUserQuestion -> 一次对话完成 Phase -1 到 Phase 10。
+
+**核心原则：**
+- **连续执行，不停顿** — Phase 完成后立即进入下一 Phase，不等待用户确认
+- **关键决策才问用户** — 只有影响架构、安全、数据的决策才用 AskUserQuestion
+- **默认值合理就继续** — 用户不回答 -> 用默认值继续，不阻塞
+- **后台任务不阻塞** — 长时间任务后台化，轮询期间继续做其他工作
+- **一次对话完成整个工作流** — 目标是一次 /doit 调用完成 Phase -1 到 Phase 10
+
+**禁止行为：**
+- **禁止**完成一个 Phase 后停止等用户说"继续"
+- **禁止**在每个阶段边界都问"是否继续？"
+- **禁止**把可以并行的调用串行化（等一个完成再发下一个）
+- **禁止**在能推断的情况下问用户（已有信息足够，不要重复确认）
+
+**何时应该暂停：**
+- 用户明确要求确认（grill 问题）
+- 多个环境冲突需要用户选择
+- 删除操作需要确认
+- 发现用户需求矛盾，需要澄清
+- Phase 9.5 完成总结后等用户反馈
+
+### Applied Everywhere
+
+- **Phase 0 → Phase 1** — 分类后直接开始 grill，不等确认
+- **Phase 1 → Phase 2** — Grill 完成直接写 spec，不等确认
+- **Phase 3 → Phase 4** — 执行完成直接 E2E，不停
+- **Phase 5 → Phase 6** — Review 完成直接 Simplify，不停
+- **Phase 8 → Phase 9** — Commit 完成直接清理，不停
+- **Any phase** — 多个独立 MCP 调用并行发出，不串行等待
+
 ## 铁律 — Review + Simplify 不可跳过
 
 **每次代码变更后，必须经过 Review（Phase 5）和 Simplify（Phase 6）。没有审查的代码不能提交。**

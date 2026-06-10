@@ -99,13 +99,13 @@ FAIL: test_xxx for REQ-00X
 If you don't know what test to write, go back to spec. Don't guess.
 
 ### GREEN
-Implement minimum code to pass test. No extra logic.
+**[Brevity First]** Implement minimum code to pass test. No extra logic.
 ```
 PASS: test_xxx for REQ-00X
 ```
 
 ### REFACTOR
-Merge duplicate code with existing code. Minimal change. No architectural restructuring (that's Phase 5).
+**[Surgical Edits]** Merge duplicate code with existing code. Minimal change. No architectural restructuring (that's Phase 5). Only touch what's needed to make the test pass.
 
 ### REVIEW + SIMPLIFY (MANDATORY after each REQ)
 After RED->GREEN->REFACTOR completes, **before moving to next REQ**:

@@ -1,5 +1,7 @@
 # Phase 4: End-to-End Testing
 
+**[Goal-Driven Execution]** Test against real user outcomes, not internal state. Verify exit codes, stdout, file output, database state — what the user observes.
+
 ## Rules
 
 - E2E tests run in real project environment (uv venv)

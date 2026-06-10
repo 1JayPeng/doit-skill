@@ -1,5 +1,7 @@
 # Phase 2: Plan
 
+**[Think Before Coding]** Map impact at symbol and coupling level. Understand the code before touching it.
+
 ## Input
 
 ` .spec/current.md ` from Phase 1.

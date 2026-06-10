@@ -2,6 +2,11 @@
 
 **MANDATORY.** Do not skip. Do not proceed until Review + Simplify pass.
 
+**Principles applied here:**
+- **Brevity First** — remove dead code, flatten abstractions, reduce line count
+- **Surgical Edits** — only simplify what you wrote, don't refactor unrelated code
+- **Goal-Driven Execution** — verify tests still pass; compare output against spec REQs
+
 ## When to Run
 
 - **Per-REQ Review**: After each REQ completes in Phase 3 Execute

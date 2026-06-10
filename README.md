@@ -123,6 +123,23 @@ Each phase is mandatory. Phases can't be skipped. The workflow enforces quality 
 | E2E verify after simplify | Simplification breaking working code |
 | Commit + Push | Lost work |
 
+### Four Major Principles
+
+doit enforces four coding principles throughout the workflow, built into each phase's execution rules:
+
+| Principle | What it prevents | Applied In |
+|-----------|------------------|------------|
+| **Think Before Coding** | Wrong assumptions, hidden confusion | Phase 1 grill — challenge assumptions before writing REQs |
+| **Brevity First** | Over-engineering, bloated abstractions | Phase 3 minimal implementation, Phase 6 remove unnecessary code |
+| **Surgical Edits** | Unrelated edits, touching working code | Phase 3 only modify planned files, Debug minimum change |
+| **Goal-Driven Execution** | Vague success criteria, endless clarification | Phase 3 testable verification per REQ, Phase 7 compare against spec |
+
+How each principle enforces itself:
+- **Think Before Coding** → Phase 1 grill challenges every assumption. No code until spec is clear.
+- **Brevity First** → Phase 6 (Review + Simplify) removes unnecessary abstractions, merges duplicates, reduces line count.
+- **Surgical Edits** → Each phase only touches files identified by the plan. No drive-by refactoring.
+- **Goal-Driven Execution** → Every REQ has testable verification. E2E loop compares actual output against spec REQs.
+
 ### Workflow Phases
 
 | Phase | What | Tools |
