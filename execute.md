@@ -204,7 +204,7 @@ After each REQ completes, if MemPalace is active:
 
 **[CALL] This gate runs once before Phase 3 execution. No skip. No rationalizing.**
 
-1. Read `.doit/config.yaml` `subagent.enabled` — **default is `true`**
+1. Read `.doit/config.yaml` `subagent.enabled` — **default is `false`**
 2. If `true`:
    - **[CALL] `tokensave_context(task="<spec summary>")`** — get code graph for ALL REQs
    - **[CALL] `tokensave_impact(node_id="<symbol>")`** — check blast radius for each REQ's target symbols
@@ -221,7 +221,7 @@ After each REQ completes, if MemPalace is active:
 
 ### Subagent Parallel TDD (When Decision Gate Says Parallel)
 
-**Config gate:** Read `.doit/config.yaml` `subagent.enabled`. If `true` (default), launch parallel subagents for independent REQs. If `false`, execute sequentially.
+**Config gate:** Read `.doit/config.yaml` `subagent.enabled`. If `true`, launch parallel subagents for independent REQs. If `false` (default), execute sequentially.
 
 **When:** 2+ REQs have no code dependencies (verified via tokensave code graph). Parallel execution can save 50-70% time.
 
