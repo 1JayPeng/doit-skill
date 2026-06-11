@@ -42,7 +42,8 @@
       "headroom": "uv tool install 'headroom-ai[mcp,proxy]' && headroom mcp install",
       "agentmemory": "npm install -g @agentmemory/agentmemory && agentmemory connect claude-code",
       "lean-ctx": "curl -fsSL https://leanctx.com/install.sh | sh && lean-ctx onboard && lean-ctx init --agent claude",
-      "tavily": "claude mcp add --transport http tavily https://mcp.tavily.com/mcp/?tavilyApiKey=<your-key>"
+      "tavily": "claude mcp add --transport http tavily https://mcp.tavily.com/mcp/?tavilyApiKey=<your-key>",
+      "codegraph": "npm i -g @colbymchenry/codegraph && codegraph install --yes && codegraph init -i"
     }
   }
 }

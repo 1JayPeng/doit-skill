@@ -491,6 +491,13 @@ if grep -rl "mempalace" "$HOME/.claude/plugins/" 2>/dev/null; then
 else
   echo "  [MISS] mempalace (plugin)"
 fi
+
+# CodeGraph MCP
+if command -v codegraph >/dev/null 2>&1; then
+  echo "  [OK]   codegraph ($(command -v codegraph))"
+else
+  echo "  [MISS] codegraph (MCP — install: npm i -g @colbymchenry/codegraph)"
+fi
 ```
 
 ### 11b. MemPalace Health Check (if available)

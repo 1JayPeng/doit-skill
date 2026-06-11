@@ -216,6 +216,7 @@ echo "    • code-review      (claude plugin install code-review)"
     echo "    • mempalace        (claude plugin install --scope user mempalace)"
     echo "    • headroom         (uv tool install headroom-ai[mcp,proxy])"
     echo "    • lean-ctx         (curl install script)"
+    echo "    • codegraph        (npm i -g @colbymchenry/codegraph)"
   fi
 
   echo "  Options (configurable at install):"
@@ -763,6 +764,47 @@ if [ "$SKIP_OPTIONAL" = false ]; then
         echo_success "headroom MCP configured"
       else
         echo_warn "headroom MCP not detected — configure manually: headroom mcp install"
+      fi
+    fi
+  fi
+fi
+
+# Step 3.8: Install CodeGraph (pre-built code graph index)
+if [ "$SKIP_OPTIONAL" = false ]; then
+  echo "=========================================="
+  echo "  Step 3.8: Installing CodeGraph"
+  echo "=========================================="
+  echo ""
+
+  if command -v codegraph >/dev/null 2>&1; then
+    echo_success "codegraph already installed"
+  else
+    echo_info "Installing codegraph..."
+    npm i -g @colbymchenry/codegraph 2>&1 || echo_warn "Failed to install codegraph via npm"
+  fi
+
+  if command -v codegraph >/dev/null 2>&1; then
+    # Install MCP server
+    if claude mcp list 2>/dev/null | grep -qi codegraph; then
+      echo_success "codegraph MCP already configured"
+    else
+      echo_info "Configuring codegraph MCP server..."
+      codegraph install --yes 2>&1 || echo_warn "Failed to configure codegraph MCP (run manually: codegraph install --yes)"
+      if claude mcp list 2>/dev/null | grep -qi codegraph; then
+        echo_success "codegraph MCP configured"
+      else
+        echo_warn "codegraph MCP not detected — configure manually: codegraph install --yes"
+      fi
+    fi
+
+    # Initialize project index (skip if already exists)
+    if [ -d ".codegraph" ]; then
+      echo_success "codegraph index already exists"
+    else
+      echo_info "Initializing codegraph index..."
+      codegraph init -i 2>&1 || echo_warn "Failed to initialize codegraph index (run manually: codegraph init -i)"
+      if [ -d ".codegraph" ]; then
+        echo_success "codegraph index initialized"
       fi
     fi
   fi
