@@ -17,7 +17,7 @@ caveman: Phase 0 [LOAD:session] 不释放 | grill-me: Phase 1 [LOAD:phase-1] 结
 [rules.md](rules.md)。Worklog: 每 phase 记录 (agentmemory > mempalace > `.doit/worklog.json`)。[worklog.md](worklog.md)
 Non-Interruptive Q | Background >10s | Commit+Push | MP 读写对称 | 工作流不可跳过 | 减少暂停 | Grill 5+/3+ | 危险操作确认 | Review+Simplify
 **[CALL]** = MCP。**[LOAD]** = 读文件。**[LOAD:phase-N]** = 加载 skill。**[RELEASE:phase-N]** = 释放 + ctx_compress。
-5 层: tokensave, context-mode, agentmemory(default), mempalace, headroom。RTK 自动 Bash, lean-ctx MCP 优先, headroom >500 行。CodeGraph 代码图预构建索引。
+5 层: codegraph(主), context-mode, agentmemory(default), mempalace, headroom。RTK 自动 Bash, lean-ctx MCP 优先, headroom >500 行。TokenSave 降级备用。
 **Subagent: 默认禁用** (`subagent.enabled: false`)。配置 `true` 后 Phase 3 决策门控强制并行独立 REQ。[execute.md](execute.md)
 
 ## Phase Index
@@ -27,7 +27,7 @@ Non-Interruptive Q | Background >10s | Commit+Push | MP 读写对称 | 工作流
 | **-1** | [env-check.md](env-check.md) | 环境检测 → CLAUDE.md + config |
 | **0** | [phases.md](phases.md)#phase-0 | Sync → [LOAD:session] caveman → 分类(R/S/F/B) → MP sweep 10 并行 |
 | **1** | [phases.md](phases.md)#phase-1, [learn/inject.md](learn/inject.md) | [LOAD:phase-1] grill-me → Grill(5+/3+) → Spec → Branch → Gate → [RELEASE:phase-1] grill-me → ctx_compress |
-| **2** | [learn/inject.md](learn/inject.md), [plan.md](plan.md) | tokensave_context → Impact → Order |
+| **2** | [learn/inject.md](learn/inject.md), [plan.md](plan.md) | codegraph_explore → Impact → Order |
 | **3** | [execute.md](execute.md) | [LOAD:phase-3] tdd → TDD per REQ → per-REQ review+simplify |
 | **4** | [e2e.md](e2e.md) | E2E real env, L0+L1 auto, L2+L3 HITL |
 | **5** | [review.md](review.md) | Feature review, merge duplicates |
@@ -43,5 +43,5 @@ Non-Interruptive Q | Background >10s | Commit+Push | MP 读写对称 | 工作流
 
 ## 辅助
 
-文档 → `.doit/docs/` + tokensave。[doc-capture.md](doc-capture.md), [errors.md](errors.md)。Spec in git + MemPalace。Logs: `.scratch/logs/`。
+文档 → `.doit/docs/` + codegraph。[doc-capture.md](doc-capture.md), [errors.md](errors.md)。Spec in git + MemPalace。Logs: `.scratch/logs/`。
 **[LOAD] [phases.md](phases.md)#resume。Blank `/doit` = always resume。**

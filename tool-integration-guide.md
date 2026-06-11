@@ -43,16 +43,15 @@ doit 内置三种后台任务机制，按任务时长自动选择：
 
 | # | 工具 | 类型 | 安装方式 | 核心作用 |
 |---|------|------|----------|----------|
-| 1 | **TokenSave** | MCP 服务器 | `cargo install tokensave` | 代码图：符号搜索、调用关系、影响分析、代码编辑 |
-| 2 | **CodeGraph** | MCP 服务器 | `npm i -g @colbymchenry/codegraph` | 代码图：预构建索引、跨语言、结构化查询 |
-| 3 | **MemPalace** | Claude Plugin | `claude plugin install --scope user mempalace` | 跨会话语义记忆：spec/决策/实现笔记的长期存储 |
+| 1 | **CodeGraph** | MCP 服务器 | `npm i -g @colbymchenry/codegraph` | **主代码图**：预构建索引、跨语言、结构问答、影响分析 |
+| 2 | **MemPalace** | Claude Plugin | `claude plugin install --scope user mempalace` | 跨会话语义记忆：spec/决策/实现笔记的长期存储 |
 | 3 | **Context-Mode** | Claude Plugin | `claude plugin marketplace add mksglu/context-mode` | 上下文管理：命令输出自动索引 + 语义搜索 |
 | 4 | **RTK** | 全局 CLI | `curl ... \| sh` | Token 优化代理：所有 shell 命令节省 60-90% token |
 | 5 | **uv** | 全局 CLI | `pip install uv` | Python 虚拟环境管理：创建 venv + 运行命令 |
 | 6 | **caveman** | Skill | `curl ... \| bash` | 压缩通信模式：减少 75% token，砍掉废话保留技术内容 |
 | 7 | **code-review** | Claude Plugin | `claude plugin install code-review` | 代码审查：Phase 5 自动审查 diff |
 | 8 | **Tavily MCP** | 远程 MCP | 只需 API key，无需安装 | 互联网搜索：Phase 1 spec 生成前的头脑风暴 |
-| 9 | **CodeGraph** | MCP 服务器 | `npm i -g @colbymchenry/codegraph` | 代码图：预构建索引、跨语言、结构问答 |
+| 9 | **TokenSave** | MCP 服务器 | `cargo install tokensave` | 降级备用：Rust 深度分析（traits/derives/impls） |
 
 ---
 
@@ -115,35 +114,15 @@ doit 内置三种后台任务机制，按任务时长自动选择：
 
 | 工具 | 具体调用 | 目的 |
 |------|---------|------|
-| **TokenSave** | `tokensave_context(task="...")` | 获取相关代码上下文 |
-| **TokenSave** | `tokensave_search(query="...")` | 搜索符号 |
-| **TokenSave** | `tokensave_similar(symbol="...")` | 找相似名称符号 |
-| **TokenSave** | `tokensave_impact(node_id)` | 评估改动影响面 |
-| **TokenSave** | `tokensave_files()` | 了解项目文件结构 |
-| **TokenSave** | `tokensave_coupling()` | 模块依赖分析 |
-| **TokenSave** | `tokensave_health()` | 综合质量信号 |
-| **TokenSave** | `tokensave_status()` | 代码图统计 |
-| **TokenSave** | `tokensave_config(key="dependencies", path="Cargo.toml")` | 读取项目配置 |
-| **TokenSave** | `tokensave_outline(file="...")` | 文件顶层符号概览 |
-| **TokenSave** | `tokensave_module_api(path="...")` | 公共 API 表面 |
-| **TokenSave** | `tokensave_body(symbol="...")` | 获取符号完整源码 |
-| **TokenSave** | `tokensave_signature(qualified_name="...")` | 获取函数签名 |
-| **TokenSave** | `tokensave_signature_search(params="...", returns="...")` | 按签名搜索函数 |
-| **TokenSave** | `tokensave_type_hierarchy(node_id)` | 类型层次树 |
-| **TokenSave** | `tokensave_rank(edge_kind="implements")` | 最实现的接口 |
-| **TokenSave** | `tokensave_distribution(path="...")` | 节点类型分布 |
-| **TokenSave** | `tokensave_largest(node_kind="class")` | 最大类 |
-| **TokenSave** | `tokensave_impls(trait="...")` | 列出 impl 块 |
-| **TokenSave** | `tokensave_derives(qualified_name="...")` | 列出 derive 宏 |
-| **TokenSave** | `tokensave_inheritance_depth()` | 最深继承层次 |
-| **TokenSave** | `tokensave_hotspots()` | 最高连接度符号 |
-| **TokenSave** | `tokensave_dsm()` | 设计结构矩阵 |
-| **CodeGraph** | `codegraph_explore("how does X work")` | 理解功能流程、探索代码区域（返回按文件分组的符号源码） |
+| **CodeGraph** | `codegraph_explore("how does X work")` | **PRIMARY** — 理解功能流程、探索代码区域（返回按文件分组的符号源码） |
 | **CodeGraph** | `codegraph_search("symbolName")` | 按名称定位符号 |
 | **CodeGraph** | `codegraph_callers(node_id)` | 谁调用了此符号（向上调用链） |
 | **CodeGraph** | `codegraph_callees(node_id)` | 此符号调用了谁（向下调用链） |
 | **CodeGraph** | `codegraph_impact(node_id)` | 评估编辑影响面 |
 | **CodeGraph** | `codegraph_node("symbolName")` | 获取符号完整源码（含所有重载） |
+| **TokenSave** | `tokensave_type_hierarchy(node_id)` | Rust 深度分析：类型层次树 |
+| **TokenSave** | `tokensave_impls(trait="...")` | Rust 深度分析：列出 impl 块 |
+| **TokenSave** | `tokensave_derives(qualified_name="...")` | Rust 深度分析：列出 derive 宏 |
 | **MemPalace** | `mempalace_search query="<feature> implementation"` | 搜索历史实现 |
 | **MemPalace** | `mempalace_traverse start_room="<project>/specs" max_hops=2` | 跨房间探索 |
 | **MemPalace** | `mempalace_kg_stats` | 知识图谱统计 |
@@ -156,27 +135,17 @@ doit 内置三种后台任务机制，按任务时长自动选择：
 
 **目的：** 每个 REQ 的 RED→GREEN→REFACTOR→REVIEW+SIMPLIFY 循环。长构建任务（>5min）使用 Tmux + Monitor 实现自动继续。
 
-**CONTEXT 步骤（写测试前）：**
-
 | 工具 | 具体调用 | 目的 |
 |------|---------|------|
-| **TokenSave** | `tokensave_context(task="...")` | 获取相关代码上下文 |
-| **TokenSave** | `tokensave_search(query="...")` | 搜索符号 |
-| **TokenSave** | `tokensave_similar(symbol="...")` | 找相似名称符号 |
-| **TokenSave** | `tokensave_node(node_id)` | 获取符号完整信息 |
-| **TokenSave** | `tokensave_body(symbol="...")` | 获取符号完整源码 |
-| **TokenSave** | `tokensave_signature(qualified_name="...")` | 获取函数签名 |
-| **TokenSave** | `tokensave_signature_search(params="...", returns="...")` | 按签名搜索函数 |
-| **TokenSave** | `tokensave_callers(node_id)` | 谁调用了这个函数 |
-| **TokenSave** | `tokensave_callees(node_id)` | 这个函数调用了谁 |
-| **TokenSave** | `tokensave_impact(node_id)` | 评估改动影响面 |
-| **TokenSave** | `tokensave_files()` | 了解项目文件结构 |
+| **CodeGraph** | `codegraph_explore("how does X work")` | **PRIMARY** — 理解现有实现、获取相关代码上下文 |
+| **CodeGraph** | `codegraph_search("symbolName")` | 按名称定位符号 |
+| **CodeGraph** | `codegraph_callers(node_id)` | 谁调用了这个符号 |
+| **CodeGraph** | `codegraph_callees(node_id)` | 这个符号调用了谁 |
+| **CodeGraph** | `codegraph_impact(node_id)` | 评估改动影响面 |
+| **CodeGraph** | `codegraph_node("symbolName")` | 获取符号完整源码 |
+| **TokenSave** | `tokensave_diagnostics(scope="workspace")` | 运行类型检查器 |
 | **TokenSave** | `tokensave_test_map(node_id)` | 检查测试覆盖 |
 | **TokenSave** | `tokensave_affected_tests(files=[...])` | 找受影响测试 |
-| **TokenSave** | `tokensave_diagnostics(scope="workspace")` | 运行类型检查器 |
-| **CodeGraph** | `codegraph_explore("how does X work")` | 理解现有实现（TokenSave 不可用时的主要替代） |
-| **CodeGraph** | `codegraph_impact(node_id)` | 编辑前评估影响面 |
-| **CodeGraph** | `codegraph_node("symbolName")` | 获取符号完整源码 |
 | **Context-Mode** | `ctx_search(queries=[...])` | 搜索之前索引的内容 |
 | **MemPalace** | `mempalace_search query="<REQ>" wing="<project>" limit=2` | 恢复上下文 |
 | **MemPalace** | `mempalace_get_drawer drawer_id="<id>"` | 获取抽屉完整内容 |

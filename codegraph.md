@@ -44,13 +44,15 @@ CodeGraph delivers its usage guidance automatically via MCP initialize response 
 
 ### Phase 2 — Plan (Code Graph Scan)
 
-**Primary alternative to TokenSave** when TokenSave is unavailable or for cross-language projects:
+**PRIMARY code graph tool** — first choice for code exploration:
 
 1. `codegraph_explore` — understand how a feature works, survey code area (PRIMARY)
 2. `codegraph_search` — locate specific symbols by name
 3. `codegraph_callers` / `codegraph_callees` — walk call flow
 4. `codegraph_impact` — assess edit blast radius
 5. `codegraph_node` — get full source of a specific symbol
+
+**Fallback:** TokenSave for Rust-specific deep analysis (traits, derives, impl blocks).
 
 ### Phase 3 — Execute
 
@@ -80,6 +82,6 @@ CodeGraph delivers its usage guidance automatically via MCP initialize response 
 
 ## What CodeGraph is NOT
 
-- **Not a replacement for TokenSave** — complementary. TokenSave has deeper Rust-specific analysis (traits, derives, impl blocks). CodeGraph excels at cross-language projects.
-- **Not an editor** — read-only code graph queries.
-- **Not a memory system** — code structure only, no semantic memory.
+- **Not an editor** — read-only code graph queries. Use native Edit/Write for file modification.
+- **Not a memory system** — code structure only, no semantic memory. Use MemPalace/AgentMemory for that.
+- **TokenSave relationship**: CodeGraph is primary; TokenSave is fallback for Rust-specific deep analysis (traits, derives, impl blocks).

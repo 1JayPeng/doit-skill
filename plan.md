@@ -10,29 +10,20 @@
 
 ### Step 1: Code Graph Scan
 
-Use **TokenSave** for code intelligence (discovery + call graph + code quality):
-1. `tokensave_context` — get focused context for the feature/task (PRIMARY)
-2. `tokensave_search` — find specific symbols by name from spec
-3. `tokensave_similar(symbol="<name>")` — find symbols with similar names (avoid naming inconsistency)
-4. `tokensave_impact` — analyze impact radius of specific symbols
-5. `tokensave_files` — understand project file structure
-6. `tokensave_coupling` — fan-in/fan-out analysis for module dependencies
-7. `tokensave_health` — composite quality signal, identifies structural risks
-8. `tokensave_status` — aggregate statistics (node/edge/file counts, DB size)
-9. `tokensave_config(key="dependencies", path="Cargo.toml")` — read project config without file reads (TOML/JSON)
-10. `tokensave_outline(file="<key_file>")` — flat list of top-level symbols (quick file overview)
-11. `tokensave_module_api(path="<src_dir>")` — public API surface (what's exposed to consumers)
+Use **CodeGraph** for code intelligence (pre-built index, cross-language):
+1. `codegraph_explore("how does X work")` — understand feature flow, survey code area (PRIMARY, returns symbols grouped by file)
+2. `codegraph_search("symbolName")` — locate specific symbols by name
+3. `codegraph_callers(node_id)` — who calls this symbol (upward call flow)
+4. `codegraph_callees(node_id)` — what does this symbol call (downward call flow)
+5. `codegraph_impact(node_id)` — assess edit blast radius before changes
+6. `codegraph_node("symbolName")` — full source of a specific symbol (all overloads)
 
-- **Fallback:** If TokenSave not installed -> use **CodeGraph** (`codegraph_explore`, `codegraph_search`, `codegraph_callers/callees`, `codegraph_impact`, `codegraph_node`). If CodeGraph also unavailable -> `grep -rn` + `find` + `Read`.
+- **Fallback:** If CodeGraph not installed -> use **TokenSave** (`tokensave_context`, `tokensave_search`, `tokensave_impact`). If both unavailable -> `grep -rn` + `find` + `Read`.
 
-**TokenSave additional tools for deeper analysis:**
-- `tokensave_callers` / `tokensave_callees` — who calls what, what does this call
-- `tokensave_hotspots` — most connected symbols (highest call count)
-- `tokensave_diff_context` — semantic context for changed files
-- `tokensave_dsm` — design structure matrix, reveals hidden coupling
-- `tokensave_body(symbol="<name>")` — return full source body of a symbol (faster than node lookup)
-- `tokensave_signature(qualified_name="<name>")` — get function signature without body
-- `tokensave_signature_search(params="&mut self", returns="Result")` — find functions by signature shape
+**CodeGraph key principles:**
+- **Trust the results** — don't re-verify with grep. The index is pre-built.
+- **Treat returned source as already read** — no need to re-read files.
+- **Check staleness banner** after edits — re-index if needed with `codegraph init -i`.
 
 **[MP-READ] MemPalace — search for prior implementation context (Phase 0 sweep already ran):**
 - `mempalace_search query="<feature name> implementation" wing="<project>" limit=3` — find prior implementation context
@@ -42,27 +33,15 @@ Use **TokenSave** for code intelligence (discovery + call graph + code quality):
 - `mempalace_check_duplicate content="<ADR: decision, rationale, tradeoff>" threshold=0.87`
 - `mempalace_add_drawer wing="<project>" room="decisions" content="<ADR: decision, rationale, tradeoff>"`
 
-**Type system analysis (when task involves interfaces, traits, classes):**
-- `tokensave_type_hierarchy(node_id="<id>")` — full type hierarchy tree for traits/interfaces/classes
-- `tokensave_rank(edge_kind="implements", direction="incoming")` — most implemented interface (high coupling)
-- `tokensave_distribution(path="<dir>")` — node kind breakdown per file/directory
-- `tokensave_largest(node_kind="class", limit=5)` — largest classes (potential god classes)
-- `tokensave_impls(trait="<name>")` — list all impl blocks for a trait (find all implementors)
-- `tokensave_derives(qualified_name="<type>")` — list #[derive(...)] macros (synthesized methods)
+**TokenSave (when available, deeper Rust-specific analysis):**
+- `tokensave_type_hierarchy(node_id="<id>")` — full type hierarchy tree
+- `tokensave_impls(trait="<name>")` — list all impl blocks for a trait
+- `tokensave_derives(qualified_name="<type>")` — list #[derive(...)] macros
 - `tokensave_inheritance_depth(limit=5)` — deepest class/interface hierarchies
+- `tokensave_port_status(source_dir="<src>", target_dir="<tgt>")` — compare symbols between directories
+- `tokensave_branch_diff(head="<head>", base="<base>")` — symbols changed between branches
 
-**Porting tasks (when porting code between languages/modules):**
-- `tokensave_port_status(source_dir="<src>", target_dir="<tgt>")` — compare symbols, track progress
-- `tokensave_port_order(source_dir="<src>")` — topological sort, port leaves first then dependents
-
-**Multi-branch (when comparing branches):**
-- `tokensave_branch_list()` — list tracked branches with DB sizes
-- `tokensave_branch_search(branch="<name>", query="<symbol>")` — search symbols in another branch
-- `tokensave_branch_diff(head="<head>", base="<base>")` — symbols added/removed/changed between branches
-
-**Rule:** `tokensave_context` first, then narrow with `tokensave_search`/`tokensave_impact`.
-
-Tool selection guidance lives in global CLAUDE.md.
+**Rule:** `codegraph_explore` first, then narrow with `codegraph_search`/`codegraph_impact`.
 
 #### Subagent Parallel Code Analysis (Optional, when 2+ independent modules)
 
