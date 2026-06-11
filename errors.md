@@ -88,3 +88,18 @@ No spec, no branch -> start fresh from Phase 0.
 ## MemPalace Unavailable
 
 If MemPalace tool calls error during any phase, skip silently. Filesystem (`.doit/docs/`, `.spec/archive/`) and tokensave code graph remain as the primary persistence layers. The workflow never blocks on a missing memory layer.
+
+## Compact 后 Task 丢失
+
+Compact 压缩上下文后，`TaskUpdate` 可能因 `taskId` 丢失而报错：
+`InputValidationError: TaskUpdate failed due to the required parameter taskId is missing`
+
+**根因：** `/compact` 压缩对话上下文，task 状态（taskId）从摘要中丢失。系统恢复阶段尝试调用 `TaskUpdate` 但参数不完整。
+
+**处理：**
+1. 调用 `TaskList` 检查当前状态
+2. 如有过期 task，标记为 `deleted` 清理
+3. **不要重试 `TaskUpdate`** — taskId 已丢失，重试无意义
+4. 如需新建 task，调用 `TaskCreate` 重新创建
+
+**预防：** Phase 10 结束必须运行 `/compact`。Compact 后自动清理 task 列表，不要保留对旧 taskId 的引用。

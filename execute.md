@@ -36,6 +36,7 @@
   - **Fallback:** If headroom not available -> 直接处理大输出（消耗更多 token）
 - **Vertical slice TDD.** One REQ at a time. RED -> GREEN -> REFACTOR. No horizontal slicing.
 - **No empty tool calls.** Every Bash/ctx_shell/ctx_execute call MUST have a complete `command` parameter. **Mandatory preflight:** before each Bash call, write `[BASH PREFLIGHT]` in thinking with the full command text. Empty command = InputValidationError = wasted turn. If you can't articulate the command in the preflight, don't call the tool.
+- **InputValidationError 路由：** `command` 为空 → 见 [rules.md](rules.md) 无命令不调用 Bash；`taskId` 缺失 → 见 [errors.md](errors.md)#compact-后-task-丢失。不要重试丢失的 taskId。
 - **Logging rules:**
   - Entry function: log inputs
   - Exit function: log result

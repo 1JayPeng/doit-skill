@@ -352,6 +352,18 @@ Reason: <为什么要运行这个命令，一句话>
 - **Phase 8 (Commit)** — git 命令必须有完整参数
 - **Any phase** — 所有 shell 操作
 
+## 铁律 — InputValidationError 路由
+
+**InputValidationError 不只发生在空 Bash。** 根据错误类型路由到对应的处理文档：
+
+| 错误 | 根因 | 处理文档 |
+|------|------|----------|
+| `command` 参数为空 | 空 Bash 调用 | 本文件"无命令不调用 Bash" |
+| `taskId` 参数缺失 | Compact 后 task 状态丢失 | [errors.md](errors.md)#compact-后-task-丢失 |
+| 其他参数缺失 | 工具调用参数不完整 | 检查工具签名，补全参数 |
+
+**Compact 后遇到 `TaskUpdate` 报错 → 立即查看 [errors.md](errors.md) "Compact 后 Task 丢失"章节。不要重试 TaskUpdate。**
+
 ## 铁律 — 不重复相同操作
 
 **每次编辑前，检查最近 3 次操作。如果连续 2 次对同一文件做同类操作，停止。**

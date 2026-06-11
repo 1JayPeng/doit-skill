@@ -280,6 +280,8 @@ RTK unavailable → `[WARN] RTK not installed` and continue.
 **This phase always runs last.** It gathers session statistics and preserves knowledge for future sessions.
 **MANDATORY: End with `/compact` to compress conversation context.**
 
+**⚠️ Compact 副作用：** `/compact` 压缩上下文后，TaskUpdate 的 `taskId` 会丢失。如果 compact 后遇到 `InputValidationError: taskId is missing`，参见 [errors.md](errors.md)#compact-后-task-丢失。
+
 ## Resume — Cross-Session Recovery
 
 Workflow spans multiple conversation turns. If `/doit` is called again, determine current phase from context and filesystem.
