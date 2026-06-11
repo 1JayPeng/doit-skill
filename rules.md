@@ -315,20 +315,36 @@ See [dangerous-ops.md](dangerous-ops.md) for full patterns and hook configuratio
 
 ## 铁律 — 无命令不调用 Bash
 
-**每个 Bash/ctx_shell/ctx_execute 调用必须有完整的 command 参数。空 command = 工具调用失败。**
+**每个 Bash/ctx_shell/ctx_execute 调用必须有完整的 command 参数。空 command = InputValidationError = 浪费一轮对话。**
 
-旧模式：思考"让我运行导出" → 生成 Bash 调用但忘记填 command → InputValidationError → 重试 → 再失败。
-新模式：先拼出完整命令 → 再调用工具。命令在思考阶段就已确定。
+**根本原因：** 模型在思考阶段还没有构造出完整的命令，就提前生成了工具调用。即使思考中说"我需要提供 command 参数"，如果思考中没有出现**完整的、可执行的命令文本**，工具调用仍然会失败。
 
-**强制检查（每次调用前）：**
-- **command 参数非空？** — 空字符串或纯空白 → 禁止调用，先想清楚要运行什么
-- **命令完整可执行？** — 包含命令名 + 必要参数，不是"let me run..."或"export"这样的占位符
-- **命令在思考阶段已拼好？** — 思考输出里出现完整的命令文本，再复制到 tool call 中
+**强制预检清单（每次调用 Bash 前，思考中必须包含以下内容）：**
 
-**禁止行为：**
-- **禁止**先调用 Bash 再想命令 — 命令必须在思考阶段确定
-- **禁止**用自然语言占位（"let me run the export"）代替实际命令
-- **禁止**重试时不修正 command — 如果第一次失败了是因为空 command，第二次必须填入实际命令
+```
+[BASH PREFLIGHT]
+Command: <完整的、可执行的命令文本，包含所有参数>
+Reason: <为什么要运行这个命令，一句话>
+```
+
+**只有思考中出现了 `[BASH PREFLIGHT]` + 完整的 `Command:` 行，才能生成 Bash 工具调用。** 没有这个标记 = 禁止调用 Bash。
+
+**破坏性循环检测：**
+- 如果思考中出现 "I'm stuck in a destructive loop" 或 "need to break it" → **立即停止生成工具调用**
+- 回到预检清单，重新写出完整的 `[BASH PREFLIGHT]`
+- 认识到问题 ≠ 解决了问题。必须写出完整的命令文本才能继续
+
+**验证检查（每次调用前）：**
+- **思考中有 `[BASH PREFLIGHT]` 标记吗？** — 没有 → 先写预检清单
+- **`Command:` 行包含完整的命令吗？** — 只有"let me run..."或"export" → 不完整，继续构造
+- **command 参数非空？** — 空字符串或纯空白 → 禁止调用
+- **重试时命令改变了？** — 如果第一次因为空 command 失败，第二次必须有不同的、完整的命令
+
+**禁止：**
+- **先调用 Bash 再想命令** — 命令必须在思考阶段确定
+- **用自然语言占位** — "let me run the export" 不是命令
+- **重试时不修正** — 如果第一次失败是因为空 command，第二次必须填入实际命令
+- **认识问题但不执行预检** — "I need to provide the command" ≠ 提供了命令。必须写出 `[BASH PREFLIGHT]`
 
 ### Applied Everywhere
 

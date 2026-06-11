@@ -35,7 +35,7 @@
   - `headroom_retrieve(hash)` — 通过 hash 还原完整内容
   - **Fallback:** If headroom not available -> 直接处理大输出（消耗更多 token）
 - **Vertical slice TDD.** One REQ at a time. RED -> GREEN -> REFACTOR. No horizontal slicing.
-- **No empty tool calls.** Every Bash/ctx_shell/ctx_execute call MUST have a complete `command` parameter. Think the full command BEFORE the tool call. Empty command = InputValidationError = wasted turn. If you can't articulate the command, don't call the tool.
+- **No empty tool calls.** Every Bash/ctx_shell/ctx_execute call MUST have a complete `command` parameter. **Mandatory preflight:** before each Bash call, write `[BASH PREFLIGHT]` in thinking with the full command text. Empty command = InputValidationError = wasted turn. If you can't articulate the command in the preflight, don't call the tool.
 - **Logging rules:**
   - Entry function: log inputs
   - Exit function: log result
