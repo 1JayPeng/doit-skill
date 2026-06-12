@@ -377,18 +377,10 @@ else
   echo "=========================================="
   echo ""
 
-# Skill-Creator (from anthropics/skills)
+# Skill-Creator (from anthropics/skills) — always check for updates
   if command -v npx >/dev/null 2>&1; then
-    if [ -d "$HOME/.agents/skills/skill-creator" ]; then
-      echo_success "skill-creator already installed (~/.agents/skills/)"
-    elif [ -d "$SKILL_DIR/skill-creator" ]; then
-      echo_success "skill-creator already installed (project skill)"
-    elif npx skills list 2>/dev/null | grep -q "skill-creator"; then
-      echo_success "skill-creator already installed (skills list)"
-    else
-      echo_info "Installing skill-creator..."
-      npx skills add anthropics/skills@skill-creator -g -y 2>&1 || echo_warn "Failed to install skill-creator (try manually: npx skills add anthropics/skills@skill-creator)"
-    fi
+    echo_info "Updating skill-creator..."
+    npx skills add anthropics/skills@skill-creator -g -y 2>&1 || echo_warn "Failed to update skill-creator"
   else
     echo_warn "npx not found — skill-creator requires Node.js. Install manually:"
     echo "     npx skills add anthropics/skills@skill-creator"
@@ -407,16 +399,15 @@ else
   echo "=========================================="
   echo ""
 
-# Context-Mode (Claude Code plugin)
-  if command -v ctx >/dev/null 2>&1; then
-    echo_success "context-mode already installed (CLI)"
-  elif grep -rl "context-mode" "$HOME/.claude/plugins/" > /dev/null 2>&1; then
-    echo_success "context-mode already installed (plugin)"
+# Context-Mode (Claude Code plugin) — always check for updates
+  if grep -rl "context-mode" "$HOME/.claude/plugins/" > /dev/null 2>&1; then
+    echo_info "Updating context-mode..."
+    plugin_cmd 180 claude plugin install context-mode@context-mode 2>&1 || echo_warn "context-mode update failed"
+    echo_success "context-mode updated"
   else
-    echo_info "context-mode is a Claude Code plugin"
-    echo_warn "Install manually:"
-    echo "     claude plugin marketplace add mksglu/context-mode"
-    echo "     claude plugin install context-mode@context-mode"
+    echo_info "Installing context-mode..."
+    plugin_cmd 120 claude plugin marketplace add mksglu/context-mode || echo_warn "Failed to add context-mode marketplace"
+    plugin_cmd 180 claude plugin install context-mode@context-mode || echo_warn "Failed to install context-mode"
   fi
 
 # Tavily MCP (web search) - only if API key provided via env or interactive
@@ -448,29 +439,25 @@ else
     fi
   done
 
-  if command -v rtk >/dev/null 2>&1; then
-    echo_success "rtk already installed"
-  else
-    echo_info "Installing rtk..."
-    curl -fsSL https://v6.gh-proxy.org/https://raw.githubusercontent.com/rtk-ai/rtk/refs/heads/master/install.sh 2>/dev/null | sh || echo_warn "Failed to install rtk"
-  fi
+  echo_info "Updating rtk..."
+  curl -fsSL https://v6.gh-proxy.org/https://raw.githubusercontent.com/rtk-ai/rtk/refs/heads/master/install.sh 2>/dev/null | sh || echo_warn "Failed to update rtk"
   if command -v rtk >/dev/null 2>&1; then
     echo_info "Initializing rtk for Claude Code..."
     rtk init -g < /dev/null 2>/dev/null || true
     echo_success "rtk installed and initialized"
   fi
 
-  # UV
-  if command -v uv >/dev/null 2>&1; then
-    echo_success "uv already installed"
-  else
-    echo_info "Installing uv..."
-    pip install uv 2>&1 || pip3 install uv 2>&1 || echo_warn "Failed to install uv"
-  fi
+  # UV — always check for updates
+  echo_info "Updating uv..."
+  pip install --upgrade uv 2>&1 || pip3 install --upgrade uv 2>&1 || echo_warn "Failed to update uv"
 
-  # Rust (required by tokensave)
+  # Rust (required by tokensave) — always check for updates
   if command -v cargo >/dev/null 2>&1; then
-    echo_success "rust/cargo already installed"
+    echo_info "Updating Rust via rustup..."
+    RUSTUP_DIST_SERVER=https://mirrors.tuna.tsinghua.edu.cn/rustup \
+      RUSTUP_UPDATE_ROOT=https://mirrors.tuna.tsinghua.edu.cn/rustup/rustup \
+      rustup update stable 2>&1 || echo_warn "Rust update failed"
+    echo_success "Rust updated"
   else
     echo_info "Installing Rust via rustup (Tsinghua mirror)..."
     curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs 2>/dev/null \
@@ -486,49 +473,54 @@ else
 
     if command -v cargo >/dev/null 2>&1; then
       echo_success "Rust installed"
+    fi
 
-      # Configure cargo mirror (USTC) for faster crate downloads
-      echo_info "Configuring cargo mirror (USTC)..."
-      mkdir -p "$HOME/.cargo"
-      cat > "$HOME/.cargo/config.toml" <<'CARGO_EOF'
+    # Configure cargo mirror (USTC) for faster crate downloads
+    mkdir -p "$HOME/.cargo"
+    cat > "$HOME/.cargo/config.toml" <<'CARGO_EOF'
 [source.crates-io]
 replace-with = 'ustc'
 [source.ustc]
 registry = "sparse+https://mirrors.ustc.edu.cn/crates.io-index/"
 CARGO_EOF
-      echo_success "cargo mirror configured (USTC)"
+    echo_success "cargo mirror configured (USTC)"
 
-      # Persist rustup mirror in .bashrc for new shells
-      grep -q "RUSTUP_DIST_SERVER" "$HOME/.bashrc" 2>/dev/null || {
-        echo 'export RUSTUP_DIST_SERVER=https://mirrors.tuna.tsinghua.edu.cn/rustup' >> "$HOME/.bashrc"
-        echo 'export RUSTUP_UPDATE_ROOT=https://mirrors.tuna.tsinghua.edu.cn/rustup/rustup' >> "$HOME/.bashrc"
-      }
-    fi
+    # Persist rustup mirror in .bashrc for new shells
+    grep -q "RUSTUP_DIST_SERVER" "$HOME/.bashrc" 2>/dev/null || {
+      echo 'export RUSTUP_DIST_SERVER=https://mirrors.tuna.tsinghua.edu.cn/rustup' >> "$HOME/.bashrc"
+      echo 'export RUSTUP_UPDATE_ROOT=https://mirrors.tuna.tsinghua.edu.cn/rustup/rustup' >> "$HOME/.bashrc"
+    }
   fi
 
-  # TokenSave
+  # TokenSave — always check for updates
   if command -v tokensave >/dev/null 2>&1; then
-    echo_success "tokensave already installed"
+    _ts_installed=$(tokensave --version 2>/dev/null | head -1)
+    _ts_latest=$(cargo search tokensave 2>/dev/null | head -1 | grep -oP 'tokensave = "\K[^"]+')
+    if [ -n "$_ts_latest" ] && [ "$_ts_installed" != "$_ts_latest" ]; then
+      echo_info "Updating tokensave (${_ts_installed} → ${_ts_latest})..."
+      cargo install tokensave || echo_warn "Failed to update tokensave"
+    else
+      echo_success "tokensave up to date"
+    fi
   else
     echo_info "Installing tokensave (compiling Rust — may take several minutes)..."
     if command -v cargo >/dev/null 2>&1; then
       cargo install tokensave || echo_warn "Failed to install tokensave via cargo"
-      if command -v tokensave >/dev/null 2>&1; then
-        echo_info "Configuring tokensave for Claude Code..."
-        tokensave install --agent claude || true
-      fi
     else
       echo_warn "cargo not found — tokensave requires Rust. Install via: cargo install tokensave"
     fi
   fi
+  if command -v tokensave >/dev/null 2>&1; then
+    echo_info "Configuring tokensave for Claude Code..."
+    tokensave install --agent claude || true
+    echo_success "tokensave ready"
+  fi
 
 # Caveman (token-compact mode + statusline)
-  if [ -d "$SKILL_DIR/caveman" ]; then
-    echo_success "caveman already installed (project skill)"
-  elif [ -d "$HOME/.claude/skills/caveman" ]; then
-    echo_success "caveman found in global skills"
-  elif grep -rl "caveman" "$HOME/.claude/plugins/" > /dev/null 2>&1; then
-    echo_success "caveman already installed (plugin)"
+  if grep -rl "caveman" "$HOME/.claude/plugins/" > /dev/null 2>&1; then
+    echo_info "Updating caveman..."
+    plugin_cmd 180 claude plugin install caveman@caveman 2>&1 || echo_warn "caveman update failed"
+    echo_success "caveman updated"
   else
     echo_info "Installing caveman (marketplace -> plugin -> npx fallback)..."
     if plugin_cmd 120 claude plugin marketplace add JuliusBrussee/caveman && \
@@ -590,37 +582,34 @@ with open('$_claude_settings', 'w') as f:
     fi
   fi
 
-  # Code Review
-  if [ -d "$SKILL_DIR/code-review" ]; then
-    echo_success "code-review already installed (project skill)"
-  elif [ -d "$HOME/.claude/skills/code-review" ]; then
-    echo_success "code-review found in global skills"
-  elif grep -rl "code-review" "$HOME/.claude/plugins/" > /dev/null 2>&1; then
-    echo_success "code-review already installed (plugin)"
+  # Code Review — always check for updates
+  if grep -rl "code-review" "$HOME/.claude/plugins/" > /dev/null 2>&1; then
+    echo_info "Updating code-review..."
+    plugin_cmd 180 claude plugin install code-review 2>&1 || echo_warn "code-review update failed"
+    echo_success "code-review updated"
   else
     echo_info "Installing code-review..."
     plugin_cmd 180 claude plugin install code-review || echo_warn "Failed to install code-review (install manually: claude plugin install code-review)"
   fi
 
-  # MemPalace — primary memory layer
+  # MemPalace — primary memory layer, always check for updates
   if grep -rl "mempalace" "$HOME/.claude/plugins/" > /dev/null 2>&1; then
-    echo_success "mempalace already installed (plugin)"
+    echo_info "Updating mempalace..."
+    plugin_cmd 180 claude plugin install --scope user mempalace 2>&1 || echo_warn "mempalace update failed"
+    echo_success "mempalace updated"
   else
     echo_info "Installing mempalace..."
     plugin_cmd 120 claude plugin marketplace add MemPalace/mempalace || echo_warn "Failed to add mempalace marketplace"
     plugin_cmd 180 claude plugin install --scope user mempalace || echo_warn "Failed to install mempalace (install manually: claude plugin install --scope user mempalace)"
   fi
 
-  # MemPalace CLI (uv tool)
-  if command -v mempalace >/dev/null 2>&1; then
-    echo_success "mempalace CLI already installed"
+  # MemPalace CLI (uv tool) — always check for updates
+  if command -v uv >/dev/null 2>&1; then
+    echo_info "Updating mempalace CLI..."
+    plugin_cmd 180 uv tool install mempalace 2>&1 || echo_warn "mempalace CLI update failed"
+    echo_success "mempalace CLI updated"
   else
-    echo_info "Installing mempalace CLI via uv tool..."
-    if command -v uv >/dev/null 2>&1; then
-      plugin_cmd 180 uv tool install mempalace || echo_warn "Failed to install mempalace CLI (install manually: uv tool install mempalace)"
-    else
-      echo_warn "uv not found, skipping mempalace CLI install"
-    fi
+    echo_warn "uv not found, skipping mempalace CLI"
   fi
 
   # MemPalace init (creates HNSW index — per-project, so only if in a project dir)
@@ -647,12 +636,8 @@ if [ "$SKIP_OPTIONAL" = false ]; then
   echo "=========================================="
   echo ""
 
-  if command -v lean-ctx >/dev/null 2>&1; then
-    echo_success "lean-ctx already installed"
-  else
-    echo_info "Installing lean-ctx..."
-    curl -fsSL https://leanctx.com/install.sh 2>/dev/null | sh || echo_warn "Failed to install lean-ctx"
-  fi
+  echo_info "Updating lean-ctx..."
+  curl -fsSL https://leanctx.com/install.sh 2>/dev/null | sh || echo_warn "Failed to update lean-ctx"
 
   if command -v lean-ctx >/dev/null 2>&1; then
     lean-ctx --version 2>&1 || true
@@ -677,29 +662,21 @@ if [ "$SKIP_OPTIONAL" = false ]; then
   echo "=========================================="
   echo ""
 
-  if command -v headroom >/dev/null 2>&1; then
-    echo_success "headroom already installed"
+  # Headroom — always check for updates
+  if command -v uv >/dev/null 2>&1; then
+    echo_info "Updating headroom..."
+    plugin_cmd 180 uv tool install "headroom-ai[mcp,proxy]" 2>&1 || echo_warn "headroom update failed"
+    echo_success "headroom updated"
   else
-    echo_info "Installing headroom..."
-    if command -v uv >/dev/null 2>&1; then
-      plugin_cmd 180 uv tool install "headroom-ai[mcp,proxy]" 2>&1 || echo_warn "Failed to install headroom via uv"
-    else
-      echo_warn "uv not found — install headroom manually: uv tool install 'headroom-ai[mcp,proxy]'"
-    fi
+    echo_warn "uv not found — install headroom manually: uv tool install 'headroom-ai[mcp,proxy]'"
   fi
 
   if command -v headroom >/dev/null 2>&1; then
-    # Configure MCP server
     if claude mcp list 2>/dev/null | grep -q headroom; then
       echo_success "headroom MCP already configured"
     else
       echo_info "Configuring headroom MCP..."
-      plugin_cmd 120 headroom mcp install 2>&1 || echo_warn "headroom mcp install timed out (run manually: headroom mcp install)"
-      if claude mcp list 2>/dev/null | grep -q headroom; then
-        echo_success "headroom MCP configured"
-      else
-        echo_warn "headroom MCP not detected after install — you may need to run: headroom mcp install"
-      fi
+      plugin_cmd 120 headroom mcp install 2>&1 || echo_warn "headroom mcp install timed out"
     fi
   fi
 fi
@@ -711,12 +688,8 @@ if [ "$SKIP_OPTIONAL" = false ]; then
   echo "=========================================="
   echo ""
 
-  if command -v codegraph >/dev/null 2>&1; then
-    echo_success "codegraph already installed"
-  else
-    echo_info "Installing codegraph..."
-    npm i -g @colbymchenry/codegraph 2>&1 || echo_warn "Failed to install codegraph via npm"
-  fi
+  echo_info "Updating codegraph..."
+  npm i -g @colbymchenry/codegraph 2>&1 || echo_warn "Failed to update codegraph via npm"
 
   if command -v codegraph >/dev/null 2>&1; then
     # Install MCP server
