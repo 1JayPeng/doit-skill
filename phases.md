@@ -2,19 +2,19 @@
 
 **本文件包含 Phase 的详细执行步骤。SKILL.md 仅保留索引 + [LOAD] 指令。执行对应 phase 前，模型必须读取本节。**
 
-**指令集:** **[LOAD]** = 必须读取的文件。**[LOAD:phase-N]** = phase 专用 skill 加载（如 [LOAD:phase-1] grill-me）。**[RELEASE:phase-N]** = skill 释放 + ctx_compress 压缩上下文。**[CALL]** = 必须执行的 MCP 工具调用。
+**指令集:** **[LOAD]** = 必须读取的文件。**[LOAD:phase-N]** = phase 专用 skill 加载（如 [LOAD:phase-1] grill-me）。**[RELEASE:phase-N]** = skill 释放 + headroom_compress 压缩上下文。**[CALL]** = 必须执行的 MCP 工具调用。
 
 ## 指令集 — Progressive Disclosure
 
 **[LOAD]** = 必须读取的文件（与原有语义不变）。
 **[LOAD:phase-N] skill-name** = 在 phase N 开始时加载指定 skill（`Skill skill="skill-name"`）。
-**[RELEASE:phase-N] skill-name** = 在 phase N 结束时释放指定 skill + 调用 `ctx_compress` 压缩上下文。
+**[RELEASE:phase-N] skill-name** = 在 phase N 结束时释放指定 skill + 调用 `headroom_compress` 压缩上下文。
 **[LOAD:session] skill-name** = 加载后全程驻留，不参与 [RELEASE]（仅 behavior 型 skill 使用）。
 
 | 指令 | 语义 | 示例 |
 |------|------|------|
 | `[LOAD:phase-1] grill-me` | Phase 1 开始时加载 grill-me skill | `Skill skill="grill-me"` |
-| `[RELEASE:phase-1] grill-me` | Phase 1 结束后释放 + ctx_compress | 上下文释放 |
+| `[RELEASE:phase-1] grill-me` | Phase 1 结束后释放 + headroom_compress | 上下文释放 |
 | `[LOAD:session] caveman` | Phase 0 加载，全程驻留 | 不释放 |
 
 **Skill 加载策略:** grill-me 不在 Phase 0 加载。它在 Phase 1 开始时 [LOAD:phase-1] 加载，Phase 1 结束时 [RELEASE:phase-1] 释放。caveman 全程驻留。
@@ -135,7 +135,7 @@ TaskCreate subject="Phase 7 - E2E Verify" description="Re-run E2E vs spec REQs"
 TaskCreate subject="Phase 8 - Commit+Push" description="Pre-commit gate, commit, push to remote"
 TaskCreate subject="Phase 9 - Cleanup" description="Remove intermediate files, keep archive"
 TaskCreate subject="Phase 9.5 - Summary" description="Completion summary, knowledge extraction"
-TaskCreate subject="Phase 10 - Session End" description="Stats, MP diary, /compact"
+TaskCreate subject="Phase 10 - Session End" description="Stats, MP diary, headroom_compress"
 ```
 
 ```
@@ -143,7 +143,7 @@ TaskCreate subject="Phase 10 - Session End" description="Stats, MP diary, /compa
 TaskCreate subject="Phase 0 - Classify" description="Classify request, announce type"
 TaskCreate subject="Execute" description="Execute the simple change directly"
 TaskCreate subject="Phase 9.5 - Summary" description="Completion summary"
-TaskCreate subject="Phase 10 - Session End" description="Stats, /compact"
+TaskCreate subject="Phase 10 - Session End" description="Stats, headroom_compress"
 ```
 
 ```
@@ -152,7 +152,7 @@ TaskCreate subject="Phase 0 - Classify" description="Classify request, announce 
 TaskCreate subject="D0-D6 Debug" description="Debug workflow per debug.md"
 TaskCreate subject="Phase 8 - Commit+Push" description="Commit fix, push to remote"
 TaskCreate subject="Phase 9.5 - Summary" description="Completion summary"
-TaskCreate subject="Phase 10 - Session End" description="Stats, /compact"
+TaskCreate subject="Phase 10 - Session End" description="Stats, headroom_compress"
 ```
 
 ```
@@ -228,7 +228,7 @@ If no knowledge found → proceed with standard grill. If knowledge tools unavai
 
 **Phase 1 完成后：** 记录工作日志（grill 问题数、用户回答、REQ 数量）。See [worklog.md](worklog.md)。
 
-**[RELEASE:phase-1] grill-me** — grill 协议完成，释放 grill-me skill 上下文。执行 `ctx_compress` 压缩上下文窗口。
+**[RELEASE:phase-1] grill-me** — grill 协议完成，释放 grill-me skill 上下文。执行 `headroom_compress` 压缩上下文窗口。
 
 ### Phase 1 → Phase 2 Gate
 
@@ -362,14 +362,14 @@ RTK unavailable → `[WARN] RTK not installed` and continue.
 
 **This phase always runs last.** It gathers session statistics and preserves knowledge for future sessions.
 
-**Phase 10 硬门控 — `/compact` 是最后一步，不可跳过：**
+**Phase 10 硬门控 — `headroom_compress` 是最后一步，不可跳过：**
 ```
-/compact
+headroom_compress(content="[full conversation context]")
 ```
-**Why:** Without compact, context grows unbounded. Next session starts with stale, bloated context. This is a hard gate — Phase 10 is NOT complete until `/compact` is called.
-**铁律: Phase 10 不调用 `/compact` = Phase 10 未完成 = 工作流未结束。**
+**Why:** Without compression, context grows unbounded. Next session starts with stale, bloated context. This is a hard gate — Phase 10 is NOT complete until `headroom_compress` is called.
+**铁律: Phase 10 不调用 `headroom_compress` = Phase 10 未完成 = 工作流未结束。**
 
-**⚠️ Compact 副作用：** `/compact` 压缩上下文后，TaskUpdate 的 `taskId` 会丢失。如果 compact 后遇到 `InputValidationError: taskId is missing`，参见 [errors.md](errors.md)#compact-后-task-丢失。
+**⚠️ Compact 副作用：** `headroom_compress` 压缩上下文后，TaskUpdate 的 `taskId` 会丢失。如果 compact 后遇到 `InputValidationError: taskId is missing`，参见 [errors.md](errors.md)#compact-后-task-丢失。
 
 ## Resume — Cross-Session Recovery
 

@@ -431,7 +431,7 @@ Skills load on-demand by phase. See SKILL.md Skill Router for full lifecycle.
 | 3 | tdd | [LOAD:phase-3] → [RELEASE:phase-3] (Type F/B only) |
 | 0 | diagnose | [LOAD:phase-0] (Type B only) |
 
-**[RELEASE]** = skill context released + ctx_compress to free window.
+**[RELEASE]** = skill context released + headroom_compress to free window.
 caveman stays loaded for entire session (behavior type). grill-me/tdd/diagnose release after their phase.
 ```
 

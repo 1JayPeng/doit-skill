@@ -11,14 +11,14 @@ Spec-driven TDD. 10 phases. Nothing ships without spec. Review + Simplify + E2E 
 
 ## Skill Router
 
-On-demand load. **[RELEASE]** after phase + `ctx_compress`。
+On-demand load. **[RELEASE]** after phase + `headroom_compress`。
 caveman: Phase 0 [LOAD:session] 不释放 | grill-me: Phase 1 [LOAD:phase-1] 结束释放 | tdd: Phase 3 [LOAD:phase-3] 结束释放 | diagnose: Phase 0 Type B | handoff/prototype: 按需
 
 ## 铁律 + 指令 + 工具
 
 [rules.md](rules.md)。Worklog: 每 phase 记录 (mempalace > `.doit/worklog.json`)。[worklog.md](worklog.md)
 Non-Interruptive Q | Background >10s | Commit+Push | MP 读写对称 | 工作流不可跳过 | 减少暂停 | Grill 5+/3+ | 危险操作确认 | Review+Simplify
-**[CALL]** = MCP。**[LOAD]** = 读文件。**[LOAD:phase-N]** = 加载 skill。**[RELEASE:phase-N]** = 释放 + ctx_compress。
+**[CALL]** = MCP。**[LOAD]** = 读文件。**[LOAD:phase-N]** = 加载 skill。**[RELEASE:phase-N]** = 释放 + headroom_compress。
 4 层: codegraph + tokensave, context-mode, mempalace, headroom。RTK 自动 Bash, lean-ctx MCP 优先, headroom >500 行。CodeGraph 精准代码图查询，TokenSave 即时检测 + 高级分析（diagnostics, dead_code, complexity, test_map, 代码编辑）。
 **Subagent: 由 `.doit/config.yaml` 控制** (`subagent.enabled`)。配置 `true` 后 Phase 3 决策门控强制并行独立 REQ。子代理与主代理拥有相同工具权限。[execute.md](execute.md)
 
@@ -28,7 +28,7 @@ Non-Interruptive Q | Background >10s | Commit+Push | MP 读写对称 | 工作流
 |-------|--------|------|
 | **-1** | [env-check.md](env-check.md) | 环境检测 → CLAUDE.md + config |
 | **0** | [phases.md](phases.md)#phase-0 | Sync → [LOAD:session] caveman → 分类(R/S/F/B) → MP sweep 10 并行 → **TaskCreate task list** |
-| **1** | [phases.md](phases.md)#phase-1, [learn/inject.md](learn/inject.md) | [LOAD:phase-1] grill-me → Grill(5+/3+) → Spec → Branch → Gate → [RELEASE:phase-1] grill-me → ctx_compress |
+| **1** | [phases.md](phases.md)#phase-1, [learn/inject.md](learn/inject.md) | [LOAD:phase-1] grill-me → Grill(5+/3+) → Spec → Branch → Gate → [RELEASE:phase-1] grill-me → headroom_compress |
 | **2** | [learn/inject.md](learn/inject.md), [plan.md](plan.md) | codegraph_context + tokensave_context → Impact → Order |
 | **3** | [execute.md](execute.md) | [LOAD:phase-3] tdd → TDD per REQ → per-REQ review+simplify |
 | **4** | [e2e.md](e2e.md) | E2E real env, L0+L1 auto, L2+L3 HITL |
@@ -39,7 +39,7 @@ Non-Interruptive Q | Background >10s | Commit+Push | MP 读写对称 | 工作流
 | **9** | — | 清理 `.spec/current.md`, `.spec/doc-capture.md`, empty `.scratch/` |
 | **9.5** | [phases.md](phases.md)#phase-9.5 | Summary → Knowledge extraction |
 | **9.5.5** | [learn/extract.md](learn/extract.md) | 结构化知识 → 用户确认 → 多层存储 |
-| **10** | [phases.md](phases.md)#phase-10 | Stats → MP → **`/compact`** |
+| **10** | [phases.md](phases.md)#phase-10 | Stats → MP → **`headroom_compress`** |
 
 **Phase Gate:** 3→4→5→6→7→8→9→9.5→9.5.5→10。**唯一合法结束 = Phase 10。**
 

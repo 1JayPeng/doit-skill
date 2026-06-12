@@ -94,7 +94,7 @@ If MemPalace tool calls error during any phase, skip silently. Filesystem (`.doi
 Compact 压缩上下文后，`TaskUpdate` 可能因 `taskId` 丢失而报错：
 `InputValidationError: TaskUpdate failed due to the required parameter taskId is missing`
 
-**根因：** `/compact` 压缩对话上下文，task 状态（taskId）从摘要中丢失。系统恢复阶段尝试调用 `TaskUpdate` 但参数不完整。
+**根因：** `headroom_compress` 压缩对话上下文，task 状态（taskId）从摘要中丢失。系统恢复阶段尝试调用 `TaskUpdate` 但参数不完整。
 
 **处理：**
 1. 调用 `TaskList` 检查当前状态
@@ -102,4 +102,4 @@ Compact 压缩上下文后，`TaskUpdate` 可能因 `taskId` 丢失而报错：
 3. **不要重试 `TaskUpdate`** — taskId 已丢失，重试无意义
 4. 如需新建 task，调用 `TaskCreate` 重新创建
 
-**预防：** Phase 10 结束必须运行 `/compact`。Compact 后自动清理 task 列表，不要保留对旧 taskId 的引用。
+**预防：** Phase 10 结束必须运行 `headroom_compress`。Compact 后自动清理 task 列表，不要保留对旧 taskId 的引用。
