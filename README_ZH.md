@@ -50,7 +50,7 @@ doit 在"用户提出"和"Agent 编码"之间插入结构化思考：
 
 ## 工具生态
 
-doit 不是一个孤立的 skill，它是**工具编排器**。它整合了 9 个外部工具和 6 个内置技能，形成四层记忆架构：
+doit 不是一个孤立的 skill，它是**工具编排器**。它整合了 10 个外部工具和 6 个内置技能，形成五层记忆架构：
 
 ```
                     /doit
@@ -233,6 +233,21 @@ pip install uv
 claude mcp add --transport http tavily https://mcp.tavily.com/mcp/?tavilyApiKey=<your-key>
 ```
 
+#### CodeGraph
+
+精准代码图查询 — 跨语言 AST 符号查找、调用图、影响分析。与 TokenSave 互补并行（CodeGraph 精准查询，TokenSave 即时检测）。[GitHub](https://github.com/colbymchenry/codegraph)
+
+```bash
+# 通过 npm 安装
+npm i -g @colbymchenry/codegraph
+
+# 配置 MCP 服务器
+codegraph install --yes
+
+# 在项目中初始化
+codegraph init -i
+```
+
 #### skill-creator
 
 技能创建和评估框架 — 迭代优化 skill，带 eval viewer。[GitHub](https://github.com/anthropics/skills)
@@ -281,7 +296,8 @@ Session 完成 -> Phase 9.5.5 提取 -> 用户确认 -> 多层存储
 
 | 层级 | 工具 | 持久化范围 |
 |------|------|-----------|
-| 代码层 | TokenSave | 代码符号、调用关系、依赖图 — 代码变更存活 |
+| 代码层 | CodeGraph | 代码符号、调用关系、影响分析 — 代码变更存活 |
+| 代码分析层 | TokenSave | 类型检查、死代码、复杂度、测试覆盖 — 代码变更存活 |
 | 会话层 | Context-Mode | 命令输出、语义搜索索引 — 工具调用存活 |
 | 跨会话层 | MemPalace | 规格、决策、知识图谱、agent diary — 重启存活 |
 | Token 优化层 | Headroom | CCR 代理压缩 — token 节省 |
@@ -299,7 +315,7 @@ RTK 通过 PreToolUse hook 自动代理所有 Bash 命令，全阶段节省 60-9
 | -1 | 检测项目环境 | 内置 |
 | 0 | 需求分类（R/S/F/B） | 内置, caveman, mempalace |
 | 1 | 规格生成 + Grill | Tavily MCP, grill-me, mempalace |
-| 2 | 代码图谱规划 | tokensave, mempalace |
+| 2 | 代码图谱规划 | codegraph + tokensave, mempalace |
 | 3 | TDD 执行 + 审查+简化 | RTK, uv, tokensave, context-mode |
 | 4 | 端到端测试（不可跳过） | tokensave, context-mode |
 | 5 | 代码审查 | code-review, tokensave |

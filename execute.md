@@ -49,40 +49,48 @@
 
 ### CONTEXT (before RED)
 Before writing tests, understand the code you'll modify:
-1. `tokensave_context` — get focused context for the REQ task (start here)
-   - **Fallback:** If TokenSave unavailable -> `ctx_search` + `ctx_read` with task description
-2. `tokensave_search` — find specific symbols by name
-   - **Fallback:** If TokenSave unavailable -> `grep -rn` + `find`
-3. `tokensave_similar(symbol="<name>")` — find symbols with similar names (avoid naming inconsistency)
-4. `tokensave_node` — function signature, full source from tests
-   - **Fallback:** If TokenSave unavailable -> `Read` the specific file
-5. `tokensave_body(symbol="<name>")` — return full source body of a symbol (faster than node lookup)
-6. `tokensave_signature(qualified_name="<name>")` — get function signature without body (visibility, generics, params, return type)
-7. `tokensave_signature_search(params="&mut self", returns="Result")` — find functions by signature shape (refactoring: find similar patterns)
-8. `tokensave_callers` / `tokensave_callees` — call graph edges, blast radius
-9. `tokensave_impact` — what's affected by changing a symbol
-10. `tokensave_files` — understand project file structure
-11. `tokensave_test_map(node_id="<id>")` — find test coverage for symbol being modified
-12. `tokensave_affected_tests(files=[<changed_files>])` — find test files affected by changed source files
-13. `tokensave_diagnostics(scope="workspace")` — run type-checker (cargo check / tsc / pyright) before writing code
-14. `ctx_search` — look up previously indexed information from this session
-    - **Fallback:** If Context-Mode unavailable -> `grep` command output
-15. `[MP-READ]` `mempalace_search query="<REQ description>" wing="<project>" limit=2` — recover cross-session context from prior implementations
-16. `[MP-READ]` `mempalace_get_drawer drawer_id="<id from search>"` — fetch full content of a specific drawer (when search preview is insufficient)
-17. `[MP-READ]` `mempalace_list_drawers wing="<project>" room="implementation" limit=5` — browse recent implementation notes
-    - **Fallback:** If MemPalace unavailable -> skip (tokensave + context-mode cover session-level context)
 
+**CodeGraph + TokenSave 互补并行**：
+1. `codegraph_context(task="<REQ description>")` — 获取 REQ 的聚焦上下文（精准，不混入无关代码）
+2. `tokensave_context(task="<REQ description>")` — 即时检测文件改动，交叉验证 CodeGraph 结果
+3. `codegraph_search("symbolName")` — 查找特定符号（精准）
+4. `tokensave_search("symbolName")` — 改动后立即生效的符号查找
+5. `codegraph_callers(symbol)` / `codegraph_callees(symbol)` — 调用图边（更准确）
+6. `codegraph_impact(symbol)` — 符号变更的影响范围
+7. `codegraph_node(symbol)` — 函数签名、完整源码
+8. `codegraph_files` — 理解项目文件结构
+9. `tokensave_diagnostics(scope="workspace")` — 运行类型检查器（cargo check / tsc / pyright）
+10. `tokensave_test_map(node_id="<id>")` — 查找符号的测试覆盖率
+11. `tokensave_affected_tests(files=[<changed_files>])` — 查找受影响的测试文件
+12. `tokensave_similar(symbol="<name>")` — 查找相似名称的符号（避免命名不一致）
+13. `tokensave_body(symbol="<name>")` — 返回符号的完整源码体（比 node 查找更快）
+14. `tokensave_signature(qualified_name="<name>")` — 获取函数签名（不含源码体）
+15. `tokensave_signature_search(params="&mut self", returns="Result")` — 按签名形状查找函数
+16. `ctx_search` — 查找之前索引的信息
+    - **Fallback:** If Context-Mode unavailable -> `grep` command output
+17. `[MP-READ]` `mempalace_search query="<REQ description>" wing="<project>" limit=2` — 恢复跨会话上下文
+18. `[MP-READ]` `mempalace_get_drawer drawer_id="<id from search>"` — 获取特定 drawer 的完整内容
+19. `[MP-READ]` `mempalace_list_drawers wing="<project>" room="implementation" limit=5` — 浏览最近的实现笔记
+    - **Fallback:** If MemPalace unavailable -> skip (codegraph + tokensave cover session-level context)
+
+**使用策略：**
+- **规划阶段**：`codegraph_context` + `tokensave_context` 并行调用
+- **符号查找**：`codegraph_search`（精准），`tokensave_search`（改动后即时检测）
+- **调用图**：`codegraph_callers/callees`（更准确）
+- **质量分析**：`tokensave_diagnostics/test_map/affected_tests`
+- **代码编辑**：`tokensave_str_replace` / `tokensave_multi_str_replace` / `tokensave_insert_at`
 ### IMPLEMENT — Reuse Gate (MANDATORY before writing any code)
 
 **Before writing ANY code, check for existing reusable code.** This is the primary gate — don't defer to review/simplify.
 
-1. **tokensave_search** — search for functions/utilities that already do what you need:
-   - `tokensave_search(query="<functionality needed>")` — find existing implementations
-   - `tokensave_signature_search(params="<key param>", returns="<return type>")` — find functions by shape
-2. **tokensave_similar** — check if a similar function already exists:
-   - `tokensave_similar(symbol="<new_function_name>")` — find naming conflicts or near-duplicates
-3. **[MP-READ] mempalace_search** — check cross-session memory for prior solutions:
-   - `mempalace_search query="<feature>" wing="<project>" limit=3` — find related implementations
+1. **CodeGraph + TokenSave 并行搜索** — 查找现有可复用代码：
+   - `codegraph_search(query="<functionality needed>")` — 精准查找现有实现（不混入无关代码）
+   - `tokensave_search(query="<functionality needed>")` — 即时检测改动后的代码
+   - `tokensave_signature_search(params="<key param>", returns="<return type>")` — 按签名形状查找函数
+2. **tokensave_similar** — 检查是否存在相似函数：
+   - `tokensave_similar(symbol="<new_function_name>")` — 查找命名冲突或近似重复
+3. **[MP-READ] mempalace_search** — 检查跨会话记忆中的先前解决方案：
+   - `mempalace_search query="<feature>" wing="<project>" limit=3` — 查找相关实现
 4. **Decision:** If existing code can be reused or extended → **reuse it**. Only write new code if nothing fits.
 
 **Rule: Write code ONCE. If it already exists, use it. If it's close, adapt it. Review/Simplify catches what this misses — but this gate should catch 90%.**
@@ -203,8 +211,9 @@ After each REQ completes, if MemPalace is active:
 
 1. Read `.doit/config.yaml` `subagent.enabled` — **default is `false`**
 2. If `true`:
-   - **[CALL] `tokensave_context(task="<spec summary>")`** — get code graph for ALL REQs
-   - **[CALL] `tokensave_impact(node_id="<symbol>")`** — check blast radius for each REQ's target symbols
+   - **[CALL] `codegraph_context(task="<spec summary>")`** — 精准代码图查询
+   - **[CALL] `tokensave_context(task="<spec summary>")`** — 即时检测改动，交叉验证
+   - **[CALL] `codegraph_impact(symbol="<symbol>")`** — check blast radius for each REQ's target symbols
    - Group REQs by dependency (files modified, symbols touched)
    - **If >= 2 independent REQs exist → LAUNCH parallel agents NOW.** Do not defer. Do not say "I'll do it later."
      - Each independent REQ → one `Agent({isolation: "worktree", run_in_background: true})` call
@@ -220,11 +229,11 @@ After each REQ completes, if MemPalace is active:
 
 **Config gate:** Read `.doit/config.yaml` `subagent.enabled`. If `true`, launch parallel subagents for independent REQs. If `false` (default), execute sequentially.
 
-**When:** 2+ REQs have no code dependencies (verified via tokensave code graph). Parallel execution can save 50-70% time.
+**When:** 2+ REQs have no code dependencies (verified via codegraph code graph). Parallel execution can save 50-70% time.
 
 **Before launching parallel agents:**
-1. `tokensave_context(task="<REQ description>")` — verify no code dependencies between REQs
-2. `tokensave_impact(node_id="<symbol>")` — check blast radius doesn't overlap
+1. `codegraph_context(task="<REQ description>")` — verify no code dependencies between REQs
+2. `codegraph_impact(symbol="<symbol>")` — check blast radius doesn't overlap
 
 **Launch independent REQs as parallel agents:**
 
