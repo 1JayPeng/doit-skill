@@ -30,7 +30,7 @@ doit is a **workflow orchestrator** — it relies on specialized tools for each 
 | **Code graph** | [tokensave](https://github.com/aovestdipaperino/tokensave) | Symbol lookup, impact analysis, call graphs |
 | **Session context** | [context-mode](https://github.com/mksglu/context-mode) | Command output indexing, semantic search, token savings |
 
-| **Cross-session memory** | [MemPalace](https://github.com/MemPalace/mempalace) (fallback) | Specs, decisions, knowledge graph — survives restarts |
+| **Cross-session memory** | [MemPalace](https://github.com/MemPalace/mempalace) | Specs, decisions, knowledge graph — survives restarts |
 | **Token optimization** | [Headroom](https://github.com/nicholasgriffintn/headroom) | CCR (Compress-Cache-Retrieve) proxy compression — token savings |
 | **Context optimization** | [lean-ctx](https://leanctx.com) | Lean context window management — token savings |
 | **Token optimization** | [RTK](https://github.com/rtk-ai/rtk) | Auto-wraps Bash commands, saves 60-90% tokens |
@@ -196,7 +196,7 @@ doit integrates five memory layers so context survives across sessions:
 | **Code graph** | TokenSave | Symbols, call edges, dependencies — survives code changes |
 | **Session context** | Context-Mode | Command output, semantic search index — survives tool calls |
 | **Cross-session** | MemPalace | Semantic search, KG, diary — survives restarts |
-| **Cross-session** | MemPalace (fallback) | Specs, decisions, knowledge graph, agent diary — survives restarts |
+| **Cross-session** | MemPalace | Specs, decisions, knowledge graph, agent diary — survives restarts |
 | **Token optimization** | Headroom | CCR (Compress-Cache-Retrieve) proxy compression — token savings |
 
 **MemPalace** (30 MCP tools, KG + semantic search, diary). Follows **read-write symmetry**: every phase that writes also reads back in subsequent runs. Phase 0 sweeps 10 parallel calls to reconstruct project context.
