@@ -15,7 +15,7 @@ if [ -z "$SKILL_DIR" ]; then
 fi
 BUNDLED_SKILLS=("grill-me" "tdd" "diagnose" "prototype" "handoff" "improve-codebase-architecture")
 BUILTIN_SKILLS=()
-EXTERNAL_TOOLS=("context-mode" "rtk" "uv" "rust" "tokensave" "tavily" "caveman" "code-review" "agentmemory" "mempalace" "headroom" "lean-ctx")
+EXTERNAL_TOOLS=("context-mode" "rtk" "uv" "rust" "tokensave" "tavily" "caveman" "code-review" "mempalace" "headroom" "lean-ctx")
 SHARED_FILES=("shared/review-simplify.md" "shared/e2e-verify.md" "shared/commit.md")
 SYMLINK_TARGETS=("review-simplify.md:shared/review-simplify.md" "commit.md:shared/commit.md")
 
@@ -88,7 +88,6 @@ echo ""
 
 # Step 3: Check external tools
 echo "[3/3] Checking external tools..."
-_agentmemory_active=false
 for tool in "${EXTERNAL_TOOLS[@]}"; do
     case $tool in
 "context-mode")
@@ -166,43 +165,22 @@ for tool in "${EXTERNAL_TOOLS[@]}"; do
                 echo "  💡 Install: claude plugin install code-review"
             fi
             ;;
-        "agentmemory")
-            if grep -rl "agentmemory" "$HOME/.claude/plugins/" > /dev/null 2>&1; then
-                echo "  ✅ agentmemory installed (plugin)"
-            else
-                echo "  ℹ️  agentmemory not installed (recommended default)"
-                echo "  💡 Install: npm install -g @agentmemory/agentmemory"
-                echo "     agentmemory connect claude-code"
-            fi
-            if curl -s http://localhost:3111/agentmemory/health >/dev/null 2>&1; then
-                echo "  ✅ agentmemory server running"
-                echo "  ℹ️  agentmemory active -> mempalace not needed (二选一)"
-                _agentmemory_active=true
-            else
-                echo "  ℹ️  agentmemory server not running"
-                echo "  💡 Start: npx @agentmemory/agentmemory &"
-                _agentmemory_active=false
-            fi
-            ;;
         "mempalace")
-            if [ "${_agentmemory_active}" = "true" ]; then
-                echo "  ℹ️  mempalace skipped — agentmemory already active (二选一)"
-            elif grep -rl "mempalace" "$HOME/.claude/plugins/" > /dev/null 2>&1; then
+            if grep -rl "mempalace" "$HOME/.claude/plugins/" > /dev/null 2>&1; then
                 echo "  ✅ mempalace installed (plugin)"
             else
-                echo "  ℹ️  mempalace plugin not installed (recommended fallback)"
+                echo "  ℹ️  mempalace plugin not installed (recommended)"
                 echo "  💡 Install: claude plugin marketplace add MemPalace/mempalace"
                 echo "     claude plugin install --scope user mempalace"
             fi
-            if [ "${_agentmemory_active}" != "true" ]; then
-                if command -v mempalace >/dev/null 2>&1; then
-                    echo "  ✅ mempalace CLI installed"
-                else
-                    echo "  ℹ️  mempalace CLI not installed"
-                    echo "  💡 Install: uv tool install mempalace"
-                fi
-                if [ -d ".mempalace" ]; then
-                    echo "  ✅ mempalace initialized"
+            if command -v mempalace >/dev/null 2>&1; then
+                echo "  ✅ mempalace CLI installed"
+            else
+                echo "  ℹ️  mempalace CLI not installed"
+                echo "  💡 Install: uv tool install mempalace"
+            fi
+            if [ -d ".mempalace" ]; then
+                echo "  ✅ mempalace initialized"
                 else
                     echo "  ℹ️  mempalace not initialized"
                     echo "  💡 Run: mempalace init ."
