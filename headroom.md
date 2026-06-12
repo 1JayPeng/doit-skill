@@ -91,7 +91,7 @@ headroom memory prune --older-than 30d
 
 ## What Headroom is NOT
 
-- NOT a cross-session memory layer (use AgentMemory or MemPalace)
+- NOT a cross-session memory layer (use MemPalace)
 - NOT a knowledge graph (use MemPalace KG)
 - NOT a code graph tool (use TokenSave)
 - IS a token optimization layer via output compression

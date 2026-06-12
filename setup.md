@@ -136,26 +136,6 @@ lean-ctx doctor
 
 After installation, usage rules appear at `~/.claude/rules/lean-ctx.md`.
 
-## AgentMemory (Default Memory Layer)
-
-Cross-session semantic memory — 53 MCP tools, 12 hooks, real-time viewer. [GitHub](https://github.com/rohitg00/agentmemory)
-
-```bash
-# 1. Install CLI globally
-npm install -g @agentmemory/agentmemory
-
-# 2. Connect to Claude Code
-agentmemory connect claude-code
-
-# 3. Start memory server
-npx @agentmemory/agentmemory &
-
-# Verify
-curl -s http://localhost:3111/agentmemory/health
-```
-
-**Note:** MemPalace and AgentMemory are mutually exclusive. If AgentMemory is installed and running, MemPalace is not needed.
-
 ## Tavily MCP (Internet Search)
 
 Remote MCP. Streamable HTTP transport — no install needed.
@@ -194,8 +174,7 @@ doit uses a **bundled dependency model**. Core skills ship inside `skills/` and 
 | TokenSave | `cargo install tokensave && tokensave install --agent claude` | Phase 2, 3, 5, 6 |
 | Headroom | `uv tool install "headroom-ai[mcp,proxy]"` + `headroom mcp install` | Phase 10 |
 | lean-ctx | `curl ... \| sh` + `lean-ctx onboard` + `lean-ctx init --agent claude` | All phases |
-| AgentMemory | `npm install -g @agentmemory/agentmemory` + `agentmemory connect claude-code` | Phase 0, 1, 3, 5, 8, 9.5, 10 |
-| MemPalace | `claude plugin marketplace add MemPalace/mempalace` (fallback for AgentMemory) | Phase 0, 1, 3, 5, 8, 9.5, 10 |
+| MemPalace | `claude plugin marketplace add MemPalace/mempalace` | Phase 0, 1, 3, 5, 8, 9.5, 10 |
 | caveman | `claude plugin marketplace add JuliusBrussee/caveman && claude plugin install caveman@caveman` (curl fallback) | Phase 0+ |
 | code-review | `claude plugin install code-review` | Phase 5 |
 | Tavily MCP | Remote, API key only | Phase 1 |

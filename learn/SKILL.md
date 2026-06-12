@@ -86,8 +86,7 @@ Full schema: [schema.json](schema.json)
 
 | Layer | Role | Search |
 |-------|------|--------|
-| AgentMemory | Primary semantic search | `memory_smart_search` |
-| MemPalace | Knowledge graph + semantic backup | `mempalace_search` |
+| MemPalace | Primary semantic search + knowledge graph | `mempalace_search` |
 | Filesystem | Backup, git-tracked | `grep`, `jq` |
 
 ## Configuration
@@ -102,15 +101,14 @@ knowledge:
   extract_failed: true       # Also extract failed sessions
   max_records: 1000          # Max records per project
   layers:                    # Which layers to use
-    agentmemory: true        # Primary
-    mempalace: true          # KG + semantic backup
+    mempalace: true          # Primary
     filesystem: true         # Always
 ```
 
 ## Graceful Degradation
 
 Works with any combination of memory tools:
-- **Full stack**: AgentMemory + MemPalace + Filesystem → best search quality
+- **Full stack**: MemPalace + Filesystem → best search quality
 - **Partial**: Any subset → still works, uses available layers
 - **None**: Filesystem only → basic grep-based search
 

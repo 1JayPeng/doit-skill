@@ -29,20 +29,16 @@ Search query = `"<user request keywords>" <project> <type>`
 
 ### Step 2: Search Knowledge Base
 
-Search AgentMemory as primary, MemPalace as secondary (KG + semantic):
+Search MemPalace as primary (KG + semantic):
 
-**AgentMemory (Primary):**
+**MemPalace (Primary — KG + room-specific):**
 ```
-memory_smart_search query="<search query>" limit=5
-```
-
-**MemPalace (Secondary — KG + room-specific):**
-```
-mempalace_search query="<search query>" wing="<project>" room="knowledge_distillation" limit=3
-mempalace_search query="<search query>" wing="<project>" limit=3
+mempalace_search query="<search query>" wing="<project>" room="knowledge_distillation" limit=5
+mempalace_search query="<search query>" wing="<project>" limit=5
+mempalace_kg_query entity="<project>"
 ```
 
-**Fallback (if both unavailable):**
+**Fallback (if MemPalace unavailable):**
 ```bash
 # Search .doit/knowledge/ for matching records
 grep -r "<keyword>" .doit/knowledge/*.json 2>/dev/null | head -20
@@ -129,9 +125,7 @@ This helps the user avoid known pitfalls without blocking the workflow.
 
 | Available Tools | Behavior |
 |----------------|----------|
-| AgentMemory + MemPalace | AgentMemory primary + MemPalace KG |
-| AgentMemory only | AgentMemory search |
-| MemPalace only | MemPalace search |
+| MemPalace | MemPalace KG + semantic search |
 | None | Filesystem search (.doit/knowledge/) |
 
 If no knowledge found:
@@ -153,5 +147,5 @@ knowledge:
     time_decay_days: 10     # Days for score to halve
     include_failed: true    # Include failed sessions as warnings
     cross_project: false    # Search across all projects (false = current only)
-    source: agentmemory     # Primary search source (agentmemory | mempalace | filesystem)
+    source: mempalace     # Primary search source (mempalace | filesystem)
 ```

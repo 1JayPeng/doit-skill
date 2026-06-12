@@ -29,8 +29,8 @@ doit is a **workflow orchestrator** — it relies on specialized tools for each 
 |-------|------|------|
 | **Code graph** | [tokensave](https://github.com/aovestdipaperino/tokensave) | Symbol lookup, impact analysis, call graphs |
 | **Session context** | [context-mode](https://github.com/mksglu/context-mode) | Command output indexing, semantic search, token savings |
-| **Cross-session memory** | [AgentMemory](https://github.com/rohitg00/agentmemory) (default) | 53 MCP tools, 12 hooks, real-time viewer — survives restarts |
-| **Cross-session memory** | [MemPalace](https://github.com/MemPalace/mempalace) (fallback) | Specs, decisions, knowledge graph — survives restarts |
+
+| **Cross-session memory** | [MemPalace](https://github.com/MemPalace/mempalace) | Specs, decisions, knowledge graph — survives restarts |
 | **Token optimization** | [Headroom](https://github.com/nicholasgriffintn/headroom) | CCR (Compress-Cache-Retrieve) proxy compression — token savings |
 | **Context optimization** | [lean-ctx](https://leanctx.com) | Lean context window management — token savings |
 | **Token optimization** | [RTK](https://github.com/rtk-ai/rtk) | Auto-wraps Bash commands, saves 60-90% tokens |
@@ -144,19 +144,19 @@ How each principle enforces itself:
 
 | Phase | What | Tools |
 |-------|------|-------|
-| -1 | Detect project environment | Built-in, agentmemory |
-| 0 | Classify request (R/S/F/B) | Built-in, caveman, agentmemory |
-| 1 | Spec generation + grill | Tavily MCP, grill-me, agentmemory |
-| 2 | Plan with code graph | tokensave, agentmemory |
-| 3 | Execute TDD + Review+Simplify | RTK, uv, tokensave, context-mode, agentmemory |
+| -1 | Detect project environment | Built-in |
+| 0 | Classify request (R/S/F/B) | Built-in, caveman, mempalace |
+| 1 | Spec generation + grill | Tavily MCP, grill-me, mempalace |
+| 2 | Plan with code graph | tokensave, mempalace |
+| 3 | Execute TDD + Review+Simplify | RTK, uv, tokensave, context-mode |
 | 4 | E2E tests (mandatory) | tokensave, context-mode |
-| 5 | Code review | code-review, tokensave, agentmemory |
+| 5 | Code review | code-review, tokensave |
 | 6 | Review + Simplify (mandatory) | tokensave |
 | 7 | E2E Verification Loop | tokensave, context-mode |
-| 8 | Git commit + Push | git, agentmemory |
-| 9.5 | Completion Summary + Knowledge Extraction | agentmemory |
-| 9.5.5 | Knowledge Distillation (structured learning) | learn/, agentmemory, mempalace, context-mode |
-| 10 | Session Summary | RTK, context-mode, headroom, agentmemory |
+| 8 | Git commit + Push | git |
+| 9.5 | Completion Summary + Knowledge Extraction | mempalace |
+| 9.5.5 | Knowledge Distillation (structured learning) | learn/, mempalace, context-mode |
+| 10 | Session Summary | RTK, context-mode, headroom, mempalace |
 
 ### E2E Verification Loop
 
@@ -195,11 +195,11 @@ doit integrates five memory layers so context survives across sessions:
 |-------|------|----------------|
 | **Code graph** | TokenSave | Symbols, call edges, dependencies — survives code changes |
 | **Session context** | Context-Mode | Command output, semantic search index — survives tool calls |
-| **Cross-session** | AgentMemory (default) | Semantic search, sessions, governance — survives restarts |
-| **Cross-session** | MemPalace (fallback) | Specs, decisions, knowledge graph, agent diary — survives restarts |
+| **Cross-session** | MemPalace | Semantic search, KG, diary — survives restarts |
+| **Cross-session** | MemPalace | Specs, decisions, knowledge graph, agent diary — survives restarts |
 | **Token optimization** | Headroom | CCR (Compress-Cache-Retrieve) proxy compression — token savings |
 
-**Default: AgentMemory** (53 MCP tools, real-time viewer at localhost:3113). Falls back to MemPalace if AgentMemory is unavailable. Both follow **read-write symmetry**: every phase that writes also reads back in subsequent runs. Phase 0 sweeps 10 parallel calls to reconstruct project context.
+**MemPalace** (30 MCP tools, KG + semantic search, diary). Follows **read-write symmetry**: every phase that writes also reads back in subsequent runs. Phase 0 sweeps 10 parallel calls to reconstruct project context.
 
 RTK auto-wraps every Bash command via PreToolUse hook, saving 60-90% tokens across all phases.
 
@@ -322,24 +322,7 @@ lean-ctx doctor
 
 After installation, usage rules appear at `~/.claude/rules/lean-ctx.md`.
 
-#### AgentMemory (default memory layer)
-
-Cross-session semantic memory — 53 MCP tools, 12 hooks, real-time viewer. [GitHub](https://github.com/rohitg00/agentmemory)
-
-```bash
-# 1. Install CLI globally
-npm install -g @agentmemory/agentmemory
-
-# 2. Connect to Claude Code
-agentmemory connect claude-code
-
-# 3. Start memory server
-npx @agentmemory/agentmemory &
-```
-
-#### MemPalace (fallback memory layer)
-
-**Note:** MemPalace and AgentMemory are mutually exclusive. If AgentMemory is installed and running, MemPalace is not needed.
+#### MemPalace (memory layer)
 
 Cross-session semantic memory — specs, decisions, knowledge graph, agent diary. [GitHub](https://github.com/MemPalace/mempalace)
 
@@ -422,15 +405,15 @@ A single `/doit` invocation may not complete the entire workflow. To continue fr
 - New `learn/` module: structured knowledge extraction at Phase 9.5.5
 - Knowledge injection at Phase 1/2 — injects relevant past sessions before grill
 - Historical data migration from git, mempalace, worklog
-- Multi-layer storage: agentmemory + mempalace + context-mode + filesystem
+- Multi-layer storage: mempalace + context-mode + filesystem
 - skill-creator integration for eval-driven skill improvement
 - setup.sh: installs skill-creator via npx skills CLI
 
-**2026-06-06** — AgentMemory as default memory layer:
-- New default: AgentMemory (53 MCP tools, 12 hooks, 4 skills, real-time viewer)
-- Fallback chain: AgentMemory -> MemPalace -> filesystem
-- setup.sh: Step 3.5 installs AgentMemory plugin + starts memory server
-- doctor.sh: Checks AgentMemory plugin + server health
+**2026-06-12** — MemPalace as sole memory layer:
+- Removed AgentMemory (never actually used in practice)
+- MemPalace is primary: semantic search + KG + diary
+- setup.sh: Clean MemPalace installation without agentmemory
+- doctor.sh: Checks MemPalace plugin + CLI
 
 **2026-06-04** — Workflow as iron rule — no phase can be skipped:
 - New iron rule: "完整工作流不可跳过" — every phase mandatory, in order, no skipping

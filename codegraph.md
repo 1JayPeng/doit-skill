@@ -82,5 +82,5 @@ claude mcp list | grep codegraph
 ## CodeGraph 不是什么
 
 - **不是编辑器** — 只读代码图查询。使用原生 Edit/Write 修改文件。
-- **不是记忆系统** — 仅代码结构，无语义记忆。使用 MemPalace/AgentMemory。
+- **不是记忆系统** — 仅代码结构，无语义记忆。使用 MemPalace。
 - **TokenSave 关系**：TokenSave 是主工具；CodeGraph 是跨语言 fallback。

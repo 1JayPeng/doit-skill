@@ -212,7 +212,6 @@ if [ "$DRY_RUN" = true ]; then
     echo "    • tavily           (claude mcp add --transport http tavily ...)"
     echo "    • caveman          (claude plugin + hooks + statusline config)"
 echo "    • code-review      (claude plugin install code-review)"
-    echo "    • agentmemory      (npm install -g @agentmemory/agentmemory)"
     echo "    • mempalace        (claude plugin install --scope user mempalace)"
     echo "    • headroom         (uv tool install headroom-ai[mcp,proxy])"
     echo "    • lean-ctx         (curl install script)"
@@ -599,32 +598,7 @@ with open('$_claude_settings', 'w') as f:
     plugin_cmd 180 claude plugin install code-review || echo_warn "Failed to install code-review (install manually: claude plugin install code-review)"
   fi
 
-  # agentmemory install FIRST (for mutual exclusion with mempalace)
-  _agentmemory_installed=false
-  if grep -rl "agentmemory" "$HOME/.claude/plugins/" > /dev/null 2>&1; then
-    echo_success "agentmemory already installed (plugin)"
-    _agentmemory_installed=true
-  else
-    echo_info "Installing agentmemory CLI..."
-    npm install -g @agentmemory/agentmemory 2>&1 || echo_warn "Failed to install agentmemory via npm"
-    agentmemory connect claude-code < /dev/null 2>&1 || echo_warn "Failed to connect agentmemory to claude-code"
-    if grep -rl "agentmemory" "$HOME/.claude/plugins/" > /dev/null 2>&1; then
-      echo_success "agentmemory installed"
-      _agentmemory_installed=true
-
-      # Fix MCP config: npx @agentmemory/mcp package doesn't exist -> use CLI
-      echo_info "Fixing agentmemory MCP configuration..."
-      _am_mcp_json="$HOME/.claude/plugins/cache/rohitg00-agentmemory/agentmemory/*/\.mcp.json"
-      for _mcp_file in $_am_mcp_json; do
-        if [ -f "$_mcp_file" ] && grep -q 'npx.*@agentmemory/mcp' "$_mcp_file" 2>/dev/null; then
-          sed -i 's|"npx", *-y *, *@agentmemory/mcp|"agentmemory", "mcp"|g; s|"npx"\|"@agentmemory/mcp"|"agentmemory"|g' "$_mcp_file" 2>/dev/null || true
-          echo_info "Fixed agentmemory MCP command in $_mcp_file"
-        fi
-      done
-    fi
-  fi
-
-  # MemPalace — fallback memory layer (installs alongside agentmemory)
+  # MemPalace — primary memory layer
   if grep -rl "mempalace" "$HOME/.claude/plugins/" > /dev/null 2>&1; then
     echo_success "mempalace already installed (plugin)"
   else
@@ -658,49 +632,6 @@ with open('$_claude_settings', 'w') as f:
       fi
     else
       echo_warn "mempalace CLI not found, skipping init"
-    fi
-  fi
-fi
-
-# Step 3.5: Start agentmemory server (install happens in Step 3)
-if [ "$SKIP_OPTIONAL" = false ]; then
-  echo "=========================================="
-  echo "  Step 3.5: Starting agentmemory server"
-  echo "=========================================="
-  echo ""
-
-  # agentmemory server - background process with retry health check
-  if curl -s http://localhost:3111/agentmemory/health >/dev/null 2>&1; then
-    echo_success "agentmemory server already running"
-  else
-    if command -v agentmemory >/dev/null 2>&1; then
-      echo_info "Starting agentmemory server in background..."
-      nohup agentmemory server > /tmp/agentmemory.log 2>&1 &
-      AGENTMEMORY_PID=$!
-      echo_info "Started agentmemory server (PID: $AGENTMEMORY_PID)"
-
-      # Retry health check: 10s, 20s, 30s
-      _am_started=false
-      for _am_retry in 1 2 3; do
-        sleep $((_am_retry * 3))
-        if curl -s http://localhost:3111/agentmemory/health >/dev/null 2>&1; then
-          _am_started=true
-          break
-        fi
-      done
-      if [ "$_am_started" = true ]; then
-        echo_success "agentmemory server is running (PID: $AGENTMEMORY_PID)"
-        echo_info "  Viewer: http://localhost:3113"
-        echo_info "  Health: http://localhost:3111/agentmemory/health"
-      else
-        echo_warn "agentmemory server health check failed after 15s"
-        echo_info "  Log: tail -f /tmp/agentmemory.log"
-        echo_info "  Health: curl http://localhost:3111/agentmemory/health"
-        echo_info "  Manual start: agentmemory server &"
-      fi
-    else
-      echo_warn "agentmemory CLI not found — cannot start agentmemory server"
-      echo_info "  Manual start: npx @agentmemory/agentmemory &"
     fi
   fi
 fi
