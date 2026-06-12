@@ -20,6 +20,7 @@
   - **Fallback:** If lean-ctx not available -> native Read/Grep/Bash tools
 
 - **Context-Mode for context management.** Auto-indexes command output, provides semantic search.
+- **Shell execution priority:** lean-ctx `ctx_shell` (compressed, fast) → Context-Mode `ctx_execute` (indexed, searchable) → native Bash. Prefer lean-ctx for simple commands, Context-Mode when you need to search output later.
 - **Tool source annotation:** lean-ctx `ctx_search` = code search (grep replacement), Context-Mode `ctx_search` = indexed content search (session output). Use lean-ctx for code, Context-Mode for session output.
   - `ctx_execute` — run commands, output auto-indexed
   - `ctx_execute_file` — process large files without loading into context
