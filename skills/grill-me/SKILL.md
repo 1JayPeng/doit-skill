@@ -57,8 +57,8 @@ Every question must include:
 - Ask questions via `AskUserQuestion` with `multiSelect: false`
 - Questions are **dynamically generated** from uncertainty scan + research, not fixed templates
 - After all questions, summarize user's answers before proceeding to spec
-- If user skips or gives incomplete answer → **追问 until answered**. Do not skip.
-- If user's requirements contain contradictions or are unrealistic → **immediately point out**, pause, and ask for clarification
+- If user skips or gives incomplete answer → **use the recommended default and continue**. Do not block the workflow.
+- If user's requirements contain contradictions or are unrealistic → **immediately point out**, use AskUserQuestion (non-interruptive) to clarify
 - Use user's language (if user writes in Chinese, ask in Chinese; technical terms stay in English)
 - Save progress to `.doit/grill-state.json` after grill for cross-session resume
 

@@ -13,8 +13,8 @@
 - 绝不写"Wait for user input"然后暂停
 - 始终用 `AskUserQuestion` + 2-4 个选项
 - 始终提供合理默认值作为第一个选项
-- 用户不回答 -> 用默认值继续
-- **例外：grill 问题不适用此规则。** grill 问题必须先被提出，然后用户不回答才用默认值。跳过 grill 问题 ≠ 用户不回答。
+- 用户不回答 -> 用推荐默认值继续，不阻塞工作流
+- **grill 问题同样适用。** 5+(Type F)/3+(Type B) 个 grill 问题必须通过 AskUserQuestion 发出，用户不回答则用推荐默认值继续。跳过 grill 问题 ≠ 用户不回答。
 
 ### Applied Everywhere
 
@@ -220,7 +220,6 @@ See [dangerous-ops.md](dangerous-ops.md) for full patterns and hook configuratio
 - **禁止**在能推断的情况下问用户（已有信息足够，不要重复确认）
 
 **何时应该暂停：**
-- 用户明确要求确认（grill 问题）
 - 多个环境冲突需要用户选择
 - 删除操作需要确认
 - 发现用户需求矛盾，需要澄清
