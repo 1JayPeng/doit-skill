@@ -187,15 +187,14 @@ Phase 4 tests the user's full journey — exit codes, stdout, file output, datab
 | L2 | Conflicting param combinations | HITL |
 | L3 | Fuzzy/random input, stability | HITL |
 
-### Five-Layer Memory
+### Four-Layer Memory
 
-doit integrates five memory layers so context survives across sessions:
+doit integrates four memory layers so context survives across sessions:
 
 | Layer | Tool | What It Stores |
 |-------|------|----------------|
 | **Code graph** | TokenSave | Symbols, call edges, dependencies — survives code changes |
 | **Session context** | Context-Mode | Command output, semantic search index — survives tool calls |
-| **Cross-session** | MemPalace | Semantic search, KG, diary — survives restarts |
 | **Cross-session** | MemPalace | Specs, decisions, knowledge graph, agent diary — survives restarts |
 | **Token optimization** | Headroom | CCR (Compress-Cache-Retrieve) proxy compression — token savings |
 
