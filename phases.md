@@ -244,6 +244,8 @@ If no knowledge found → proceed with standard grill. If knowledge tools unavai
 
 **Before Phase 10, tell the user what was done and what to do next.** This is the last visible output before session ends. See [commit.md](shared/commit.md) Gate section for format.
 
+**Language Rule:** The completion summary MUST be written in the user's configured language (default: Chinese/中文). Internal work process, reasoning, and tool calls can use English. Only the user-facing output (summary, next steps, REQ results) uses the user's language.
+
 Must include:
 - Branch, commit hash, change summary
 - What each REQ delivered

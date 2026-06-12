@@ -196,6 +196,8 @@ These files are excluded from git (see step 3). Cleanup is for local directory h
 
 **After push + cleanup, BEFORE compact, present a structured completion summary to the user.** This is the last thing the user sees before context compression. Make it actionable.
 
+**Language Rule:** The completion summary MUST be written in the user's configured language (default: Chinese/中文). Internal work process, reasoning, and tool calls can use English. Only the user-facing output (summary, next steps, REQ results) uses the user's language.
+
 ### Summary Format
 
 ```
