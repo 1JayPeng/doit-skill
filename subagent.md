@@ -4,7 +4,7 @@
 
 **环境要求：** Agent 工具需要 Claude 模型（Opus/Sonnet/Haiku）才能启动子 agent。在 Qwen 等非 Claude 模型环境下，Agent 调用会返回模型不存在的错误。Subagent 编排模式在 Claude 模型环境下正常工作。
 
-**配置开关：** 读取 `.doit/config.yaml` 中 `subagent.enabled`。默认 `true`（启用）。设置为 `false` 禁用子代理编排。通过 `setup.sh` 安装时交互式选择，或手动编辑 `~/.doit/config.yaml`。
+**配置开关：** 读取 `.doit/config.yaml` 中 `subagent.enabled`。默认 `false`（禁用）。设置为 `true` 启用子代理编排。通过 `setup.sh` 安装时交互式选择，或手动编辑 `~/.doit/config.yaml`。
 
 Claude Code 内置 `Agent` 工具允许启动独立 agent 处理子任务。每个 agent 有独立的上下文窗口、独立的工具调用链、独立的工作目录（可选 worktree 隔离）。
 

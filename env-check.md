@@ -608,13 +608,13 @@ AskUserQuestion:
   question: "启用子代理并行执行？— 独立 REQ 并行可节省 50-70% 时间，但 token 消耗 2-4x。"
   header: "子代理"
   options:
-    - label: "启用 (Recommended)"
+    - label: "启用"
       description: "并行执行独立 REQ -> 大幅加速 50-70%。Trade-off: token 消耗增加 2-4x。适合: 多 REQ 功能开发。"
     - label: "关闭"
       description: "串行执行 -> token 节省，速度稳定。Trade-off: 多 REQ 时等待时间长。适合: 预算有限或单 REQ 项目。"
 ```
 
-User selects "启用" → `subagent.enabled: true`. User selects "关闭" → `subagent.enabled: false`. User doesn't answer → default `true`.
+User selects "启用" → `subagent.enabled: true`. User selects "关闭" → `subagent.enabled: false`. User doesn't answer → default `false`.
 
 ```bash
 if [ ! -f .doit/config.yaml ]; then
@@ -626,7 +626,7 @@ doc-capture:
   path: .doit/docs
 
 subagent:
-  enabled: true
+  enabled: false
 
 commit:
   branch: branch

@@ -209,7 +209,7 @@ After each REQ completes, if MemPalace is active:
 
 **[CALL] This gate runs once before Phase 3 execution. No skip. No rationalizing.**
 
-1. Read `.doit/config.yaml` `subagent.enabled` — **default is `true`**
+1. Read `.doit/config.yaml` `subagent.enabled` — **default is `false`**
 2. If `true`:
    - **[CALL] `codegraph_context(task="<spec summary>")`** — 精准代码图查询
    - **[CALL] `tokensave_context(task="<spec summary>")`** — 即时检测改动，交叉验证
@@ -227,7 +227,7 @@ After each REQ completes, if MemPalace is active:
 
 ### Subagent Parallel TDD (When Decision Gate Says Parallel)
 
-**Config gate:** Read `.doit/config.yaml` `subagent.enabled`. If `true` (default), launch parallel subagents for independent REQs. If `false`, execute sequentially.
+**Config gate:** Read `.doit/config.yaml` `subagent.enabled`. If `true`, launch parallel subagents for independent REQs. If `false` (default), execute sequentially.
 **Subagent permissions:** Any subagent has the same tool permissions as the main agent — including tokensave, codegraph, and all MCP servers.
 
 **When:** 2+ REQs have no code dependencies (verified via codegraph code graph). Parallel execution can save 50-70% time.

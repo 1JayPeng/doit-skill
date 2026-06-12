@@ -135,10 +135,10 @@ if [ -t 0 ] && [ -t 1 ]; then
 fi
 
 # Ask about subagent orchestration (interactive, skip if piped/non-tty)
-SUBAGENT_ENABLED="true"
+SUBAGENT_ENABLED="false"
 if [ -t 0 ] && [ -t 1 ]; then
-  read -r -p "Enable subagent orchestration (parallel, faster)? [Y/n] " answer
-  case "${answer:-Y}" in
+  read -r -p "Enable subagent orchestration (parallel, token-intensive)? [y/N] " answer
+  case "${answer:-N}" in
     [yY][eE][sS]|[yY]) SUBAGENT_ENABLED="true" ;;
     *) SUBAGENT_ENABLED="false" ;;
   esac
@@ -242,7 +242,7 @@ echo "    • code-review      (claude plugin install code-review)"
 
   echo "  Options (configurable at install):"
   echo "    • doc-capture    (persist reference docs, default: enabled)"
-  echo "    • subagent       (parallel orchestration, default: enabled)"
+  echo "    • subagent       (parallel orchestration, default: disabled)"
   echo "    • --global       install to ~/.claude/skills/ instead of .claude/skills/"
 
   echo ""
@@ -398,7 +398,8 @@ else
 # Skill-Creator (from anthropics/skills) — always check for updates
   if command -v npx >/dev/null 2>&1; then
     echo_info "Updating skill-creator..."
-    npx skills add anthropics/skills@skill-creator -y 2>&1 || echo_warn "Failed to update skill-creator"
+    npx skills add anthropics/skills@skill-creator -y --non-interactive </dev/null 2>&1 || \
+      echo_warn "Failed to update skill-creator (some agents may not support installation — this is non-blocking)"
   else
     echo_warn "npx not found — skill-creator requires Node.js. Install manually:"
     echo "     npx skills add anthropics/skills@skill-creator"
