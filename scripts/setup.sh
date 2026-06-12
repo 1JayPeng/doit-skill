@@ -135,10 +135,10 @@ if [ -t 0 ] && [ -t 1 ]; then
 fi
 
 # Ask about subagent orchestration (interactive, skip if piped/non-tty)
-SUBAGENT_ENABLED="false"
+SUBAGENT_ENABLED="true"
 if [ -t 0 ] && [ -t 1 ]; then
-  read -r -p "Enable subagent orchestration (parallel, faster)? [y/N] " answer
-  case "${answer:-N}" in
+  read -r -p "Enable subagent orchestration (parallel, faster)? [Y/n] " answer
+  case "${answer:-Y}" in
     [yY][eE][sS]|[yY]) SUBAGENT_ENABLED="true" ;;
     *) SUBAGENT_ENABLED="false" ;;
   esac
@@ -192,6 +192,24 @@ if [ "$TAVILY_CONFIGURED" != "true" ]; then
   _ask_tavily 2>/dev/null
 fi
 
+# Install Tavily MCP immediately after API key is obtained.
+# This runs BEFORE git clone and all other steps, so Tavily is never
+# lost if later steps fail.
+if [ -n "$TAVILY_API_KEY" ]; then
+  echo_info "Installing Tavily MCP with your API key..."
+  # Remove existing tavily first — claude mcp add fails if name already exists
+  claude mcp remove tavily 2>/dev/null || true
+  if claude mcp add --transport http tavily "https://mcp.tavily.com/mcp/?tavilyApiKey=$TAVILY_API_KEY" 2>&1; then
+    if claude mcp list 2>/dev/null | grep -q tavily; then
+      echo_success "tavily MCP configured"
+    else
+      echo_warn "tavily MCP not detected after install — may need manual install"
+    fi
+  else
+    echo_warn "Failed to install Tavily MCP (install manually: claude mcp add --transport http tavily https://mcp.tavily.com/mcp/?tavilyApiKey=<your-key>)"
+  fi
+fi
+
 # Handle dry-run
 if [ "$DRY_RUN" = true ]; then
   echo_info "Dry run — showing what would be installed:"
@@ -224,7 +242,7 @@ echo "    • code-review      (claude plugin install code-review)"
 
   echo "  Options (configurable at install):"
   echo "    • doc-capture    (persist reference docs, default: enabled)"
-  echo "    • subagent       (parallel orchestration, default: disabled)"
+  echo "    • subagent       (parallel orchestration, default: enabled)"
   echo "    • --global       install to ~/.claude/skills/ instead of .claude/skills/"
 
   echo ""
@@ -408,19 +426,6 @@ else
     echo_info "Installing context-mode..."
     plugin_cmd 120 claude plugin marketplace add mksglu/context-mode || echo_warn "Failed to add context-mode marketplace"
     plugin_cmd 180 claude plugin install context-mode@context-mode || echo_warn "Failed to install context-mode"
-  fi
-
-# Tavily MCP (web search) - only if API key provided via env or interactive
-  if [ -n "$TAVILY_API_KEY" ]; then
-    echo_info "Installing Tavily MCP with your API key..."
-    # Remove existing tavily first — claude mcp add fails if name already exists
-    claude mcp remove tavily 2>/dev/null || true
-    claude mcp add --transport http tavily "https://mcp.tavily.com/mcp/?tavilyApiKey=$TAVILY_API_KEY" || echo_warn "Failed to install Tavily MCP (install manually: claude mcp add --transport http tavily https://mcp.tavily.com/mcp/?tavilyApiKey=<your-key>)"
-    if claude mcp list 2>/dev/null | grep -q tavily; then
-      echo_success "tavily MCP configured"
-    else
-      echo_warn "tavily MCP not detected after install"
-    fi
   fi
 
   # RTK
