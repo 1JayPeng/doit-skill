@@ -12,7 +12,7 @@ Capture successful patterns from doit sessions and reuse them to accelerate futu
 This module integrates with doit-skill's workflow to automatically:
 
 1. **Extract** knowledge at Phase 9.5.5 (after completion summary)
-2. **Store** in multi-layer memory (agentmemory, mempalace, context-mode, filesystem)
+2. **Store** in primary layers (mempalace + filesystem)
 3. **Inject** relevant past knowledge at Phase 1/2 (before grill/planning)
 
 ## Workflow Integration
@@ -86,9 +86,7 @@ Full schema: [schema.json](schema.json)
 
 | Layer | Role | Search |
 |-------|------|--------|
-| AgentMemory | Primary semantic search | `agentmemory_recall` |
-| MemPalace | Knowledge graph + rooms | `mempalace_search` |
-| Context-Mode | Session index | `ctx_search` |
+| MemPalace | Primary semantic search + knowledge graph | `mempalace_search` |
 | Filesystem | Backup, git-tracked | `grep`, `jq` |
 
 ## Configuration
@@ -103,16 +101,14 @@ knowledge:
   extract_failed: true       # Also extract failed sessions
   max_records: 1000          # Max records per project
   layers:                    # Which layers to use
-    agentmemory: true
     mempalace: true
-    context_mode: true
     filesystem: true
 ```
 
 ## Graceful Degradation
 
 Works with any combination of memory tools:
-- **Full stack**: All 4 layers → best search quality
+- **Full stack**: MemPalace + Filesystem → best search quality
 - **Partial**: Any subset → still works, uses available layers
 - **None**: Filesystem only → basic grep-based search
 
@@ -168,9 +164,7 @@ learn/
 - Phase 2 hook (before impact analysis)
 
 **With memory tools:**
-- AgentMemory: Primary semantic search
-- MemPalace: Knowledge graph + rooms
-- Context-Mode: Session indexing
+- MemPalace: Primary semantic search + knowledge graph
 - Tokensave: Code pattern references
 
 **With skill-creator:**

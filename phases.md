@@ -200,7 +200,7 @@ For each category, construct the knowledge entry from the session data:
 
 **If nothing to extract for a category:** Skip that category silently. But still run KG stats and announce.
 **If ALL categories empty:** Announce `[KNOWLEDGE] No new knowledge this session` — don't skip the announcement.
-**MP unavailable:** Fall back to `[CALL] agentmemory_remember content="<extraction>"` — don't skip entirely.
+**MP unavailable:** Fall back to `[CALL] ctx_shell("echo '<extraction>' > .doit/knowledge/<date>-<project>.json")` — filesystem backup.
 
 ## Phase 9.5.5 — Knowledge Distillation (结构化知识沉淀)
 
