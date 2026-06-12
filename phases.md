@@ -42,11 +42,12 @@ CLAUDE.md `## Skill Loading` section (written by Phase -1) also enforces this, s
 **分类驱动额外 skill 加载:**
 - Type F → Phase 1 开始时 [LOAD:phase-1] grill-me, Phase 3 开始时 [LOAD:phase-3] tdd
 - Type B → 现在 [LOAD:phase-0] diagnose
-- Type R/S → 无额外 skill
+- Type Q/R/S → 无额外 skill
 
-**Step 2 — Auto-classify.** Read [classifier.md](classifier.md). Four types:
+**Step 2 — Auto-classify.** Read [classifier.md](classifier.md). Five types:
 
 - **R (resume)** — `/doit` called with no args or blank args. Resume in-progress workflow. See classifier.md Type R.
+- **Q (query)** — pure query/research, no code changes. Use tools directly to answer. Skip phases 1-9.5. See classifier.md Type Q.
 - **S (simple)** — single file, rename, quick fix. Execute directly. Skip Phase -1 (use env-cache if available). Skip phases 1-6.
 - **F (feature)** — new functionality, cross-module, user-facing. Run phases 1-8.
 - **B (bug)** — something broken. Run debug workflow D0-D6. See [debug.md](debug.md).
@@ -63,7 +64,7 @@ CLAUDE.md `## Skill Loading` section (written by Phase -1) also enforces this, s
 ```
 **Why:** User needs to see the classification. Without it, the agent can skip Phase 0 and the user won't know.
 
-**Step 2.5 — Memory Context Sweep (MANDATORY).** Before any phase logic executes, load project context from MemPalace. Type S (simple) can skip.
+**Step 2.5 — Memory Context Sweep (MANDATORY).** Before any phase logic executes, load project context from MemPalace. Type Q and Type S can skip.
 
 **Step A — Refresh index (sequential, must complete first):**
 ```
@@ -98,6 +99,7 @@ mempalace_search wing="sessions" room="problems" limit=3 max_distance=0.7
 **CRITICAL: `wing="<project>"` is mandatory on every `mempalace_search`.** The `sessions` wing (auto-save) typically contains 80-95% of all drawers. Searching without `wing` filter returns auto-saved session dumps, not project context. `<project>` = project root directory name.
 
 **Type-specific sweep:**
+- **Type Q (query):** Skip entirely — no MP sweep needed
 - **Type F (feature):** All 8 calls above + sessions feedback 2 = 10 total
 - **Type S (simple):** Only core 4 calls, skip knowledge rooms + sessions
 - **Type B (bug):** Core 4 + sessions 2 + `mempalace_search wing="<project>" room="knowledge_code" limit=3 max_distance=0.7` + `mempalace_search query="<bug 关键词> error" wing="<project>" room="bugs" limit=5 max_distance=0.7`
@@ -136,6 +138,13 @@ TaskCreate subject="Phase 8 - Commit+Push" description="Pre-commit gate, commit,
 TaskCreate subject="Phase 9 - Cleanup" description="Remove intermediate files, keep archive"
 TaskCreate subject="Phase 9.5 - Summary" description="Completion summary, knowledge extraction"
 TaskCreate subject="Phase 10 - Session End" description="Stats, MP diary, headroom_compress"
+```
+
+```
+# Type Q (query workflow):
+TaskCreate subject="Phase 0 - Classify" description="Classify request, announce Type Q"
+TaskCreate subject="Query" description="Use tools to research and answer directly"
+TaskCreate subject="Phase 10 - Compact" description="headroom_compress"
 ```
 
 ```
@@ -415,6 +424,11 @@ This recovers what was done in prior sessions without relying on filesystem stat
   [x] Phase 9.5     Completion Summary (user-facing)
   [x] Phase 9.5.5   Knowledge Distillation (structured extraction)
   [x] Phase 10      Session Summary
+
+[Phase Gate] Type Q flow (query):
+  [x] Phase 0   Classify → Type Q
+  [x] Answer directly using tools — codegraph, tokensave, ctx_search, ctx_read
+  [x] Phase 10    headroom_compress
 
 [Phase Gate] Type F flow (full):
   [x] Phase -1    Detect Environment + Config

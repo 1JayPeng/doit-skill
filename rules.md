@@ -117,7 +117,7 @@ See [shared/commit.md](shared/commit.md) for commit message conventions and push
 
 **MemPalace 调用与 TokenSave 同级别，不可跳过。可用则必做，不可用则静默跳过。**
 
-- **Phase 0 sweep 必须执行**（Type S 除外）— 10 个并行调用加载项目上下文（4 核心 + 4 知识 room + 2 sessions 反馈）
+- **Phase 0 sweep 必须执行**（Type Q/S 除外）— 10 个并行调用加载项目上下文（4 核心 + 4 知识 room + 2 sessions 反馈）
 - **`[MP-READ]` 标记的步骤** — 读项目相关历史（spec、决策、实现、bug），为当前 phase 提供上下文
 - **`[MP-WRITE]` 标记的步骤** — 写当前 phase 产出（spec、ADR、实现摘要、KG 事实、diary）
 - **先读后写** — Phase 0 已做全局 sweep，各 phase 的 `[MP-READ]` 做精准搜索，`[MP-WRITE]` 在 phase 完成后写入
@@ -160,6 +160,7 @@ Phase -1 → Phase 0 → Phase 1 → Phase 2 → Phase 3 → Phase 4 → Phase 5
 
 **唯一合法结束状态是 Phase 10 完成。** 如果要说"完成"而 Phase 10 还没执行，说明你没做完。
 
+**Type Q（查询）极简流程：** Phase 0 → 直接用工具回答 → Phase 10 (仅 headroom_compress)。不创建分支、不写 spec、不 commit。
 **Type S（简单）简化流程：** Phase 0 → 直接执行 → Phase 9.5 → Phase 10。简单变更也需 commit + session summary。
 **Type B（Bug）调试流程：** Phase 0 → D0-D6 → Phase 8 → Phase 9.5 → Phase 10.
 

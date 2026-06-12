@@ -14,7 +14,7 @@ fi
 **Why:** avoids working on stale code, prevents conflicts with parallel sessions or manual pushes.
 **Safety:** `--rebase` first (cleaner history), falls back to merge rebase fails. `|| true` so missing remote or network error doesn't block the workflow.
 
-**Apply to ALL classification types (R/S/F/B).** This runs before type detection.
+**Apply to ALL classification types (R/Q/S/F/B).** This runs before type detection.
 
 ## Type R — Resume (blank /doit)
 
@@ -46,6 +46,26 @@ If no in-progress work found → tell user "No in-progress workflow found. Type 
 **Action:** Execute directly. Skip Phase -1 (use `.doit/env-cache.json` if exists, skip if not). Skip phases 1-5. Log to `.scratch/doit-log.jsonl`.
 
 **Phase -1 skip for Type S:** Type S tasks do NOT run Phase -1 environment detection. If `.doit/env-cache.json` exists and is <24h old, read it for runtime info. If not, just execute — don't scan the environment.
+
+## Type Q — Query (纯查询/研究，无代码变更)
+
+**Signs:**
+- 查询信息（"X 怎么工作的", "找一下 Y 的实现"）
+- 代码研究（"这个功能的架构是怎样的"）
+- 解释代码（"这段代码做什么"）
+- 回答问题（基于代码库的事实查询）
+- 环境排查（"为什么这个命令不工作"）
+- 任何不需要修改代码的请求
+
+**Action:** **不执行完整工作流。** 仅使用工具直接回答：
+
+1. **Phase 0 分类** → announce Type Q
+2. **直接使用工具** — codegraph、tokensave、ctx_search、ctx_read 等查找信息
+3. **用中文直接回答** — 给出清晰、准确的答案
+4. **跳过 Phase 1-9.5** — 无 spec、无 branch、无 commit、无知识提取
+5. **Phase 10** — 仅运行 headroom_compress，跳过其他统计
+
+**铁律：Type Q 不创建分支、不写 spec、不 commit、不提取知识。** 纯查询 = 纯回答。
 
 ## Type F — Feature
 

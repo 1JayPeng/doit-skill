@@ -9,6 +9,8 @@ Spec-driven TDD. 10 phases. Nothing ships without spec. Review + Simplify + E2E 
 
 **Phase 0 是强制入口。** 任何 `/doit` 调用，必须先执行 Phase 0 分类，然后 announce 分类结果给用户，然后创建 Phase Task List（TaskCreate）。不 announce = 用户不知道工作流在做什么 = 跳过。不创建 task 列表 = 模型无法跟踪进度 = 跳过。
 
+**Type Q 例外：** 纯查询/研究工作不需要完整工作流。分类为 Type Q → 直接用工具回答 → Phase 10 (仅 headroom_compress)。
+
 ## Skill Router
 
 On-demand load. **[RELEASE]** after phase + `headroom_compress`。
@@ -42,6 +44,7 @@ Non-Interruptive Q | Background >10s | Commit+Push | MP 读写对称 | 工作流
 | **10** | [phases.md](phases.md)#phase-10 | Stats → MP → **`headroom_compress`** |
 
 **Phase Gate:** 3→4→5→6→7→8→9→9.5→9.5.5→10。**唯一合法结束 = Phase 10。**
+**Type Q 流程:** Phase 0 → 直接用工具回答 → Phase 10 (仅 headroom_compress)。不创建分支、不写 spec、不 commit。
 
 ## 辅助
 
