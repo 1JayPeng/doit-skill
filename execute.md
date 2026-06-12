@@ -124,16 +124,8 @@ After RED->GREEN->REFACTOR completes, **before moving to next REQ**:
 
 ### Worklog Write (MANDATORY after each REQ)
 
-**[CALL] Execute these MCP tool calls after every REQ completion. No skip.**
+**[CALL] Execute this after every REQ completion. No skip.**
 
-```
-[CALL] mempalace_add_drawer wing="<project>" room="worklog" content="<worklog JSON>"
-```
-If mempalace fails:
-```
-[CALL] mempalace_add_drawer wing="<project>" room="worklog" content="<summary>"
-```
-If mempalace fails, final fallback:
 ```
 [CALL] ctx_shell("echo '<worklog JSON>' >> .doit/worklog.json")
 ```
@@ -143,7 +135,8 @@ If mempalace fails, final fallback:
 {"phase":3,"req":"REQ-00X","desc":"<what was done>","files":["<changed_file>"],"duration":"<approx>","tests":"pass/fail","decision":"<key decision>"}
 ```
 
-**If all layers fail:** Announce `[WARN] worklog failed` and continue. Never block the workflow on worklog failure.
+**If filesystem write fails:** Announce `[WARN] worklog failed` and continue. Never block the workflow on worklog failure.
+Phase 10 will batch-extract worklog to MemPalace at session end.
 
 **Full Phase 6 review-simplify runs after Phase 5.** Shared source: [shared/review-simplify.md](shared/review-simplify.md)
 

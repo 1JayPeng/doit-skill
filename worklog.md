@@ -1,17 +1,21 @@
 # 工作留痕 (Worklog)
 
-**每个 phase 完成后记录工作日志。两层存储：mempalace > 文件系统。**
+**每个 phase 完成后记录工作日志。只写文件系统，Phase 10 统一提取到 MemPalace。**
 
 最终目标：生成日报/周报/项目报告，有据可依。
 
 ## 存储层
 
-| 层级 | 工具 | 用途 | 回退 |
-|------|------|------|------|
-| 1 | mempalace | 跨会话语义记忆（首选） | 文件系统 |
-| 2 | `.doit/worklog.json` | 结构化日志文件 | 无 |
+| 层级 | 工具 | 用途 |
+|------|------|------|
+| 1 | `.doit/worklog.json` | 结构化日志文件（唯一写入点） |
 
-**写入逻辑：** 尝试 mempalace → 失败则文件系统。**至少一层成功。**
+**写入逻辑：** 直接追加到 `.doit/worklog.json`。Phase 10 会话结束时统一提取到 MemPalace。
+
+**为什么简化为单层：**
+- 每 phase 都调 mempalace MCP → token 浪费
+- worklog 结构化数据本身不适合语义搜索
+- Phase 10 统一提取到 MP，保证会话结束时有跨会话可检索
 
 ## 日志格式
 
@@ -51,7 +55,7 @@
 
 ## 写入实现
 
-### 文件系统（回退层）
+### 文件系统（唯一写入层）
 
 每个 phase 完成后，追加到 `.doit/worklog.json`：
 
@@ -72,11 +76,13 @@ echo '{
 }' >> .doit/worklog.json
 ```
 
-### MemPalace
+### Phase 10 统一提取到 MemPalace
+
+Phase 10 会话结束时，将本会话的 worklog 汇总提取到 MemPalace：
 
 ```
-mempalace_add_drawer wing="<project>" room="worklog" content="<JSON log entry>" source_file=".doit/worklog.json"
-mempalace_diary_write agent_name="doit" entry="<compact summary>" topic="worklog"
+mempalace_add_drawer wing="<project>" room="worklog" content="<session summary from worklog>"
+mempalace_diary_write agent_name="doit" entry="<compact session summary>" topic="worklog"
 ```
 
 ## 报告生成
@@ -125,7 +131,7 @@ mempalace_diary_write agent_name="doit" entry="<compact summary>" topic="worklog
 
 **每个 phase 完成后必须记录工作日志。没有例外。**
 
-- 记录失败（两层都不可用）→ 在 Phase 9.5 完成摘要中声明 `[WARN] worklog failed`
+- 记录失败 → 在 Phase 9.5 完成摘要中声明 `[WARN] worklog failed`
 - 记录不阻塞工作流 → 即使记录失败也继续下一个 phase
 - 记录内容要具体 → "实现认证 API" 而不是 "写代码"
 
@@ -137,7 +143,7 @@ mempalace_diary_write agent_name="doit" entry="<compact summary>" topic="worklog
 worklog:
   enabled: true          # 默认启用
   format: json           # json | markdown
-  storage: auto          # auto (两层尝试) | mempalace | filesystem
+  storage: filesystem   # filesystem only (Phase 10 extracts to MemPalace)
   report:
     daily: true          # 生成日报
     weekly: false        # 生成周报

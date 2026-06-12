@@ -43,7 +43,9 @@ If no in-progress work found → tell user "No in-progress workflow found. Type 
 - Run a command, install a package
 - Change config value
 
-**Action:** Execute directly. Skip phases 1-5. Log to `.scratch/doit-log.jsonl`.
+**Action:** Execute directly. Skip Phase -1 (use `.doit/env-cache.json` if exists, skip if not). Skip phases 1-5. Log to `.scratch/doit-log.jsonl`.
+
+**Phase -1 skip for Type S:** Type S tasks do NOT run Phase -1 environment detection. If `.doit/env-cache.json` exists and is <24h old, read it for runtime info. If not, just execute — don't scan the environment.
 
 ## Type F — Feature
 

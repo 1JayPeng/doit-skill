@@ -47,7 +47,7 @@ CLAUDE.md `## Skill Loading` section (written by Phase -1) also enforces this, s
 **Step 2 — Auto-classify.** Read [classifier.md](classifier.md). Four types:
 
 - **R (resume)** — `/doit` called with no args or blank args. Resume in-progress workflow. See classifier.md Type R.
-- **S (simple)** — single file, rename, quick fix. Execute directly. Skip phases 1-6.
+- **S (simple)** — single file, rename, quick fix. Execute directly. Skip Phase -1 (use env-cache if available). Skip phases 1-6.
 - **F (feature)** — new functionality, cross-module, user-facing. Run phases 1-8.
 - **B (bug)** — something broken. Run debug workflow D0-D6. See [debug.md](debug.md).
 
@@ -258,7 +258,13 @@ RTK unavailable → `[WARN] RTK not installed` and continue.
 [CALL] headroom_stats (MCP tool) — show compression statistics for session
 ```
 
-4. **[CALL] MemPalace diary:**
+4. **[CALL] Worklog → MemPalace (batch extract):** Read `.doit/worklog.json`, summarize the session's worklog entries, and extract to MemPalace:
+```
+[CALL] mempalace_add_drawer wing="<project>" room="worklog" content="<session worklog summary>"
+[CALL] mempalace_diary_write agent_name="doit" entry="<compact session summary>" topic="worklog"
+```
+
+5. **[CALL] MemPalace diary:**
 ```
 [CALL] mempalace_diary_write agent_name="doit" entry="<compact summary>" topic="compact"
 [CALL] mempalace_memories_filed_away — verify auto-save checkpoint
@@ -272,7 +278,7 @@ RTK unavailable → `[WARN] RTK not installed` and continue.
 [CALL] mempalace_kg_timeline entity="<project>" — log project timeline
 ```
 
-5. **[CALL] Caveman compress:** Run `/caveman:compress CLAUDE.md` to compress CLAUDE.md.
+6. **[CALL] Caveman compress:** Run `/caveman:compress CLAUDE.md` to compress CLAUDE.md.
 
 **This phase always runs last.** It gathers session statistics and preserves knowledge for future sessions.
 **MANDATORY: End with `/compact` to compress conversation context.**
@@ -345,6 +351,7 @@ This recovers what was done in prior sessions without relying on filesystem stat
 
 [Phase Gate] Type S flow (simple):
   [x] Phase 0   Classify
+  [~] Phase -1  Skip (use env-cache.json if available, otherwise skip)
   [x] Execute directly
   [x] Phase 9.5     Completion Summary (user-facing)
   [x] Phase 9.5.5   Knowledge Distillation (structured extraction)
