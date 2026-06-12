@@ -181,10 +181,9 @@ for tool in "${EXTERNAL_TOOLS[@]}"; do
             fi
             if [ -d ".mempalace" ]; then
                 echo "  ✅ mempalace initialized"
-                else
-                    echo "  ℹ️  mempalace not initialized"
-                    echo "  💡 Run: mempalace init ."
-                fi
+            else
+                echo "  ℹ️  mempalace not initialized"
+                echo "  💡 Run: mempalace init ."
             fi
             ;;
         "headroom")
