@@ -163,17 +163,21 @@ fi
 # Tavily API Key: always read .env first (before checking MCP list)
 # This ensures .env key is available even when old MCP config already exists
 TAVILY_API_KEY="${TAVILY_API_KEY:-}"
+TAVILY_CONFIGURED=false
 if [ -f .env ] && grep -q 'TAVILY_API_KEY' .env 2>/dev/null; then
   TAVILY_API_KEY=$(grep 'TAVILY_API_KEY' .env | cut -d'=' -f2- | tr -d '"' | tr -d "'")
+  TAVILY_CONFIGURED=true
   echo_success "tavily API key found in .env"
 elif claude mcp list 2>/dev/null | grep -q tavily; then
+  TAVILY_CONFIGURED=true
   echo_success "tavily MCP already configured"
 elif grep -q 'tavily' ~/.claude/settings.json 2>/dev/null; then
+  TAVILY_CONFIGURED=true
   echo_success "tavily configured in settings.json"
 fi
 
 # Ask about Tavily API Key only if not already configured
-if [ -z "$TAVILY_API_KEY" ]; then
+if [ "$TAVILY_CONFIGURED" != "true" ]; then
   _ask_tavily() {
     if [ -t 0 ] && [ -t 1 ]; then
       read -r -p "Tavily API Key (for web search, or press Enter to skip): " TAVILY_API_KEY
