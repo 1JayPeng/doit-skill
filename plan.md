@@ -10,20 +10,48 @@
 
 ### Step 1: Code Graph Scan
 
-Use **TokenSave** for code intelligence (primary code graph tool):
-1. `tokensave_context(task="<feature description>")` — understand feature flow, get relevant symbols + relationships + code (PRIMARY)
-2. `tokensave_search("symbolName")` — locate specific symbols by name
-3. `tokensave_callers(node_id)` — who calls this symbol (upward call flow)
-4. `tokensave_callees(node_id)` — what does this symbol call (downward call flow)
-5. `tokensave_impact(node_id)` — assess edit blast radius before changes
-6. `tokensave_node(node_id)` — full source of a specific symbol
+**CodeGraph + TokenSave 互补并行** — 两个工具同等地位，各自优势互补：
 
-- **Fallback:** If TokenSave not installed -> use **CodeGraph** (`codegraph_context`, `codegraph_search`, `codegraph_impact`). If both unavailable -> `grep -rn` + `find` + `Read`.
+**CodeGraph**（精准代码图查询，跨语言 AST）：
+1. `codegraph_context(task="<feature description>")` — 理解功能流，获取相关符号 + 关系 + 代码
+2. `codegraph_search("symbolName")` — 定位特定符号
+3. `codegraph_callers(symbol)` — 谁调用此符号（向上调用流）
+4. `codegraph_callees(symbol)` — 此符号调用什么（向下调用流）
+5. `codegraph_impact(symbol)` — 评估编辑爆炸半径
+6. `codegraph_node(symbol)` — 符号完整源码
+7. `codegraph_explore(query)` — 一次检查多个相关符号的源码
 
-**TokenSave key principles:**
+**TokenSave**（即时改动检测 + 高级分析）：
+8. `tokensave_context(task="<feature description>")` — 即时检测文件改动，15ms 索引
+9. `tokensave_search("symbolName")` — 符号查找（改动后立即生效，无需 re-index）
+10. `tokensave_impact(node_id)` — 影响分析（需先查 node_id）
+11. `tokensave_diagnostics(scope="workspace")` — 运行类型检查器
+12. `tokensave_dead_code()` — 查找潜在不可达代码
+13. `tokensave_complexity()` — 按复杂度排名函数
+14. `tokensave_test_map(node_id)` — 符号测试覆盖率
+15. `tokensave_test_risk(path="...")` — 高风险未测试符号
+16. `tokensave_unsafe_patterns(kinds=[...])` — 查找 panic/unsafe 站点
+17. `tokensave_todos(kinds=["HACK", "TODO"])` — 查找 TODO/FIXME 标记
+18. `tokensave_dsm(path="<src_dir>", format="clusters")` — 设计结构矩阵
+19. `tokensave_coupling(direction="fan_in")` — 最被依赖的文件
+20. `tokensave_hotspots()` — 最高连接度符号
+
+**使用策略：**
+- **规划阶段**：`codegraph_context` + `tokensave_context` 并行调用，交叉验证结果
+- **符号查找**：`codegraph_search`（精准，不混入无关代码）
+- **改动后验证**：`tokensave_search`（即时检测，无需等待 file watcher）
+- **调用图**：`codegraph_callers/callees`（更准确）
+- **质量分析**：`tokensave_diagnostics/dead_code/complexity/test_map`
+- **代码编辑**：`tokensave_str_replace` / `tokensave_multi_str_replace` / `tokensave_insert_at`
+
+**CodeGraph 优势：** 查询精准度高，callers/callees 准确，跨语言支持完整（Python/TS/Rust/Java/Go），符号名直接查询
+**TokenSave 优势：** 改动跟随即时检测（15ms 索引），高级静态分析（10+ 种质量工具），代码编辑原语
+
+**CodeGraph 使用原则：**
 - **Trust the results** — don't re-verify with grep. The index is pre-built.
 - **Treat returned source as already read** — no need to re-read files.
 - **Auto-sync** — file watcher debounces ~500ms; don't re-query immediately after edits.
+- **Answer directly** — `codegraph_context` first, then ONE `codegraph_explore` for source. No grep+read loops.
 
 **[MP-READ] MemPalace — search for prior implementation context (Phase 0 sweep already ran):**
 - `mempalace_search query="<feature name> implementation" wing="<project>" limit=3` — find prior implementation context
@@ -34,18 +62,23 @@ Use **TokenSave** for code intelligence (primary code graph tool):
 - `mempalace_add_drawer wing="<project>" room="decisions" content="<ADR: decision, rationale, tradeoff>"`
 
 **TokenSave 高级分析工具（按需使用）：**
+- `tokensave_diagnostics(scope="workspace")` — run type checker
+- `tokensave_dead_code()` — find potentially unreachable code
+- `tokensave_complexity()` — functions ranked by complexity
+- `tokensave_test_map(node_id)` — test coverage per symbol
+- `tokensave_test_risk(path="...")` — high-risk untested symbols
+- `tokensave_unsafe_patterns(kinds=[...])` — find panic/unsafe sites
+- `tokensave_todos(kinds=["HACK", "TODO"])` — find TODO/FIXME markers
 - `tokensave_type_hierarchy(node_id="<id>")` — full type hierarchy tree
 - `tokensave_impls(trait="<name>")` — list all impl blocks for a trait
 - `tokensave_derives(qualified_name="<type>")` — list #[derive(...)] macros
-- `tokensave_inheritance_depth(limit=5)` — deepest class/interface hierarchies
 - `tokensave_dsm(path="<src_dir>", format="clusters")` — design structure matrix
 - `tokensave_coupling(direction="fan_in")` — most depended-on files
 - `tokensave_hotspots()` — highest connectivity symbols
-- `tokensave_dead_code()` — potentially unreachable code
-- `tokensave_complexity()` — functions ranked by complexity
 - `tokensave_signature_search(returns="Result<", params=["&mut self"])` — search by signature shape
+- `tokensave_str_replace` / `tokensave_multi_str_replace` / `tokensave_insert_at` — code editing
 
-**Rule:** `tokensave_context` first, then narrow with `tokensave_search`/`tokensave_impact`.
+**Rule:** `codegraph_context` first, then narrow with `codegraph_search`/`codegraph_impact`. Use TokenSave for advanced static analysis (diagnostics, dead code, complexity, test coverage).
 
 #### Subagent Parallel Code Analysis (Optional, when 2+ independent modules)
 
@@ -55,14 +88,14 @@ When the feature affects multiple independent modules, parallelize the code grap
 // Analyze multiple modules in parallel
 Agent({
   description: "Analyze module A impact",
-  prompt: "使用 tokensave_context 分析 '<feature>' 对模块 A 的影响。重点关注 API 变更、依赖关系、测试覆盖。",
+  prompt: "使用 codegraph_context 分析 '<feature>' 对模块 A 的影响。重点关注 API 变更、依赖关系、测试覆盖。",
   subagent_type: "Plan",
   run_in_background: true
 })
 
 Agent({
   description: "Analyze module B impact",
-  prompt: "使用 tokensave_context 分析 '<feature>' 对模块 B 的影响。重点关注 API 变更、依赖关系、测试覆盖。",
+  prompt: "使用 codegraph_context 分析 '<feature>' 对模块 B 的影响。重点关注 API 变更、依赖关系、测试覆盖。",
   subagent_type: "Plan",
   run_in_background: true
 })

@@ -10,7 +10,8 @@ doit 工作流依赖四个互补的持久化层：
 
 | 层级 | 管什么 | 生命周期 | 类比 |
 |------|--------|----------|------|
-| **TokenSave** | 代码图（函数、结构体、调用关系、依赖） | 随代码变更实时更新 | "项目的实时地图" |
+| **CodeGraph** | 代码图（符号、调用关系、影响分析） | 随代码变更实时更新 | "项目的实时地图" |
+| **TokenSave** | 高级代码分析（类型检查、死代码、复杂度、测试覆盖） | 随代码变更实时更新 | "代码质量仪表盘" |
 | **Context-Mode** | 当前会话的命令输出、索引、搜索 | 会话结束即消失 | "本次对话的笔记本" |
 | **MemPalace** | 跨会话的语义记忆 + 知识图谱 | 永久存储，跨会话存活 | "项目的长期记忆库" |
 | **Headroom** | 上下文优化（代理压缩、记忆持久化） | 跨会话存活 | "token 节省器" |
@@ -41,15 +42,15 @@ doit 内置三种后台任务机制，按任务时长自动选择：
 
 | # | 工具 | 类型 | 安装方式 | 核心作用 |
 |---|------|------|----------|----------|
-| 1 | **TokenSave** | MCP 服务器 | `cargo install tokensave` | **主代码图**：代码结构、调用关系、影响分析、测试覆盖 |
-| 2 | **MemPalace** | Claude Plugin | `claude plugin install --scope user mempalace` | 跨会话语义记忆：spec/决策/实现笔记的长期存储 |
-| 3 | **Context-Mode** | Claude Plugin | `claude plugin marketplace add mksglu/context-mode` | 上下文管理：命令输出自动索引 + 语义搜索 |
-| 4 | **RTK** | 全局 CLI | `curl ... \| sh` | Token 优化代理：所有 shell 命令节省 60-90% token |
-| 5 | **uv** | 全局 CLI | `pip install uv` | Python 虚拟环境管理：创建 venv + 运行命令 |
-| 6 | **caveman** | Skill | `curl ... \| bash` | 压缩通信模式：减少 75% token，砍掉废话保留技术内容 |
-| 7 | **code-review** | Claude Plugin | `claude plugin install code-review` | 代码审查：Phase 5 自动审查 diff |
-| 8 | **Tavily MCP** | 远程 MCP | 只需 API key，无需安装 | 互联网搜索：Phase 1 spec 生成前的头脑风暴 |
-| 9 | **CodeGraph** | MCP 服务器 | `npm i -g @colbymchenry/codegraph` | 跨语言 fallback：当 TokenSave 不可用时的备选代码图 |
+| 1 | **CodeGraph** | MCP 服务器 | `npm i -g @colbymchenry/codegraph` | **精准代码图查询**：AST 解析、符号查找、调用关系、影响分析 |
+| 2 | **TokenSave** | MCP 服务器 | `cargo install tokensave` | **即时检测 + 高级分析**：类型检查、死代码、复杂度、测试覆盖、代码编辑 |
+| 3 | **MemPalace** | Claude Plugin | `claude plugin install --scope user mempalace` | 跨会话语义记忆：spec/决策/实现笔记的长期存储 |
+| 4 | **Context-Mode** | Claude Plugin | `claude plugin marketplace add mksglu/context-mode` | 上下文管理：命令输出自动索引 + 语义搜索 |
+| 5 | **RTK** | 全局 CLI | `curl ... \| sh` | Token 优化代理：所有 shell 命令节省 60-90% token |
+| 6 | **uv** | 全局 CLI | `pip install uv` | Python 虚拟环境管理：创建 venv + 运行命令 |
+| 7 | **caveman** | Skill | `curl ... \| bash` | 压缩通信模式：减少 75% token，砍掉废话保留技术内容 |
+| 8 | **code-review** | Claude Plugin | `claude plugin install code-review` | 代码审查：Phase 5 自动审查 diff |
+| 9 | **Tavily MCP** | 远程 MCP | 只需 API key，无需安装 | 互联网搜索：Phase 1 spec 生成前的头脑风暴 |
 
 ---
 
@@ -112,20 +113,24 @@ doit 内置三种后台任务机制，按任务时长自动选择：
 
 | 工具 | 具体调用 | 目的 |
 |------|---------|------|
-| **TokenSave** | `tokensave_context(task="<feature>")` | **PRIMARY** — 理解功能流程、探索代码区域 |
-| **TokenSave** | `tokensave_search("symbolName")` | 按名称定位符号 |
-| **TokenSave** | `tokensave_callers(node_id)` | 谁调用了此符号（向上调用链） |
-| **TokenSave** | `tokensave_callees(node_id)` | 此符号调用了谁（向下调用链） |
-| **TokenSave** | `tokensave_impact(node_id)` | 评估编辑影响面 |
-| **TokenSave** | `tokensave_node(node_id)` | 获取符号完整源码 |
+| **CodeGraph** | `codegraph_context(task="<feature>")` | 理解功能流程、探索代码区域 — 与 TokenSave 并行 |
+| **CodeGraph** | `codegraph_search("symbolName")` | 按名称定位符号 |
+| **CodeGraph** | `codegraph_callers(symbol)` | 谁调用了此符号（向上调用链） |
+| **CodeGraph** | `codegraph_callees(symbol)` | 此符号调用了谁（向下调用链） |
+| **CodeGraph** | `codegraph_impact(symbol)` | 评估编辑影响面 |
+| **CodeGraph** | `codegraph_node(symbol)` | 获取符号完整源码 |
+| **CodeGraph** | `codegraph_explore(query)` | 多个相关符号的源码一次性查看 |
+| **TokenSave** | `tokensave_context(task="<feature>")` | 并行理解功能流程 — 与 CodeGraph 交叉验证 |
+| **TokenSave** | `tokensave_search(query)` | 并行符号搜索 — 与 CodeGraph 交叉验证 |
 | **TokenSave** | `tokensave_dsm(path="<src_dir>", format="clusters")` | 设计结构矩阵 |
 | **TokenSave** | `tokensave_coupling(direction="fan_in")` | 最高被依赖文件 |
 | **TokenSave** | `tokensave_hotspots()` | 最高连接度符号 |
+| **TokenSave** | `tokensave_diagnostics(scope="workspace")` | 运行类型检查器 |
 | **MemPalace** | `mempalace_search query="<feature> implementation"` | 搜索历史实现 |
 | **MemPalace** | `mempalace_traverse start_room="<project>/specs" max_hops=2` | 跨房间探索 |
 | **MemPalace** | `mempalace_add_drawer wing="<project>" room="decisions"` | 存储决策 |
 
-**降级：** TokenSave 不可用 → CodeGraph (`codegraph_context`, `codegraph_search`, `codegraph_impact`)。
+**降级：** CodeGraph + TokenSave 并行使用。两者都不可用 → `grep -rn` + `find` + `Read`。
 
 ---
 
@@ -135,12 +140,12 @@ doit 内置三种后台任务机制，按任务时长自动选择：
 
 | 工具 | 具体调用 | 目的 |
 |------|---------|------|
-| **TokenSave** | `tokensave_context(task="<feature>")` | **PRIMARY** — 理解现有实现、获取相关代码上下文 |
-| **TokenSave** | `tokensave_search("symbolName")` | 按名称定位符号 |
-| **TokenSave** | `tokensave_callers(node_id)` | 谁调用了这个符号 |
-| **TokenSave** | `tokensave_callees(node_id)` | 这个符号调用了谁 |
-| **TokenSave** | `tokensave_impact(node_id)` | 评估改动影响面 |
-| **TokenSave** | `tokensave_node(node_id)` | 获取符号完整源码 |
+| **CodeGraph** | `codegraph_context(task="<feature>")` | 理解现有实现、获取相关代码上下文 — 与 TokenSave 并行 |
+| **CodeGraph** | `codegraph_search("symbolName")` | 按名称定位符号 |
+| **CodeGraph** | `codegraph_callers(symbol)` | 谁调用了这个符号 |
+| **CodeGraph** | `codegraph_callees(symbol)` | 这个符号调用了谁 |
+| **CodeGraph** | `codegraph_impact(symbol)` | 评估改动影响面 |
+| **CodeGraph** | `codegraph_node(symbol)` | 获取符号完整源码 |
 | **TokenSave** | `tokensave_diagnostics(scope="workspace")` | 运行类型检查器 |
 | **TokenSave** | `tokensave_test_map(node_id)` | 检查测试覆盖 |
 | **TokenSave** | `tokensave_affected_tests(files=[...])` | 找受影响测试 |
@@ -201,10 +206,10 @@ doit 内置三种后台任务机制，按任务时长自动选择：
 
 | 工具 | 具体调用 | 目的 |
 |------|---------|------|
+| **CodeGraph** | `codegraph_search("symbolName")` | 找入口函数 |
+| **CodeGraph** | `codegraph_node(symbol)` | 获取函数签名 |
 | **TokenSave** | `tokensave_affected_tests(files=[...])` | 找受影响测试 |
 | **TokenSave** | `tokensave_run_affected_tests(changed_paths=[...])` | 只运行受影响测试 |
-| **TokenSave** | `tokensave_search(query="<entry_point>")` | 找入口函数 |
-| **TokenSave** | `tokensave_node(node_id)` | 获取函数签名 |
 | **TokenSave** | `tokensave_signature(qualified_name="...")` | 获取函数签名 |
 | **TokenSave** | `tokensave_test_map(file="...")` | 检查测试覆盖 |
 | **TokenSave** | `tokensave_config(key="dependencies", path="Cargo.toml")` | 读取项目配置 |
@@ -366,6 +371,7 @@ doit 内置三种后台任务机制，按任务时长自动选择：
 
 ```
 Phase -1  环境检测
+  ├─ CodeGraph: status 检测
   ├─ TokenSave: status 检测
   ├─ MemPalace: status + hook_settings + reconnect + taxonomy + kg_stats + graph_stats + list_wings + sync
   └─ caveman: 启用压缩模式
@@ -381,27 +387,31 @@ Phase 1   Spec 生成
   └─ RTK: 自动包装所有 shell 命令
 
 Phase 2   计划
-  ├─ TokenSave: context + search + similar + impact + files + coupling + health + status + config + outline + module_api + body + signature + signature_search + type_hierarchy + rank + distribution + largest + impls + derives + inheritance_depth + hotspots + dsm
+  ├─ CodeGraph: context + search + callers + callees + impact + node + explore
+  ├─ TokenSave: dsm + coupling + hotspots + diagnostics
   ├─ MemPalace: search + traverse + add_drawer
   ├─ Context-Mode: ctx_batch_execute
   └─ RTK: 自动包装所有 shell 命令
 
 Phase 3   执行（每个 REQ 循环）
-  ├─ TokenSave: context + search + similar + node + body + signature + signature_search + callers + callees + impact + files + test_map + affected_tests + diagnostics + str_replace + multi_str_replace + insert_at + simplify_scan
+  ├─ CodeGraph: context + search + callers + callees + impact + node
+  ├─ TokenSave: diagnostics + test_map + affected_tests + str_replace + multi_str_replace + insert_at + simplify_scan
   ├─ MemPalace: search + get_drawer + list_drawers + add_drawer
   ├─ Context-Mode: ctx_search + ctx_execute + ctx_batch_execute
   ├─ RTK: 自动包装所有 shell 命令 + gain 报告
   └─ uv: Python 虚拟环境
 
 Phase 4   E2E 测试
-  ├─ TokenSave: affected_tests + run_affected_tests + search + node + signature + test_map + config + outline + diff_context
+  ├─ CodeGraph: search + node
+  ├─ TokenSave: affected_tests + run_affected_tests + signature + test_map + config + outline + diff_context
   ├─ Context-Mode: ctx_batch_execute + ctx_search + ctx_execute
   ├─ MemPalace: add_drawer (e2e 结果)
   └─ RTK: 自动包装所有 shell 命令
 
 Phase 5   审查
   ├─ code-review: 审查 diff
-  ├─ TokenSave: health + diff_context + simplify_scan + dead_code + unused_imports + complexity + circular + recursion + similar + signature_search + diagnostics + dsm + coupling + hotspots + dependency_depth + gini + inheritance_depth + type_hierarchy + rank + distribution + largest + unsafe_patterns + todos + doc_coverage + test_risk + module_api + search + context
+  ├─ CodeGraph: context + search + impact
+  ├─ TokenSave: health + diff_context + simplify_scan + dead_code + unused_imports + complexity + circular + recursion + similar + signature_search + diagnostics + dsm + coupling + hotspots + dependency_depth + gini + inheritance_depth + type_hierarchy + rank + distribution + largest + unsafe_patterns + todos + doc_coverage + test_risk + module_api
   ├─ MemPalace: add_drawer (reviews) + kg_add (passed_review)
   ├─ Context-Mode: ctx_search
   ├─ RTK: discover + gain --history
@@ -438,26 +448,35 @@ Phase 10  Session Summary
 
 ## 六、关键设计决策
 
-### 1. 为什么 TokenSave 管代码，MemPalace 管语义？
+### 1. 为什么 CodeGraph 管代码图，TokenSave 管高级分析，MemPalace 管语义？
 
-- **TokenSave** 是代码的"实时地图"——随代码变更自动更新，回答"这个函数在哪、谁调用了它"
+- **CodeGraph** 是代码的"实时地图"——AST 解析，跨语言符号查找/调用关系/影响分析，回答"这个函数在哪、谁调用了它、改它会破坏什么"
+- **TokenSave** 是代码的"质量仪表盘"——类型检查、死代码、复杂度、测试覆盖、代码编辑，回答"代码质量如何、哪些测试受影响"
 - **MemPalace** 是项目的"长期记忆"——回答"上次我们为什么选 JWT"、"REQ-001 改了什么文件"
 
-两者互补：TokenSave 回答"现在代码长什么样"，MemPalace 回答"过去发生了什么"。
+三者互补：CodeGraph 回答"代码结构"，TokenSave 回答"代码质量"，MemPalace 回答"过去发生了什么"。
+
+### 1b. CodeGraph 和 TokenSave 互补并行，不是 fallback
+
+- **CodeGraph** 精准代码图查询 — 跨语言 AST 符号查找，调用图精准，影响分析准确，symbol-name 查询无需 node_id
+- **TokenSave** 即时改动检测 + 高级分析 — 15ms 索引无需 re-index，10+ 质量分析工具（diagnostics, dead_code, complexity, test_map, test_risk），代码编辑原语（str_replace, multi_str_replace, insert_at）
+- **使用策略**：代码图查询 → CodeGraph（精准），改动检测 → TokenSave（即时），两者并行交叉验证。CodeGraph 擅长回答"代码结构是什么"，TokenSave 擅长回答"代码质量如何、哪些测试受影响"
 
 ### 2. 为什么 MemPalace 不替代文件系统？
 
 MemPalace 是**补充**，不是替代：
-- `.spec/current.md` 仍然是 spec 的权威来源（TokenSave 可索引、git 可追踪）
+- `.spec/current.md` 仍然是 spec 的权威来源（CodeGraph 可索引、git 可追踪）
 - `.doit/docs/` 仍然是文档的权威来源（git 可追踪变更历史）
 - MemPalace 额外提供**语义搜索**（"找之前关于认证的讨论"）和**跨会话恢复**（"上次做到哪了"）
 
 ### 3. 为什么降级策略是静默跳过？
 
 工作流不应该因为一个记忆层不可用就卡住。降级顺序：
-1. TokenSave 不可用 → 用 grep/find/Read
-2. MemPalace 不可用 → 用文件系统（.doit/docs/, .spec/archive/）
-3. Context-Mode 不可用 → 用原生 Bash（不索引）
+1. CodeGraph 不可用 → 仅用 TokenSave（`tokensave_context`, `tokensave_search`）
+2. TokenSave 不可用 → 仅用 CodeGraph（`codegraph_context`, `codegraph_search`）
+3. 两者都不可用 → 用 grep/find/Read
+4. MemPalace 不可用 → 用文件系统（.doit/docs/, .spec/archive/）
+5. Context-Mode 不可用 → 用原生 Bash（不索引）
 
 ### 4. MemPalace 的 Wing/Room 约定
 
@@ -487,7 +506,9 @@ caveman 是**整个会话**的压缩通信模式，Phase 0 启用后一直生效
 
 | 工具 | 不可用时的降级 | 影响阶段 |
 |------|--------------|---------|
-| TokenSave | `grep` + `find` + `Read` | 2, 3, 5, 6, 7, 8 |
+| CodeGraph | TokenSave (`tokensave_context` + `tokensave_search`) | 2, 3, 4, 5 |
+| TokenSave | CodeGraph (`codegraph_context` + `codegraph_search`) | 2, 3, 5, 6, 7, 8 |
+| 两者都不可用 | `grep` + `find` + `Read` | 2, 3, 4, 5, 6, 7, 8 |
 | Context-Mode | 原生 Bash（不索引） | 2, 3, 4, 7, 8 |
 | Tavily MCP | `WebSearch`（内置） | 1 |
 | RTK | Bash（不优化） | 所有阶段 |

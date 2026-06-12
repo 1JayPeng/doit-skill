@@ -27,7 +27,8 @@ doit is a **workflow orchestrator** — it relies on specialized tools for each 
 
 | Layer | Tool | Role |
 |-------|------|------|
-| **Code graph** | [tokensave](https://github.com/aovestdipaperino/tokensave) | Symbol lookup, impact analysis, call graphs |
+| **Code graph** | [codegraph](https://github.com/colbymchenry/codegraph) | 精准代码图查询 — 跨语言 AST 符号查找，调用图，影响分析 |
+| **Code analysis** | [tokensave](https://github.com/aovestdipaperino/tokensave) | 即时改动检测 + 高级分析 — 类型检查，死代码，复杂度，测试覆盖，代码编辑 |
 | **Session context** | [context-mode](https://github.com/mksglu/context-mode) | Command output indexing, semantic search, token savings |
 
 | **Cross-session memory** | [MemPalace](https://github.com/MemPalace/mempalace) | Specs, decisions, knowledge graph — survives restarts |
@@ -147,7 +148,7 @@ How each principle enforces itself:
 | -1 | Detect project environment | Built-in |
 | 0 | Classify request (R/S/F/B) | Built-in, caveman, mempalace |
 | 1 | Spec generation + grill | Tavily MCP, grill-me, mempalace |
-| 2 | Plan with code graph | tokensave, mempalace |
+| 2 | Plan with code graph | codegraph + tokensave, mempalace |
 | 3 | Execute TDD + Review+Simplify | RTK, uv, tokensave, context-mode |
 | 4 | E2E tests (mandatory) | tokensave, context-mode |
 | 5 | Code review | code-review, tokensave |
@@ -187,16 +188,19 @@ Phase 4 tests the user's full journey — exit codes, stdout, file output, datab
 | L2 | Conflicting param combinations | HITL |
 | L3 | Fuzzy/random input, stability | HITL |
 
-### Four-Layer Memory
+### Five-Layer Memory
 
-doit integrates four memory layers so context survives across sessions:
+doit integrates five memory layers so context survives across sessions:
 
 | Layer | Tool | What It Stores |
 |-------|------|----------------|
-| **Code graph** | TokenSave | Symbols, call edges, dependencies — survives code changes |
+| **Code graph** | CodeGraph | Precise AST-based symbols, call edges, cross-language — survives code changes |
+| **Code analysis** | TokenSave | Immediate change detection, diagnostics, complexity, test coverage — survives code changes |
 | **Session context** | Context-Mode | Command output, semantic search index — survives tool calls |
 | **Cross-session** | MemPalace | Specs, decisions, knowledge graph, agent diary — survives restarts |
 | **Token optimization** | Headroom | CCR (Compress-Cache-Retrieve) proxy compression — token savings |
+
+**CodeGraph + TokenSave complementary:** CodeGraph provides precise code graph queries (callers/callees accurate, cross-language support), TokenSave provides immediate change detection (15ms indexing) and advanced static analysis (diagnostics, dead code, complexity, test coverage). Both run in parallel for cross-validation.
 
 **MemPalace** (30 MCP tools, KG + semantic search, diary). Follows **read-write symmetry**: every phase that writes also reads back in subsequent runs. Phase 0 sweeps 10 parallel calls to reconstruct project context.
 
@@ -376,6 +380,21 @@ Internet search for spec grilling. [Tavily](https://tavily.com)
 ```bash
 # Add to .mcp.json (requires API key):
 claude mcp add --transport http tavily https://mcp.tavily.com/mcp/?tavilyApiKey=<your-key>
+```
+
+#### CodeGraph
+
+Cross-language code graph — AST-based symbol lookup, call graphs, impact analysis. Fallback when TokenSave is unavailable. [GitHub](https://github.com/colbymchenry/codegraph)
+
+```bash
+# Install via npm
+npm i -g @colbymchenry/codegraph
+
+# Configure MCP server
+codegraph install --yes
+
+# Initialize in project
+codegraph init -i
 ```
 
 #### skill-creator

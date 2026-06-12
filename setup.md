@@ -67,6 +67,23 @@ tokensave init
 tokensave status
 ```
 
+### CodeGraph
+Cross-language code graph — AST-based symbol lookup, call graphs, impact analysis. Fallback when TokenSave is unavailable. [GitHub](https://github.com/colbymchenry/codegraph)
+
+```bash
+# Install via npm
+npm i -g @colbymchenry/codegraph
+
+# Configure MCP server
+codegraph install --yes
+
+# Initialize in project
+codegraph init -i
+
+# Verify
+codegraph --version
+```
+
 ## Context-Mode Plugin
 
 Context window management plugin. Keeps raw data in sandbox, auto-indexes output, provides semantic search. **Must be installed as a Claude Code plugin.** [GitHub](https://github.com/mksglu/context-mode)
