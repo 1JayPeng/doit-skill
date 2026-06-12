@@ -27,27 +27,17 @@ Extract keywords from user's request:
 
 Search query = `"<user request keywords>" <project> <type>`
 
-### Step 2: Multi-Layer Search
+### Step 2: Search MemPalace
 
-Search all available layers in parallel:
+Search MemPalace as the primary knowledge source:
 
-**AgentMemory (Primary):**
+**MemPalace (Primary):**
 ```
-agentmemory_recall query="<search query>" limit=5
-```
-
-**MemPalace:**
-```
-mempalace_search query="<search query>" wing="<project>" room="knowledge_distillation" limit=3
+mempalace_search query="<search query>" wing="<project>" room="knowledge_distillation" limit=5
 mempalace_search query="<search query>" wing="<project>" limit=3
 ```
 
-**Context-Mode:**
-```
-ctx_search queries=["<search query> knowledge", "<search query> decision"] limit=3
-```
-
-**Filesystem:**
+**Fallback (if MemPalace unavailable):**
 ```bash
 # Search .doit/knowledge/ for matching records
 grep -r "<keyword>" .doit/knowledge/*.json 2>/dev/null | head -20
@@ -55,14 +45,14 @@ grep -r "<keyword>" .doit/knowledge/*.json 2>/dev/null | head -20
 
 ### Step 3: Rank and Deduplicate
 
-Combine results from all layers:
+Rank results:
 1. **Semantic similarity** — from embedding search
 2. **Time decay** — recent sessions weighted higher: `score *= exp(-0.1 * days_since)`
 3. **Type match** — same request type (F/B/S) gets bonus
 4. **Status** — success records ranked higher than failed
 5. **Confidence** — higher confidence records ranked higher
 
-Remove duplicates (same session ID from multiple layers).
+Remove duplicates (same session ID from multiple searches).
 
 ### Step 4: Select Top-3
 
@@ -134,10 +124,7 @@ This helps the user avoid known pitfalls without blocking the workflow.
 
 | Available Tools | Behavior |
 |----------------|----------|
-| AgentMemory + MemPalace + Context-Mode | Full multi-layer search |
-| AgentMemory only | AgentMemory search only |
-| MemPalace only | MemPalace search only |
-| Context-Mode only | Context-Mode search only |
+| MemPalace | MemPalace search |
 | None | Filesystem search (.doit/knowledge/) |
 
 If no knowledge found:
@@ -159,4 +146,5 @@ knowledge:
     time_decay_days: 10     # Days for score to halve
     include_failed: true    # Include failed sessions as warnings
     cross_project: false    # Search across all projects (false = current only)
+    source: mempalace       # Primary search source (mempalace | filesystem)
 ```

@@ -11,7 +11,6 @@ doit 工作流依赖六个互补的持久化层：
 | 层级 | 管什么 | 生命周期 | 类比 |
 |------|--------|----------|------|
 | **TokenSave** | 代码图（函数、结构体、调用关系、依赖） | 随代码变更实时更新 | "项目的实时地图" |
-| **CodeGraph** | 代码图（预构建索引、跨语言） | 随代码变更更新 | "项目的预构建地图" |
 | **Context-Mode** | 当前会话的命令输出、索引、搜索 | 会话结束即消失 | "本次对话的笔记本" |
 | **AgentMemory** | 跨会话的语义记忆（默认） | 永久存储，跨会话存活 | "项目的长期记忆库" |
 | **MemPalace** | 跨会话的语义记忆（备选） | 永久存储，跨会话存活 | "项目的长期记忆库（备选）" |
@@ -43,7 +42,7 @@ doit 内置三种后台任务机制，按任务时长自动选择：
 
 | # | 工具 | 类型 | 安装方式 | 核心作用 |
 |---|------|------|----------|----------|
-| 1 | **CodeGraph** | MCP 服务器 | `npm i -g @colbymchenry/codegraph` | **主代码图**：预构建索引、跨语言、结构问答、影响分析 |
+| 1 | **TokenSave** | MCP 服务器 | `cargo install tokensave` | **主代码图**：代码结构、调用关系、影响分析、测试覆盖 |
 | 2 | **MemPalace** | Claude Plugin | `claude plugin install --scope user mempalace` | 跨会话语义记忆：spec/决策/实现笔记的长期存储 |
 | 3 | **Context-Mode** | Claude Plugin | `claude plugin marketplace add mksglu/context-mode` | 上下文管理：命令输出自动索引 + 语义搜索 |
 | 4 | **RTK** | 全局 CLI | `curl ... \| sh` | Token 优化代理：所有 shell 命令节省 60-90% token |
@@ -51,7 +50,7 @@ doit 内置三种后台任务机制，按任务时长自动选择：
 | 6 | **caveman** | Skill | `curl ... \| bash` | 压缩通信模式：减少 75% token，砍掉废话保留技术内容 |
 | 7 | **code-review** | Claude Plugin | `claude plugin install code-review` | 代码审查：Phase 5 自动审查 diff |
 | 8 | **Tavily MCP** | 远程 MCP | 只需 API key，无需安装 | 互联网搜索：Phase 1 spec 生成前的头脑风暴 |
-| 9 | **TokenSave** | MCP 服务器 | `cargo install tokensave` | 降级备用：Rust 深度分析（traits/derives/impls） |
+| 9 | **CodeGraph** | MCP 服务器 | `npm i -g @colbymchenry/codegraph` | 跨语言 fallback：当 TokenSave 不可用时的备选代码图 |
 
 ---
 
@@ -114,20 +113,20 @@ doit 内置三种后台任务机制，按任务时长自动选择：
 
 | 工具 | 具体调用 | 目的 |
 |------|---------|------|
-| **CodeGraph** | `codegraph_explore("how does X work")` | **PRIMARY** — 理解功能流程、探索代码区域（返回按文件分组的符号源码） |
-| **CodeGraph** | `codegraph_search("symbolName")` | 按名称定位符号 |
-| **CodeGraph** | `codegraph_callers(node_id)` | 谁调用了此符号（向上调用链） |
-| **CodeGraph** | `codegraph_callees(node_id)` | 此符号调用了谁（向下调用链） |
-| **CodeGraph** | `codegraph_impact(node_id)` | 评估编辑影响面 |
-| **CodeGraph** | `codegraph_node("symbolName")` | 获取符号完整源码（含所有重载） |
-| **TokenSave** | `tokensave_type_hierarchy(node_id)` | Rust 深度分析：类型层次树 |
-| **TokenSave** | `tokensave_impls(trait="...")` | Rust 深度分析：列出 impl 块 |
-| **TokenSave** | `tokensave_derives(qualified_name="...")` | Rust 深度分析：列出 derive 宏 |
+| **TokenSave** | `tokensave_context(task="<feature>")` | **PRIMARY** — 理解功能流程、探索代码区域 |
+| **TokenSave** | `tokensave_search("symbolName")` | 按名称定位符号 |
+| **TokenSave** | `tokensave_callers(node_id)` | 谁调用了此符号（向上调用链） |
+| **TokenSave** | `tokensave_callees(node_id)` | 此符号调用了谁（向下调用链） |
+| **TokenSave** | `tokensave_impact(node_id)` | 评估编辑影响面 |
+| **TokenSave** | `tokensave_node(node_id)` | 获取符号完整源码 |
+| **TokenSave** | `tokensave_dsm(path="<src_dir>", format="clusters")` | 设计结构矩阵 |
+| **TokenSave** | `tokensave_coupling(direction="fan_in")` | 最高被依赖文件 |
+| **TokenSave** | `tokensave_hotspots()` | 最高连接度符号 |
 | **MemPalace** | `mempalace_search query="<feature> implementation"` | 搜索历史实现 |
 | **MemPalace** | `mempalace_traverse start_room="<project>/specs" max_hops=2` | 跨房间探索 |
-| **MemPalace** | `mempalace_kg_stats` | 知识图谱统计 |
-| **MemPalace** | `mempalace_graph_stats` | 宫殿图统计 |
 | **MemPalace** | `mempalace_add_drawer wing="<project>" room="decisions"` | 存储决策 |
+
+**降级：** TokenSave 不可用 → CodeGraph (`codegraph_context`, `codegraph_search`, `codegraph_impact`)。
 
 ---
 
@@ -137,12 +136,12 @@ doit 内置三种后台任务机制，按任务时长自动选择：
 
 | 工具 | 具体调用 | 目的 |
 |------|---------|------|
-| **CodeGraph** | `codegraph_explore("how does X work")` | **PRIMARY** — 理解现有实现、获取相关代码上下文 |
-| **CodeGraph** | `codegraph_search("symbolName")` | 按名称定位符号 |
-| **CodeGraph** | `codegraph_callers(node_id)` | 谁调用了这个符号 |
-| **CodeGraph** | `codegraph_callees(node_id)` | 这个符号调用了谁 |
-| **CodeGraph** | `codegraph_impact(node_id)` | 评估改动影响面 |
-| **CodeGraph** | `codegraph_node("symbolName")` | 获取符号完整源码 |
+| **TokenSave** | `tokensave_context(task="<feature>")` | **PRIMARY** — 理解现有实现、获取相关代码上下文 |
+| **TokenSave** | `tokensave_search("symbolName")` | 按名称定位符号 |
+| **TokenSave** | `tokensave_callers(node_id)` | 谁调用了这个符号 |
+| **TokenSave** | `tokensave_callees(node_id)` | 这个符号调用了谁 |
+| **TokenSave** | `tokensave_impact(node_id)` | 评估改动影响面 |
+| **TokenSave** | `tokensave_node(node_id)` | 获取符号完整源码 |
 | **TokenSave** | `tokensave_diagnostics(scope="workspace")` | 运行类型检查器 |
 | **TokenSave** | `tokensave_test_map(node_id)` | 检查测试覆盖 |
 | **TokenSave** | `tokensave_affected_tests(files=[...])` | 找受影响测试 |
@@ -158,7 +157,6 @@ doit 内置三种后台任务机制，按任务时长自动选择：
 | **TokenSave** | `tokensave_str_replace` | 替换唯一字符串 |
 | **TokenSave** | `tokensave_multi_str_replace` | 原子多替换 |
 | **TokenSave** | `tokensave_insert_at` | 在锚点插入代码 |
-| **TokenSave** | `tokensave_ast_grep_rewrite` | 结构化代码重写 |
 
 **长任务执行（Tmux + Monitor）：**
 
@@ -385,12 +383,12 @@ Phase 1   Spec 生成
 
 Phase 2   计划
   ├─ TokenSave: context + search + similar + impact + files + coupling + health + status + config + outline + module_api + body + signature + signature_search + type_hierarchy + rank + distribution + largest + impls + derives + inheritance_depth + hotspots + dsm
-  ├─ MemPalace: search + traverse + kg_stats + graph_stats + add_drawer
+  ├─ MemPalace: search + traverse + add_drawer
   ├─ Context-Mode: ctx_batch_execute
   └─ RTK: 自动包装所有 shell 命令
 
 Phase 3   执行（每个 REQ 循环）
-  ├─ TokenSave: context + search + similar + node + body + signature + signature_search + callers + callees + impact + files + test_map + affected_tests + diagnostics + str_replace + multi_str_replace + insert_at + ast_grep_rewrite + simplify_scan
+  ├─ TokenSave: context + search + similar + node + body + signature + signature_search + callers + callees + impact + files + test_map + affected_tests + diagnostics + str_replace + multi_str_replace + insert_at + simplify_scan
   ├─ MemPalace: search + get_drawer + list_drawers + add_drawer
   ├─ Context-Mode: ctx_search + ctx_execute + ctx_batch_execute
   ├─ RTK: 自动包装所有 shell 命令 + gain 报告

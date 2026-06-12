@@ -81,27 +81,16 @@ Show the extracted record to the user and ask for confirmation/edits:
 
 ### Step 4: Save to Multi-Layer Storage
 
-Once confirmed, save to all available layers:
+Once confirmed, save to primary layers:
 
-**Layer 1: AgentMemory (Primary)**
-```
-agentmemory_recall query="<summary>" limit=1    # Check for duplicates
-agentmemory_remember content="<full JSON>"      # Save record
-```
-
-**Layer 2: MemPalace**
+**Layer 1: MemPalace (Primary)**
 ```
 mempalace_check_duplicate content="<summary>"   # Check for duplicates
 mempalace_add_drawer wing="<project>" room="knowledge_distillation" content="<summary>"
 mempalace_kg_add subject="<project>" predicate="shipped" object="<feature>" valid_from="<today>"
 ```
 
-**Layer 3: Context-Mode**
-```
-ctx_index content="<full JSON>" source="knowledge:<project>:<date>"
-```
-
-**Layer 4: Filesystem (Backup)**
+**Layer 2: Filesystem (Backup)**
 ```bash
 mkdir -p .doit/knowledge/
 cp <record> .doit/knowledge/<date>-<project>-<short-id>.json
@@ -111,11 +100,9 @@ cp <record> .doit/knowledge/<date>-<project>-<short-id>.json
 
 ```
 [KNOWLEDGE EXTRACTION] Saved to:
-  ✓ AgentMemory (semantic search ready)
   ✓ MemPalace (KG updated)
-  ✓ Context-Mode (indexed)
   ✓ Filesystem (.doit/knowledge/)
-[KNOWLEDGE EXTRACTION] Total records: N (this project), M (all projects)
+[KNOWLEDGE EXTRACTION] Total records: N (this project)
 ```
 
 ## Extraction Quality Guidelines
@@ -164,10 +151,7 @@ Failed sessions are still valuable — they teach what NOT to do. When injected 
 
 | Available Tools | Behavior |
 |----------------|----------|
-| AgentMemory + MemPalace + Context-Mode | Full multi-layer save |
-| AgentMemory only | AgentMemory save + filesystem backup |
-| MemPalace only | MemPalace save + filesystem backup |
-| Context-Mode only | Context-Mode save + filesystem backup |
+| MemPalace | MemPalace save + filesystem backup |
 | None | Filesystem backup only (.doit/knowledge/) |
 
 If all layers fail:
@@ -187,8 +171,6 @@ knowledge:
   extract_failed: true       # Also extract failed sessions
   max_records: 1000          # Max records per project (cleanup oldest)
   layers:                    # Which layers to use
-    agentmemory: true
     mempalace: true
-    context_mode: true
     filesystem: true
 ```
