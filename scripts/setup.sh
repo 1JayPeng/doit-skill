@@ -30,18 +30,73 @@ file_hash() {
   fi
 }
 
-# Plugin commands can be slow (marketplace lookup + download). Default timeout too short.
-# marketplace add: 120s, plugin install: 180s
-plugin_cmd() {
+# Spinner: runs a command with animated progress + real-time output to terminal.
+# Usage: spin <timeout_s> "<label>" <command...>
+# Spinner animates on stderr; command output streams to stdout in real-time.
+spin() {
   local timeout_s="${1:-120}"
-  shift
+  local label="$2"
+  shift 2
+
+  # Print header
+  echo -e "${BLUE}[⏳]${NC} ${label}..."
+  local cmd_str="$*"
+  local truncated="${cmd_str:0:120}"
+  [ ${#cmd_str} -gt 120 ] && truncated+="..."
+  echo -e "     \$ ${truncated}"
+  echo ""
+
+  local start_s=$SECONDS
+  local frames=("⠋" "⠙" "⠹" "⠸" "⠼" "⠴" "⠦" "⠧" "⠇" "⠏")
+  local fi=0
+  local spin_pid=""
+
+  # Background spinner on stderr (killed after command, don't override main INT trap)
+  (
+    trap 'exit 0' TERM INT
+    while true; do
+      printf "\r ${frames[$fi]} running..." >&2
+      fi=$(( (fi + 1) % ${#frames[@]} ))
+      sleep 0.5
+    done
+  ) &
+  spin_pid=$!
+
+  # Run command — output streams directly to terminal in real-time
+  local exit_code=0
   if command -v timeout >/dev/null 2>&1; then
-    timeout "$timeout_s" "$@"
+    timeout "$timeout_s" bash -c "$cmd_str"
   elif command -v gtimeout >/dev/null 2>&1; then
-    gtimeout "$timeout_s" "$@"
+    gtimeout "$timeout_s" bash -c "$cmd_str"
   else
-    "$@"
+    bash -c "$cmd_str"
   fi
+  exit_code=$?
+
+  # Stop spinner (main script's INT trap remains intact)
+  kill $spin_pid 2>/dev/null
+  wait $spin_pid 2>/dev/null
+  echo "" >&2
+
+  local elapsed=$(( SECONDS - start_s ))
+  local min=$(( elapsed / 60 ))
+  local sec=$(( elapsed % 60 ))
+  local time_str
+  if [ "$min" -gt 0 ]; then
+    time_str="${min}m ${sec}s"
+  else
+    time_str="${sec}s"
+  fi
+
+  if [ $exit_code -eq 0 ]; then
+    echo -e "${GREEN}[✓]${NC} ${label} completed (${time_str})"
+  elif [ $exit_code -eq 124 ]; then
+    echo -e "${YELLOW}[!]${NC} ${label} timed out after ${timeout_s}s (ran ${time_str})"
+  else
+    echo -e "${YELLOW}[!]${NC} ${label} failed (exit $exit_code, ${time_str})"
+  fi
+
+  return $exit_code
 }
 
 # Create a hash snapshot of a directory: "hash relative_path" per file
@@ -193,7 +248,7 @@ if [ -f .env ] && grep -q 'TAVILY_API_KEY' .env 2>/dev/null; then
   TAVILY_API_KEY=$(grep 'TAVILY_API_KEY' .env | cut -d'=' -f2- | tr -d '"' | tr -d "'")
   TAVILY_CONFIGURED=true
   echo_success "tavily API key found in .env"
-elif claude mcp list 2>/dev/null | grep -q tavily; then
+elif spin 30 "tavily MCP check" "claude mcp list" 2>/dev/null | grep -q tavily; then
   TAVILY_CONFIGURED=true
   echo_success "tavily MCP already configured"
 elif grep -q 'tavily' ~/.claude/settings.json 2>/dev/null; then
@@ -223,9 +278,9 @@ fi
 if [ -n "$TAVILY_API_KEY" ]; then
   echo_info "Installing Tavily MCP with your API key..."
   # Remove existing tavily first — claude mcp add fails if name already exists
-  claude mcp remove tavily 2>/dev/null || true
-  if claude mcp add --transport http tavily "https://mcp.tavily.com/mcp/?tavilyApiKey=$TAVILY_API_KEY" 2>&1; then
-    if claude mcp list 2>/dev/null | grep -q tavily; then
+  spin 30 "tavily MCP remove" claude mcp remove tavily 2>/dev/null || true
+  if spin 60 "tavily MCP add" claude mcp add --transport http tavily "https://mcp.tavily.com/mcp/?tavilyApiKey=$TAVILY_API_KEY" 2>&1; then
+    if spin 30 "tavily MCP verify" claude mcp list 2>/dev/null | grep -q tavily; then
       echo_success "tavily MCP configured"
     else
       echo_warn "tavily MCP not detected after install — may need manual install"
@@ -467,12 +522,12 @@ else
 # Context-Mode (Claude Code plugin) — always check for updates
   if grep -rl "context-mode" "$HOME/.claude/plugins/" > /dev/null 2>&1; then
     echo_info "Updating context-mode..."
-    plugin_cmd 180 claude plugin install context-mode@context-mode 2>&1 || echo_warn "context-mode update failed"
+    spin 180 "context-mode update" claude plugin install context-mode@context-mode || echo_warn "context-mode update failed"
     echo_success "context-mode updated"
   else
     echo_info "Installing context-mode..."
-    plugin_cmd 120 claude plugin marketplace add mksglu/context-mode || echo_warn "Failed to add context-mode marketplace"
-    plugin_cmd 180 claude plugin install context-mode@context-mode || echo_warn "Failed to install context-mode"
+    spin 120 "context-mode marketplace add" claude plugin marketplace add mksglu/context-mode || echo_warn "Failed to add context-mode marketplace"
+    spin 180 "context-mode install" claude plugin install context-mode@context-mode || echo_warn "Failed to install context-mode"
   fi
 
   # RTK
@@ -492,30 +547,25 @@ else
   done
 
   echo_info "Updating rtk..."
-  curl -fsSL https://v6.gh-proxy.org/https://raw.githubusercontent.com/rtk-ai/rtk/refs/heads/master/install.sh 2>/dev/null | sh || echo_warn "Failed to update rtk"
+  spin 60 "rtk install (curl | sh)" "curl -fsSL https://v6.gh-proxy.org/https://raw.githubusercontent.com/rtk-ai/rtk/refs/heads/master/install.sh 2>/dev/null | sh" || echo_warn "Failed to update rtk"
   if command -v rtk >/dev/null 2>&1; then
     echo_info "Initializing rtk for Claude Code..."
-    rtk init -g < /dev/null 2>/dev/null || true
+    spin 30 "rtk init" "rtk init -g < /dev/null" 2>/dev/null || true
     echo_success "rtk installed and initialized"
   fi
 
   # UV — always check for updates
   echo_info "Updating uv..."
-  pip install --upgrade uv 2>&1 || pip3 install --upgrade uv 2>&1 || echo_warn "Failed to update uv"
+  spin 60 "uv update (pip)" "pip install --upgrade uv" 2>&1 || spin 60 "uv update (pip3)" "pip3 install --upgrade uv" 2>&1 || echo_warn "Failed to update uv"
 
   # Rust (required by tokensave) — always check for updates
   if command -v cargo >/dev/null 2>&1; then
     echo_info "Updating Rust via rustup..."
-    RUSTUP_DIST_SERVER=https://mirrors.tuna.tsinghua.edu.cn/rustup \
-      RUSTUP_UPDATE_ROOT=https://mirrors.tuna.tsinghua.edu.cn/rustup/rustup \
-      rustup update stable 2>&1 || echo_warn "Rust update failed"
+    spin 120 "rustup update stable" "RUSTUP_DIST_SERVER=https://mirrors.tuna.tsinghua.edu.cn/rustup RUSTUP_UPDATE_ROOT=https://mirrors.tuna.tsinghua.edu.cn/rustup/rustup rustup update stable" 2>&1 || echo_warn "Rust update failed"
     echo_success "Rust updated"
   else
     echo_info "Installing Rust via rustup (Tsinghua mirror)..."
-    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs 2>/dev/null \
-      | RUSTUP_DIST_SERVER=https://mirrors.tuna.tsinghua.edu.cn/rustup \
-        RUSTUP_UPDATE_ROOT=https://mirrors.tuna.tsinghua.edu.cn/rustup/rustup \
-        sh -s -- -y \
+    spin 180 "rustup install (curl | sh)" "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs 2>/dev/null | RUSTUP_DIST_SERVER=https://mirrors.tuna.tsinghua.edu.cn/rustup RUSTUP_UPDATE_ROOT=https://mirrors.tuna.tsinghua.edu.cn/rustup/rustup sh -s -- -y" \
       || echo_warn "Failed to install Rust via rustup"
 
     # Source cargo env for current shell
@@ -550,14 +600,14 @@ CARGO_EOF
     _ts_latest=$(cargo search tokensave 2>/dev/null | head -1 | grep -oP 'tokensave = "\K[^"]+')
     if [ -n "$_ts_latest" ] && [ "$_ts_installed" != "$_ts_latest" ]; then
       echo_info "Updating tokensave (${_ts_installed} → ${_ts_latest})..."
-      cargo install tokensave || echo_warn "Failed to update tokensave"
+      spin 600 "tokensave update (cargo install)" cargo install tokensave || echo_warn "Failed to update tokensave"
     else
       echo_success "tokensave up to date"
     fi
   else
     echo_info "Installing tokensave (compiling Rust — may take several minutes)..."
     if command -v cargo >/dev/null 2>&1; then
-      cargo install tokensave || echo_warn "Failed to install tokensave via cargo"
+      spin 600 "tokensave install (cargo install)" cargo install tokensave || echo_warn "Failed to install tokensave via cargo"
     else
       echo_warn "cargo not found — tokensave requires Rust. Install via: cargo install tokensave"
     fi
@@ -571,12 +621,12 @@ CARGO_EOF
 # Caveman (token-compact mode + statusline)
   if grep -rl "caveman" "$HOME/.claude/plugins/" > /dev/null 2>&1; then
     echo_info "Updating caveman..."
-    plugin_cmd 180 claude plugin install caveman@caveman 2>&1 || echo_warn "caveman update failed"
+    spin 180 "caveman update" claude plugin install caveman@caveman || echo_warn "caveman update failed"
     echo_success "caveman updated"
   else
     echo_info "Installing caveman (marketplace -> plugin -> npx fallback)..."
-    if plugin_cmd 120 claude plugin marketplace add JuliusBrussee/caveman && \
-       plugin_cmd 180 claude plugin install caveman@caveman; then
+    if spin 120 "caveman marketplace add" claude plugin marketplace add JuliusBrussee/caveman && \
+       spin 180 "caveman install" claude plugin install caveman@caveman; then
       echo_success "caveman installed (claude plugin)"
     else
       echo_warn "claude plugin install failed, trying npx installer..."
@@ -637,28 +687,28 @@ with open('$_claude_settings', 'w') as f:
   # Code Review — always check for updates
   if grep -rl "code-review" "$HOME/.claude/plugins/" > /dev/null 2>&1; then
     echo_info "Updating code-review..."
-    plugin_cmd 180 claude plugin install code-review 2>&1 || echo_warn "code-review update failed"
+    spin 180 "code-review update" claude plugin install code-review || echo_warn "code-review update failed"
     echo_success "code-review updated"
   else
     echo_info "Installing code-review..."
-    plugin_cmd 180 claude plugin install code-review || echo_warn "Failed to install code-review (install manually: claude plugin install code-review)"
+    spin 180 "code-review install" claude plugin install code-review || echo_warn "Failed to install code-review (install manually: claude plugin install code-review)"
   fi
 
   # MemPalace — primary memory layer, always check for updates
   if grep -rl "mempalace" "$HOME/.claude/plugins/" > /dev/null 2>&1; then
     echo_info "Updating mempalace..."
-    plugin_cmd 180 claude plugin install --scope user mempalace 2>&1 || echo_warn "mempalace update failed"
+    spin 180 "mempalace update" claude plugin install --scope user mempalace || echo_warn "mempalace update failed"
     echo_success "mempalace updated"
   else
     echo_info "Installing mempalace..."
-    plugin_cmd 120 claude plugin marketplace add MemPalace/mempalace || echo_warn "Failed to add mempalace marketplace"
-    plugin_cmd 180 claude plugin install --scope user mempalace || echo_warn "Failed to install mempalace (install manually: claude plugin install --scope user mempalace)"
+    spin 120 "mempalace marketplace add" claude plugin marketplace add MemPalace/mempalace || echo_warn "Failed to add mempalace marketplace"
+    spin 180 "mempalace install" claude plugin install --scope user mempalace || echo_warn "Failed to install mempalace (install manually: claude plugin install --scope user mempalace)"
   fi
 
   # MemPalace CLI (uv tool) — always check for updates
   if command -v uv >/dev/null 2>&1; then
     echo_info "Updating mempalace CLI..."
-    plugin_cmd 180 uv tool install mempalace 2>&1 || echo_warn "mempalace CLI update failed"
+    spin 180 "mempalace CLI update" uv tool install mempalace || echo_warn "mempalace CLI update failed"
     echo_success "mempalace CLI updated"
   else
     echo_warn "uv not found, skipping mempalace CLI"
@@ -670,10 +720,10 @@ with open('$_claude_settings', 'w') as f:
   else
     echo_info "Initializing mempalace (creating HNSW index — may take 1-2 min)..."
     if command -v mempalace >/dev/null 2>&1; then
-      plugin_cmd 600 mempalace init . --yes || echo_warn "Failed to initialize mempalace (run manually: mempalace init . --yes)"
+      spin 600 "mempalace init (HNSW index)" mempalace init . --yes || echo_warn "Failed to initialize mempalace (run manually: mempalace init . --yes)"
       if [ -f "mempalace.yaml" ]; then
         echo_info "Mining mempalace index..."
-        plugin_cmd 300 mempalace mine . 2>&1 || echo_warn "mempalace mine timed out (run manually: mempalace mine .)"
+        spin 300 "mempalace mine (index mining)" mempalace mine . || echo_warn "mempalace mine timed out (run manually: mempalace mine .)"
       fi
     else
       echo_warn "mempalace CLI not found, skipping init"
@@ -689,14 +739,14 @@ if [ "$SKIP_OPTIONAL" = false ]; then
   echo ""
 
   echo_info "Updating lean-ctx..."
-  curl -fsSL https://leanctx.com/install.sh 2>/dev/null | sh || echo_warn "Failed to update lean-ctx"
+  spin 60 "lean-ctx install (curl | sh)" "curl -fsSL https://leanctx.com/install.sh 2>/dev/null | sh" || echo_warn "Failed to update lean-ctx"
 
   if command -v lean-ctx >/dev/null 2>&1; then
     lean-ctx --version 2>&1 || true
     echo_info "Connecting lean-ctx to all AI tools..."
-    plugin_cmd 120 lean-ctx onboard 2>&1 || echo_warn "lean-ctx onboard failed"
+    spin 120 "lean-ctx onboard" lean-ctx onboard || echo_warn "lean-ctx onboard failed"
     source "$HOME/.bashrc" 2>/dev/null || true
-    plugin_cmd 120 lean-ctx init --agent claude 2>&1 || echo_warn "lean-ctx init --agent claude timed out (may need manual: claude mcp add lean-ctx lean-ctx)"
+    spin 120 "lean-ctx init (Claude agent)" lean-ctx init --agent claude || echo_warn "lean-ctx init --agent claude timed out (may need manual: claude mcp add lean-ctx lean-ctx)"
     echo_success "lean-ctx installed"
   fi
 
@@ -717,18 +767,18 @@ if [ "$SKIP_OPTIONAL" = false ]; then
   # Headroom — always check for updates
   if command -v uv >/dev/null 2>&1; then
     echo_info "Updating headroom..."
-    plugin_cmd 180 uv tool install "headroom-ai[mcp,proxy]" 2>&1 || echo_warn "headroom update failed"
+    spin 180 "headroom tool install" uv tool install "headroom-ai[mcp,proxy]" || echo_warn "headroom update failed"
     echo_success "headroom updated"
   else
     echo_warn "uv not found — install headroom manually: uv tool install 'headroom-ai[mcp,proxy]'"
   fi
 
   if command -v headroom >/dev/null 2>&1; then
-    if claude mcp list 2>/dev/null | grep -q headroom; then
+    if spin 30 "headroom MCP verify" "claude mcp list" 2>/dev/null | grep -q headroom; then
       echo_success "headroom MCP already configured"
     else
       echo_info "Configuring headroom MCP..."
-      plugin_cmd 120 headroom mcp install 2>&1 || echo_warn "headroom mcp install timed out"
+      spin 120 "headroom MCP install" headroom mcp install || echo_warn "headroom mcp install timed out"
     fi
   fi
 fi
@@ -741,16 +791,16 @@ if [ "$SKIP_OPTIONAL" = false ]; then
   echo ""
 
   echo_info "Updating codegraph..."
-  npm i -g @colbymchenry/codegraph 2>&1 || echo_warn "Failed to update codegraph via npm"
+  spin 60 "codegraph npm install" "npm i -g @colbymchenry/codegraph" 2>&1 || echo_warn "Failed to update codegraph via npm"
 
   if command -v codegraph >/dev/null 2>&1; then
     # Install MCP server
-    if claude mcp list 2>/dev/null | grep -qi codegraph; then
+    if spin 30 "codegraph MCP check" "claude mcp list" 2>/dev/null | grep -qi codegraph; then
       echo_success "codegraph MCP already configured"
     else
       echo_info "Configuring codegraph MCP server..."
-      plugin_cmd 120 codegraph install --yes 2>&1 || echo_warn "codegraph install timed out (run manually: codegraph install --yes)"
-      if claude mcp list 2>/dev/null | grep -qi codegraph; then
+      spin 120 "codegraph MCP install" codegraph install --yes || echo_warn "codegraph install timed out (run manually: codegraph install --yes)"
+      if spin 30 "codegraph MCP verify" "claude mcp list" 2>/dev/null | grep -qi codegraph; then
         echo_success "codegraph MCP configured"
       else
         echo_warn "codegraph MCP not detected after install — you may need to run: codegraph install --yes"
@@ -762,7 +812,7 @@ if [ "$SKIP_OPTIONAL" = false ]; then
       echo_success "codegraph index already exists"
     else
       echo_info "Initializing codegraph index..."
-      plugin_cmd 300 codegraph init -i 2>&1 || echo_warn "codegraph init timed out (run manually: codegraph init -i)"
+      spin 300 "codegraph init (index)" codegraph init -i || echo_warn "codegraph init timed out (run manually: codegraph init -i)"
       if [ -d ".codegraph" ]; then
         echo_success "codegraph index initialized"
       fi
