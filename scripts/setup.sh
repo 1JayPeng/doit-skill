@@ -380,7 +380,7 @@ else
 # Skill-Creator (from anthropics/skills) — always check for updates
   if command -v npx >/dev/null 2>&1; then
     echo_info "Updating skill-creator..."
-    npx skills add anthropics/skills@skill-creator -g -y 2>&1 || echo_warn "Failed to update skill-creator"
+    npx skills add anthropics/skills@skill-creator -y 2>&1 || echo_warn "Failed to update skill-creator"
   else
     echo_warn "npx not found — skill-creator requires Node.js. Install manually:"
     echo "     npx skills add anthropics/skills@skill-creator"
