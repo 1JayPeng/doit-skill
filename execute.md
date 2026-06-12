@@ -203,7 +203,7 @@ After each REQ completes, if MemPalace is active:
 **铁律: 长时间任务必须后台执行 + 轮询。不允许空等。** See [rules.md](rules.md).
 **铁律: 所有代码变更必须提交并推送。没有例外。** See [rules.md](rules.md).
 
-完整三级模式见 [background-process.md](background-process.md)。
+完整 tmux + `/loop` 模式见 [background-process.md](background-process.md)。
 
 ### Subagent Decision Gate (MANDATORY — Execute Before First REQ)
 

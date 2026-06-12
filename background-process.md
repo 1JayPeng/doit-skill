@@ -1,8 +1,6 @@
 # Background Process Management
 
-**铁律: 长时间任务必须有轮询。不允许空等。这是铁律，不是建议。** See [rules.md](rules.md).
-
-Standardized three-tier patterns for running long-running commands with observable exit signals, automatic monitoring, and phase-continuation.
+**铁律: 所有 >10s 任务必须用 tmux + 实时日志 + `/loop` 自动轮询。不允许空等。** See [rules.md](rules.md).
 
 ## 强制决策门控（运行前必须检查）
 
@@ -10,9 +8,9 @@ Standardized three-tier patterns for running long-running commands with observab
 
 ```
 □ 1. 估计运行时间：这个命令预计需要多久？
-□ 2. 选择执行级别：前台(<10s) / 后台+loop(推荐) / tmux(多阶段pipeline)
-□ 3. 设置完成信号：[END] 标记 + /loop 轮询
-□ 4. 设置超时：timeout = 2x 估计时间（默认 300s）
+□ 2. >10s？→ tmux 命名 session + 实时日志 + `/loop` 轮询
+□ 3. 日志包含 [START] 和 [END] 标记？
+□ 4. `/loop` 轮询已设置？
 □ 5. 计划后续工作：后台任务启动后，继续做什么？
 ```
 
@@ -22,24 +20,21 @@ Standardized three-tier patterns for running long-running commands with observab
 
 | 违例 | 正确做法 |
 |------|---------|
-| 运行 `cargo build --release` 后沉默等待 | 后台启动 + `/loop` + 继续其他工作 |
+| 运行 `cargo build --release` 后沉默等待 | tmux 启动 + `/loop` + 继续其他工作 |
 | `tail -f` 日志文件来"看进度" | `/loop` 自动检查 `[END]` |
-| 启动后台任务后不设轮询 | 每个后台任务必须有 `/loop` 或 Monitor |
+| 启动后台任务后不设轮询 | 每个 tmux session 必须有 `/loop` |
 | 在长对话中忘记后台任务 | 用户问进度 → 立即检查 `.scratch/logs/` 和 `tmux list-sessions` |
+| 用 shell `&` 代替 tmux | tmux 是唯一标准 |
 | 不设 timeout | 所有后台任务必须有 timeout，默认 300s |
 
-## Three Tiers
+## 执行标准
 
 | Tier | When | Mechanism |
 |------|------|-----------|
 | **Foreground** | <10s, simple commands | Direct Bash call |
-| **Background** | 10s-5min, no interactive need | Shell `&` + log file + `[START]`/`[END]` markers |
-| **Loop** | 10s-30min, needs intelligent polling | `/loop` directive + ScheduleWakeup — native, context-aware |
-| **Tmux + Monitor** | >5min, multi-phase, or needs auto-continuation | Named tmux session + Claude Code monitor + auto-resume |
+| **Tmux + Loop** | >10s, all long tasks | Named tmux session + real-time log + `/loop` polling |
 
-**推荐优先级:** Loop > Tmux+Monitor > Background > Foreground (按复杂度递减)
-
-Loop 是 Claude Code 原生指令，比 Monitor 更简洁 — 自动保存上下文、智能调整轮询间隔、支持条件退出。
+**Tmux 是唯一长任务标准。** 不用 shell `&`，不用 `run_in_background`。
 
 ## Tier 1: Foreground
 
@@ -49,65 +44,43 @@ cargo check
 pytest tests/unit/
 ```
 
-## Tier 2: Background (Log File)
+## Tier 2: Tmux + Loop (所有长任务)
 
-For commands that take 10s-5min, run in background with log markers:
+### 为什么 tmux 是唯一标准
+
+| 特性 | tmux | shell & |
+|------|------|---------|
+| 实时日志 | log 文件持续写入，随时 `tail` 可读 | 输出缓冲，日志可能延迟 |
+| 进程管理 | 独立 session，可 attach 查看 | 依赖 shell 进程组 |
+| 崩溃恢复 | session 持久，可重新连接 | shell 退出进程丢失 |
+| 多阶段 pipeline | split-window 多 pane 协同 | 需要手动编排 |
+| 完成检测 | `[END]` 标记写入 log，`/loop` 轮询 | 需要 wait + trap |
+
+### 标准启动模板
 
 ```bash
 mkdir -p .scratch/logs
-(
-  echo "[START] $(date '+%Y-%m-%d %H:%M:%S') — <command description>"
+
+TMUX_SESSION="doit-<phase-name>"
+tmux new-session -d -s "$TMUX_SESSION"
+
+tmux send-keys -t "$TMUX_SESSION" '(
+  echo "[START] $(date "+%Y-%m-%d %H:%M:%S") — <description>"
   <your-command-here>
   EXIT_CODE=$?
-  echo "[END] $(date '+%Y-%m-%d %H:%M:%S') — exit_code=$EXIT_CODE"
+  echo "[END] $(date "+%Y-%m-%d %H:%M:%S") — exit_code=$EXIT_CODE"
   exit $EXIT_CODE
-) > .scratch/logs/<name>.log 2>&1 &
-BG_PID=$!
+) > .scratch/logs/<name>.log 2>&1' Enter
 ```
 
-Check results:
-```bash
-tail -1 .scratch/logs/<name>.log
-# Expected: [END] 2026-05-30 12:34:56 — exit_code=0
-```
-
-## Tier 2.5: Loop (Native Polling)
-
-**推荐用于大多数轮询场景。** `/loop` 是 Claude Code 原生指令，自动管理上下文和轮询节奏。
-
-### 核心优势 vs Monitor
-
-| | `/loop` | Monitor |
-|---|---|---|
-| 上下文 | 自动保存完整上下文 | 只传递 monitor 事件 |
-| 轮询间隔 | 智能调整（ScheduleWakeup） | 固定 interval |
-| 条件退出 | loop 内判断完成就 stop | 只能等 interval 触发 |
-| 并行工作 | loop 期间主 agent 可继续工作 | Monitor 是独立的 |
-| 设置复杂度 | 1 行 | tmux + log + Monitor 配置 |
-
-### Basic Loop — 轮询后台任务
-
-```bash
-# Step 1: Launch task in background
-(
-  echo "[START] $(date '+%Y-%m-%d %H:%M:%S') — cargo build --release"
-  cargo build --release
-  EXIT_CODE=$?
-  echo "[END] $(date '+%Y-%m-%d %H:%M:%S') — exit_code=$EXIT_CODE"
-  exit $EXIT_CODE
-) > .scratch/logs/build.log 2>&1 &
-```
+### 标准轮询模板
 
 ```
-/loop 检查 .scratch/logs/build.log 是否出现 [END] 标记，如果完成则读取结果并报告退出码
-```
-
-Loop 会自动轮询，检测到 `[END]` 后停止并处理结果。
-
-### Loop with ScheduleWakeup — 智能间隔
-
-```
-ScheduleWakeup delaySeconds=120 reason="polling build completion — cache miss ok after 5min" prompt="/loop 检查 build 是否完成"
+/loop 检查 .scratch/logs/<name>.log 完成状态:
+1. grep '\[END\]' .scratch/logs/<name>.log
+2. 如果找到 [END]: tail -1 读取 exit_code → 报告结果 → 停止循环
+3. 如果没找到: ScheduleWakeup delaySeconds=120 继续轮询
+4. 如果超过 30min: 报告超时 → 停止循环
 ```
 
 **间隔选择指南:**
@@ -118,189 +91,29 @@ ScheduleWakeup delaySeconds=120 reason="polling build completion — cache miss 
 
 **避免 300s 精确值** — 缓存 TTL 正好 5min。选 270s（缓存内）或 360s（承担缓存 misses）。
 
-### Loop 条件退出模式
+### 轮询期间必须做其他工作
 
-```
-/loop 检查 E2E 测试是否完成:
-1. grep '\[END\]' .scratch/logs/e2e.log
-2. 如果找到 [END]: 读取 exit_code -> 如果 0 则 "PASS, 进入 Phase 7" -> 停止循环
-3. 如果没找到: ScheduleWakeup 120s 继续轮询
-4. 如果超过 30min: 报告超时 -> 停止循环
-```
+**设置 tmux + `/loop` 后，必须立即继续其他工作。** 空等 loop 触发 = 违反铁律。
 
-### Loop + 并行工作模式
+## 带进度报告的长任务
 
-```bash
-# 启动后台任务
-( cargo test --all > .scratch/logs/test.log 2>&1; echo "[END] exit_code=$?" >> .scratch/logs/test.log ) &
-```
-
-```
-/loop 轮询测试进度
-```
-
-主 agent 在 loop 期间可以继续其他工作（读文档、准备下一个 phase、写文档）。Loop 完成后自动通知。
-
-### Loop vs Monitor 决策指南
-
-| 场景 | 推荐 | 原因 |
-|------|------|------|
-| 简单轮询（单个命令） | `/loop` | 设置简单，上下文自动保存 |
-| 需要复杂监控逻辑 | Monitor | Monitor 可以执行复杂检查脚本 |
-| 多阶段 pipeline | Tmux + Monitor | 需要多 session 协调 |
-| 长时间不确定任务 | `/loop` + ScheduleWakeup | 智能间隔调整 |
-| 需要用户可见进度 | `/loop` | 更容易报告进度 |
-
-### Loop 完整示例: Phase 3 长构建
-
-```bash
-# 1. 后台启动
-mkdir -p .scratch/logs
-(
-  echo "[START] $(date '+%Y-%m-%d %H:%M:%S') — cargo build --release"
-  cargo build --release
-  EXIT_CODE=$?
-  echo "[END] $(date '+%Y-%m-%d %H:%M:%S') — exit_code=$EXIT_CODE"
-  exit $EXIT_CODE
-) > .scratch/logs/build.log 2>&1 &
-```
-
-```
-/loop 检查 .scratch/logs/build.log 完成状态:
-- grep '\[END\]' .scratch/logs/build.log
-- 如果完成: tail -1 读取结果，报告退出码，停止循环
-- 如果未完成: ScheduleWakeup delaySeconds=60 继续
-```
-
-### Loop 完整示例: Phase 4 E2E
-
-```bash
-# 1. 启动 E2E server + 测试
-(
-  echo "[START] $(date '+%Y-%m-%d %H:%M:%S') — E2E server"
-  uv run python -m uvicorn main:app --host 127.0.0.1 --port 8765 &
-  SERVER_PID=$!
-  sleep 10
-  echo "[START] $(date '+%Y-%m-%d %H:%M:%S') — E2E tests"
-  uv run pytest tests/e2e/ -v --tb=short
-  EXIT_CODE=$?
-  kill $SERVER_PID 2>/dev/null || true
-  echo "[END] $(date '+%Y-%m-%d %H:%M:%S') — exit_code=$EXIT_CODE"
-  exit $EXIT_CODE
-) > .scratch/logs/e2e.log 2>&1 &
-```
-
-```
-/loop 检查 E2E 测试完成:
-1. grep '\[END\]' .scratch/logs/e2e.log
-2. 完成 -> 读取结果 -> 停止
-3. 未完成 -> ScheduleWakeup 120s
-```
-
-## Tier 3: Tmux + Monitor (Auto-Resume)
-
-For long-running tasks (>5min) where Claude Code should automatically continue to the next phase when the task completes.
-
-### Core Concept
-
-1. Launch a long task in a **named tmux session**
-2. Set up a **Claude Code monitor** that watches for the task's completion marker
-3. When the monitor fires, Claude Code reads the log, checks the exit code, and **automatically proceeds to the next phase**
-4. No human intervention needed
-
-### Setup
-
-```bash
-# Create log directory
-mkdir -p .scratch/logs
-
-# Create named tmux session (detached)
-TMUX_SESSION="doit-<phase-name>"
-tmux new-session -d -s "$TMUX_SESSION"
-
-# Send the long-running command to tmux
-tmux send-keys -t "$TMUX_SESSION" '(
-  echo "[START] $(date "+%Y-%m-%d %H:%M:%S") — <description>"
-  <your-long-command-here>
-  EXIT_CODE=$?
-  echo "[END] $(date "+%Y-%m-%d %H:%M:%S") — exit_code=$EXIT_CODE"
-  exit $EXIT_CODE
-) > .scratch/logs/<name>.log 2>&1' Enter
-```
-
-### Monitor Setup
-
-After launching the tmux session, set up a monitor to watch for completion:
-
-```bash
-# Monitor watches for [END] marker in the log file
-Monitor "Watch <phase> completion" \
-  "grep -q '\[END\]' .scratch/logs/<name>.log" \
-  --interval 10
-```
-
-The monitor runs every 10 seconds. When `[END]` appears in the log, Claude Code receives a notification.
-
-### Monitor Callback (Auto-Resume)
-
-When the monitor fires:
-
-1. **Read the log's last line** to get exit code:
-   ```bash
-   tail -1 .scratch/logs/<name>.log
-   ```
-
-2. **Interpret result**:
-   - `exit_code=0` → Success. Proceed to next phase.
-   - `exit_code!=0` → Failure. Read log for error details, decide next action.
-   - `[TIMEOUT]` → Task exceeded time limit. Investigate.
-
-3. **Clean up tmux session**:
-   ```bash
-   tmux kill-session -t "doit-<phase-name>"
-   ```
-
-4. **Continue workflow** — execute the next phase automatically.
-
-### Progress Reporting (User Visibility)
-
-Long-running tasks should give users a sense of control. Add `[PROGRESS]` markers to the task log, and report progress when monitor checks but task isn't complete yet.
-
-**In the task script, emit progress markers:**
-
-```bash
-tmux send-keys -t "$TMUX_SESSION" '(
-  echo "[START] $(date "+%Y-%m-%d %H:%M:%S") — cargo build --release"
-
-  echo "[PROGRESS] 0% — Starting build..."
-  cargo build --release 2>&1 | while IFS= read -r line; do
-    echo "$line"
-  done
-  EXIT_CODE=$?
-
-  echo "[PROGRESS] 100% — Build complete, exit_code=$EXIT_CODE"
-  echo "[END] $(date "+%Y-%m-%d %H:%M:%S") — exit_code=$EXIT_CODE"
-  exit $EXIT_CODE
-) > .scratch/logs/build.log 2>&1' Enter
-```
-
-**For tasks without natural progress (e.g., compiler, test runner), use elapsed time:**
+对于没有自然进度输出的任务（编译器、测试运行器），添加时间进度报告：
 
 ```bash
 tmux send-keys -t "$TMUX_SESSION" '(
   START_TIME=$(date +%s)
   echo "[START] $(date "+%Y-%m-%d %H:%M:%S") — cargo test --all"
 
-  # Progress reporter runs in background
+  # 后台进度报告器
   (
     while true; do
       ELAPSED=$(( $(date +%s) - START_TIME ))
       if [ $ELAPSED -eq 60 ]; then
-        echo "[PROGRESS] 1min elapsed — tests still running..."
+        echo "[PROGRESS] 1min elapsed — still running..."
       elif [ $ELAPSED -eq 180 ]; then
-        echo "[PROGRESS] 3min elapsed — tests still running..."
+        echo "[PROGRESS] 3min elapsed — still running..."
       elif [ $ELAPSED -eq 300 ]; then
-        echo "[PROGRESS] 5min elapsed — tests still running..."
+        echo "[PROGRESS] 5min elapsed — still running..."
       fi
       sleep 30
     done
@@ -309,162 +122,53 @@ tmux send-keys -t "$TMUX_SESSION" '(
 
   cargo test --all
   EXIT_CODE=$?
-
   kill $PROGRESS_PID 2>/dev/null || true
 
   TOTAL_ELAPSED=$(( $(date +%s) - START_TIME ))
-  echo "[PROGRESS] Complete in $TOTAL_ELAPSED seconds"
+  echo "[PROGRESS] Complete in ${TOTAL_ELAPSED}s"
   echo "[END] $(date "+%Y-%m-%d %H:%M:%S") — exit_code=$EXIT_CODE"
   exit $EXIT_CODE
 ) > .scratch/logs/test.log 2>&1' Enter
 ```
 
-**When Claude Code monitor checks and task is NOT yet complete, report progress:**
+## 多阶段 Pipeline
+
+多阶段任务（如 E2E：启动服务器 → 等待 → 运行测试）使用 tmux split-window：
 
 ```bash
-# Monitor check script — reports progress if still running
-if grep -q '\[END\]' .scratch/logs/<name>.log; then
-  # Task complete — handle normally
-  tail -1 .scratch/logs/<name>.log
-else
-  # Task still running — report latest progress
-  LATEST_PROGRESS=$(grep '\[PROGRESS\]' .scratch/logs/<name>.log | tail -1)
-  if [ -n "$LATEST_PROGRESS" ]; then
-    echo "Still running: $LATEST_PROGRESS"
-  fi
-fi
-```
-
-**Progress reporting to user — keep it brief:**
-
-When monitor fires but task still running, show user:
-```
-⏳ <task-name> still running...
-  Latest: "[PROGRESS] 3min elapsed — tests still running..."
-  Started: 14:32:05
-```
-
-When task completes, show:
-```
-✅ <task-name> complete!
-  Duration: 4m 23s
-  Exit: 0 (success)
-  → Proceeding to Phase N
-```
-
-**Progress marker convention:**
-
-| Marker | When to use |
-|--------|-------------|
-| `[PROGRESS] 0%` | Task just started |
-| `[PROGRESS] Xmin elapsed` | Time-based checkpoint (every 1-3 min) |
-| `[PROGRESS] Step N/M` | Multi-step task (e.g., "Step 2/4 — compiling tests") |
-| `[PROGRESS] 100%` | Task finishing, before `[END]` |
-
-**Rule: Only report progress if user can see it.** If the monitor interval is short (<30s), don't report every check — only on first check after a new `[PROGRESS]` marker appears. Avoid spam.
-
-### Complete Example: Phase 3 Execute (Long Build)
-
-```bash
-# Step 1: Launch in tmux
-mkdir -p .scratch/logs
-TMUX_SESSION="doit-build"
-tmux new-session -d -s "$TMUX_SESSION"
-tmux send-keys -t "$TMUX_SESSION" '(
-  echo "[START] $(date "+%Y-%m-%d %H:%M:%S") — cargo build --release"
-  cargo build --release
-  EXIT_CODE=$?
-  echo "[END] $(date "+%Y-%m-%d %H:%M:%S") — exit_code=$EXIT_CODE"
-  exit $EXIT_CODE
-) > .scratch/logs/build.log 2>&1' Enter
-
-# Step 2: Set up monitor
-Monitor "Watch build completion" \
-  "grep -q '\[END\]' .scratch/logs/build.log" \
-  --interval 15
-
-# Claude Code continues with other work while waiting...
-# When monitor fires:
-#   - tail -1 .scratch/logs/build.log → check exit_code
-#   - If 0: proceed to Phase 4 (E2E)
-#   - If !=0: read log, diagnose, fix
-```
-
-### Complete Example: Phase 4 E2E (Long Test Suite)
-
-```bash
-# Step 1: Launch E2E server + tests in tmux
 mkdir -p .scratch/logs
 tmux new-session -d -s "doit-e2e"
 
-# Start server in tmux pane 0
+# Pane 0: 启动服务器
 tmux send-keys -t "doit-e2e:0" '(
-  echo "[START] $(date "+%Y-%m-%d %H:%M:%S") — E2E dev server"
+  echo "[START] $(date "+%Y-%m-%d %H:%M:%S") — dev server"
   uv run python -m uvicorn main:app --host 127.0.0.1 --port 8765
   EXIT_CODE=$?
   echo "[END] $(date "+%Y-%m-%d %H:%M:%S") — exit_code=$EXIT_CODE"
   exit $EXIT_CODE
 ) > .scratch/logs/e2e-server.log 2>&1' Enter
 
-# Split window, run tests in pane 1
+# Pane 1: 等待后运行测试
 tmux split-window -t "doit-e2e" -h
 tmux send-keys -t "doit-e2e:1" 'sleep 10 && (
-  echo "[START] $(date "+%Y-%m-%d %H:%M:%S") — E2E test suite"
+  echo "[START] $(date "+%Y-%m-%d %H:%M:%S") — E2E tests"
   uv run pytest tests/e2e/ -v --tb=short
   EXIT_CODE=$?
   echo "[END] $(date "+%Y-%m-%d %H:%M:%S") — exit_code=$EXIT_CODE"
   exit $EXIT_CODE
 ) > .scratch/logs/e2e-tests.log 2>&1' Enter
 
-# Step 2: Monitor test completion
-Monitor "Watch E2E test completion" \
-  "grep -q '\[END\]' .scratch/logs/e2e-tests.log" \
-  --interval 20
+# 轮询测试完成
 ```
 
-### Multi-Phase Pipeline
-
-For tasks that chain multiple phases sequentially:
-
-```bash
-# Phase A: Build
-tmux new-session -d -s "doit-pipeline"
-tmux send-keys -t "doit-pipeline" '(
-  echo "[START] $(date "+%Y-%m-%d %H:%M:%S") — Phase A: Build"
-  cargo build --release
-  EXIT_A=$?
-  echo "[END] $(date "+%Y-%m-%d %H:%M:%S") — exit_code=$EXIT_A"
-
-  echo "[START] $(date "+%Y-%m-%d %H:%M:%S") — Phase B: Test"
-  cargo test --all
-  EXIT_B=$?
-  echo "[END] $(date "+%Y-%m-%d %H:%M:%S") — exit_code=$EXIT_B"
-
-  # Final: overall result
-  echo "[PIPELINE_DONE] exit_code=$((EXIT_A | EXIT_B))"
-  exit $((EXIT_A | EXIT_B))
-) > .scratch/logs/pipeline.log 2>&1' Enter
-
-# Monitor for pipeline completion
-Monitor "Watch pipeline completion" \
-  "grep -q '\[PIPELINE_DONE\]' .scratch/logs/pipeline.log" \
-  --interval 30
+```
+/loop 检查 E2E 测试完成:
+1. grep '\[END\]' .scratch/logs/e2e-tests.log
+2. 完成 → tail -1 读取结果 → 停止
+3. 未完成 → ScheduleWakeup 120s
 ```
 
-### Exit Signal Convention
-
-| Marker | Meaning |
-|--------|---------|
-| `[START]` | Phase started with timestamp |
-| `[PROGRESS]` | Intermediate progress update (for user visibility) |
-| `[END] exit_code=0` | Success |
-| `[END] exit_code=N` | Failure (N != 0) |
-| `[TIMEOUT]` | Exceeded estimated runtime |
-| `[PIPELINE_DONE]` | Multi-phase pipeline completed |
-
-### Timeout Wrapper
-
-For commands where you want explicit timeout handling:
+## 超时包装
 
 ```bash
 tmux send-keys -t "$TMUX_SESSION" '(
@@ -480,56 +184,111 @@ tmux send-keys -t "$TMUX_SESSION" '(
 ) > .scratch/logs/<name>.log 2>&1' Enter
 ```
 
-### Tmux Session Management
+## Tmux Session 管理
 
 ```bash
-# List active doit sessions
+# 列出活跃 session
 tmux list-sessions | grep doit-
 
-# Check session status
+# 检查 session 状态
 tmux has-session -t "doit-<name>" 2>/dev/null && echo "running" || echo "done"
 
-# Kill session when done
+# 清理 session
 tmux kill-session -t "doit-<name>" 2>/dev/null || true
 
-# Send-keys to running session (e.g., interrupt)
+# 中断运行中的 session
 tmux send-keys -t "doit-<name>" C-c
 ```
 
-### Per-Phase Usage
+## 退出信号约定
 
-| Phase | Long Task | Tmux Session | Monitor |
-|-------|-----------|-------------|---------|
-| Phase 3 | `cargo build --release` | `doit-build` | `[END]` in build.log |
-| Phase 4 | E2E server + test suite | `doit-e2e` | `[END]` in e2e-tests.log |
-| Phase 7 | Re-run E2E after simplify | `doit-e2e-verify` | `[END]` in e2e-verify.log |
-| Phase 8 | Large commit + push | `doit-commit` | `[END]` in commit.log |
+| 标记 | 含义 |
+|------|------|
+| `[START]` | 任务开始，带时间戳 |
+| `[PROGRESS]` | 中间进度（可选，用于用户可见性） |
+| `[END] exit_code=0` | 成功 |
+| `[END] exit_code=N` | 失败（N != 0） |
+| `[TIMEOUT]` | 超时 |
 
-### When to Use Each Tier
+## 完整示例
 
-| Condition | Tier |
-|-----------|------|
-| <10s, simple | Foreground |
-| 10s-5min, single command | Background (log file) |
-| >5min, single command | Tmux + Monitor |
-| Multi-phase pipeline | Tmux + Monitor |
-| Needs auto-continuation | Tmux + Monitor |
-| Interactive (needs user input) | Foreground |
-| Sequential deps (B needs A output) | Tmux pipeline or foreground |
-
-### Log Retention
-
-Logs in `.scratch/logs/` are cleaned up in Phase 9 along with the `.scratch/` directory.
-
-### Fallback: No Tmux
-
-If tmux is not available:
-1. Use Tier 2 (Background with log file)
-2. Use `Bash run_in_background=true` with timeout
-3. Check log file after notification
+### Phase 3: 长构建
 
 ```bash
-# Fallback: no tmux, use shell background
+mkdir -p .scratch/logs
+TMUX_SESSION="doit-build"
+tmux new-session -d -s "$TMUX_SESSION"
+tmux send-keys -t "$TMUX_SESSION" '(
+  echo "[START] $(date "+%Y-%m-%d %H:%M:%S") — cargo build --release"
+  cargo build --release
+  EXIT_CODE=$?
+  echo "[END] $(date "+%Y-%m-%d %H:%M:%S") — exit_code=$EXIT_CODE"
+  exit $EXIT_CODE
+) > .scratch/logs/build.log 2>&1' Enter
+```
+
+```
+/loop 检查 build.log 完成:
+- grep '\[END\]' .scratch/logs/build.log
+- 完成 → tail -1 读取 exit_code → 报告 → 停止
+- 未完成 → ScheduleWakeup 60s
+```
+
+### Phase 4: E2E 测试
+
+```bash
+mkdir -p .scratch/logs
+tmux new-session -d -s "doit-e2e"
+tmux send-keys -t "doit-e2e:0" '(
+  echo "[START] $(date "+%Y-%m-%d %H:%M:%S") — dev server"
+  uv run python -m uvicorn main:app --host 127.0.0.1 --port 8765
+) > .scratch/logs/e2e-server.log 2>&1' Enter
+
+tmux split-window -t "doit-e2e" -h
+tmux send-keys -t "doit-e2e:1" 'sleep 10 && (
+  echo "[START] $(date "+%Y-%m-%d %H:%M:%S") — E2E tests"
+  uv run pytest tests/e2e/ -v --tb=short
+  EXIT_CODE=$?
+  echo "[END] $(date "+%Y-%m-%d %H:%M:%S") — exit_code=$EXIT_CODE"
+  exit $EXIT_CODE
+) > .scratch/logs/e2e-tests.log 2>&1' Enter
+```
+
+```
+/loop 检查 E2E 测试完成 → 完成后进入 Phase 5
+```
+
+### Phase 7: E2E 验证（简化后重新运行）
+
+```bash
+mkdir -p .scratch/logs
+tmux new-session -d -s "doit-e2e-verify"
+tmux send-keys -t "doit-e2e-verify" '(
+  echo "[START] $(date "+%Y-%m-%d %H:%M:%S") — E2E verification"
+  uv run pytest tests/e2e/ -v
+  EXIT_CODE=$?
+  echo "[END] $(date "+%Y-%m-%d %H:%M:%S") — exit_code=$EXIT_CODE"
+  exit $EXIT_CODE
+) > .scratch/logs/e2e-verify.log 2>&1' Enter
+```
+
+```
+/loop 检查 e2e-verify.log 完成 → 全部通过则进入 Phase 8
+```
+
+## 日志保留
+
+`.scratch/logs/` 中的日志在 Phase 9 清理。
+
+## 降级：无 tmux
+
+如果 tmux 不可用：
+1. 用 `Bash run_in_background=true` + timeout
+2. Claude Code 自动通知完成
+3. 检查结果
+
+```bash
+# 降级方案：无 tmux
 (
   echo "[START] $(date '+%Y-%m-%d %H:%M:%S') — <description>"
   <command>
@@ -537,21 +296,8 @@ If tmux is not available:
   echo "[END] $(date '+%Y-%m-%d %H:%M:%S') — exit_code=$EXIT_CODE"
   exit $EXIT_CODE
 ) > .scratch/logs/<name>.log 2>&1 &
-
-# Monitor the log file
-Monitor "Watch <name> completion" \
-  "grep -q '\[END\]' .scratch/logs/<name>.log" \
-  --interval 10
 ```
 
-### Claude Code Monitor Behavior
-
-When a monitor fires:
-1. Claude Code receives a "Monitor event" notification
-2. It reads the relevant log file
-3. It checks the exit code
-4. **If success** → automatically continues to the next workflow phase
-5. **If failure** → reads the log for diagnostics, decides on remediation
-6. The user sees "● 正常，继续跑。" or "Monitor event: <description>"
-
-This enables fully autonomous long-running workflows without human intervention.
+```
+/loop 检查 .scratch/logs/<name>.log 的 [END] 标记
+```

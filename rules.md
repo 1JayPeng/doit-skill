@@ -26,64 +26,70 @@
 
 ## 铁律 — Background Execution
 
-**永远不要空等长时间任务。始终使用后台执行 + 轮询机制。这是铁律，不是建议。**
+**永远不要空等长时间任务。始终使用 tmux + 实时日志 + 自动轮询。这是铁律，不是建议。**
 
 旧模式：运行 `cargo build --release` -> 干等 5min -> 结果。这阻塞工作流、浪费 token、让用户盯着冻结的 agent。
-新模式：后台启动 -> 继续做其他工作 -> 通知时检查结果。
+新模式：tmux 命名 session 启动 -> 日志实时写入 log 文件 -> `/loop` 自动轮询 `[END]` 标记 -> 完成后自动继续下一 phase。
 
 ### 决策门控（每个命令运行前必须执行）
 
 在运行任何 Bash 命令前，**必须**先判断：
 
 1. **这个命令预计需要多长时间？**
-2. **>10s？** → 禁止前台直接运行，必须后台化
-3. **>10s？** → 必须后台 + `/loop` 轮询（推荐）
-4. **>30min？** → 必须 tmux + Monitor（多阶段 pipeline）
-5. **后台任务设置完成后，是否已设置完成信号（`/loop` 推荐、Monitor 备选）？** → 没有则禁止继续
+2. **>10s？** → 禁止前台直接运行，必须 tmux + 实时日志 + `/loop` 轮询
+3. **后台任务设置完成后，是否已设置完成信号（`[END]` 标记 + `/loop`）？** → 没有则禁止继续
 
-### 三级执行标准
+### 统一执行标准
 
 - **<10s** → 直接 Bash（前台 OK）
-- **10s–30min** → shell `&` + log 文件 + `/loop` 轮询（推荐）+ ScheduleWakeup
-- **>30min** → tmux 命名 session + Monitor + 自动继续
+- **>10s** → **tmux 命名 session + 实时日志 + `/loop` 自动轮询**
+
+**所有长任务统一使用 tmux。** 不用 shell `&`，不用 `run_in_background`。Tmux 是唯一标准。
+
+### 为什么是 tmux（不是 shell &）
+
+| 特性 | tmux | shell & |
+|------|------|---------|
+| 实时日志 | log 文件持续写入，随时 `tail` 可读 | 输出缓冲，日志可能延迟 |
+| 进程管理 | 独立 session，可 attach 查看 | 依赖 shell 进程组 |
+| 崩溃恢复 | session 持久，可重新连接 | shell 退出进程丢失 |
+| 多阶段 pipeline | split-window 多 pane 协同 | 需要手动编排 |
+| 完成检测 | `[END]` 标记写入 log，`/loop` 轮询 | 需要 wait + trap |
 
 ### 强制轮询规则
 
-**每个后台任务必须有一个对应的轮询机制。没有轮询的后台任务 = 丢失的工作。**
+**每个后台任务必须有 tmux session + `/loop` 轮询。没有轮询的后台任务 = 丢失的工作。**
 
-- `Bash run_in_background=true` → Claude Code 自动通知，但仍需设置 timeout
-- Shell `&` → **必须**配合 `/loop` 轮询（推荐）或 Monitor 命令
-- tmux → **必须**配合 `Monitor` 命令 + `[END]` 标记检查
-- **禁止**启动后台任务后不做任何轮询设置
-
-### 轮询期间必须做其他工作
-
-**设置后台任务 + `/loop` 后，必须立即继续其他工作。** 空等 loop 触发 = 违反铁律。
-如果无其他工作可做，`/loop` 期间主 agent 可以继续其他任务。
+1. **启动 tmux session** — 命名 `doit-<phase>`，写入 `.scratch/logs/<name>.log`
+2. **日志必须包含 `[START]` 和 `[END]` 标记** — `[END]` 包含 exit_code
+3. **设置 `/loop` 轮询** — 检查 `[END]` 标记，完成后读取结果并报告
+4. **轮询期间做其他工作** — 不空等
 
 ### 禁止行为
 
 - **禁止**运行长时间命令后停止响应、沉默等待
-- **禁止**重复 `tail -f` 或频繁 `cat` 日志文件来手动轮询（用 `/loop` 或 Monitor）
-- **禁止**忘记设置完成信号（`[END]` 标记、`/loop`、Monitor、ScheduleWakeup）
+- **禁止**前台运行 >10s 的命令后干等
+- **禁止**用 shell `&` 代替 tmux — tmux 是唯一标准
+- **禁止**忘记设置完成信号（`[END]` 标记 + `/loop` 轮询）
 - **禁止**对后台任务不设 timeout（默认 300s）
-- **禁止**在长对话中忘记后台任务的存在 → 用户问进度时立即检查 `.scratch/logs/` 和 tmux sessions
+- **禁止**在长对话中忘记后台任务的存在 → 用户问进度时立即检查 `.scratch/logs/` 和 `tmux list-sessions`
 
 ### 始终遵守
 
-- **始终设置完成信号** — `[END]` 标记、`/loop` 轮询、Monitor 检查或 ScheduleWakeup 回调
+- **始终 tmux + 实时日志** — 所有 >10s 任务
+- **始终 `/loop` 轮询** — 不空等，不手动 `tail -f`
 - **绝不说"waiting for X..."然后沉默** — 要么轮询，要么做其他工作
 - **估计运行时，设置 2x 超时** — 如果预计 3min，timeout = 6min
 
-See [background-process.md](background-process.md) for full three-tier patterns.
+See [background-process.md](background-process.md) for full tmux + `/loop` patterns.
 
 ### Applied Everywhere
 
-- **Phase 3 (Execute)** — `cargo build --release`, `cargo test --all`, long test suites -> background
-- **Phase 4 (E2E)** — dev server + test suite -> tmux + monitor
-- **Phase 7 (E2E Verify)** — re-run full e2e after simplify -> background + monitor
-- **Phase 8 (Commit + Push)** — large repo push -> background with log
-- **Any phase** — docker build, database migration, large file processing -> background tier matching duration
+- **Phase 3 (Execute)** — `cargo build --release`, `cargo test --all`, long test suites -> tmux + /loop
+- **Phase 4 (E2E)** — dev server + test suite -> tmux + /loop
+- **Phase 7 (E2E Verify)** — re-run full e2e after simplify -> tmux + /loop
+- **Phase 8 (Commit + Push)** — large repo push -> tmux + /loop
+- **Any phase** — docker build, database migration, large file processing -> tmux + /loop
 
 ## 铁律 — Commit + Push Mandatory
 
