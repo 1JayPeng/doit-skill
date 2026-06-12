@@ -161,7 +161,7 @@ Save all extracted records to multi-layer storage (same as Phase 9.5 extraction)
   MemPalace drawers: N extracted (M merged)
   Worklog entries: N extracted (M merged)
   Total unique records: X
-  Saved to: agentmemory ✓, mempalace ✓, context-mode ✓, filesystem ✓
+  Saved to: mempalace ✓, filesystem ✓
 ```
 
 ## Configuration

@@ -1,6 +1,6 @@
 # 工作留痕 (Worklog)
 
-**每个 phase 完成后记录工作日志。三层存储：agentmemory > mempalace > 文件系统。**
+**每个 phase 完成后记录工作日志。两层存储：mempalace > 文件系统。**
 
 最终目标：生成日报/周报/项目报告，有据可依。
 
@@ -8,11 +8,10 @@
 
 | 层级 | 工具 | 用途 | 回退 |
 |------|------|------|------|
-| 1 | agentmemory | 跨会话语义记忆（首选） | mempalace |
-| 2 | mempalace | 跨会话语义记忆（备选） | 文件系统 |
-| 3 | `.doit/worklog.json` | 结构化日志文件 | 无 |
+| 1 | mempalace | 跨会话语义记忆（首选） | 文件系统 |
+| 2 | `.doit/worklog.json` | 结构化日志文件 | 无 |
 
-**写入逻辑：** 尝试 agentmemory → 失败则 mempalace → 失败则文件系统。**至少一层成功。**
+**写入逻辑：** 尝试 mempalace → 失败则文件系统。**至少一层成功。**
 
 ## 日志格式
 
@@ -80,10 +79,6 @@ mempalace_add_drawer wing="<project>" room="worklog" content="<JSON log entry>" 
 mempalace_diary_write agent_name="doit" entry="<compact summary>" topic="worklog"
 ```
 
-### agentmemory
-
-通过 agentmemory 的日记/记忆工具写入。格式同 MemPalace。
-
 ## 报告生成
 
 ### 日报
@@ -130,7 +125,7 @@ mempalace_diary_write agent_name="doit" entry="<compact summary>" topic="worklog
 
 **每个 phase 完成后必须记录工作日志。没有例外。**
 
-- 记录失败（三层都不可用）→ 在 Phase 9.5 完成摘要中声明 `[WARN] worklog failed`
+- 记录失败（两层都不可用）→ 在 Phase 9.5 完成摘要中声明 `[WARN] worklog failed`
 - 记录不阻塞工作流 → 即使记录失败也继续下一个 phase
 - 记录内容要具体 → "实现认证 API" 而不是 "写代码"
 
@@ -142,7 +137,7 @@ mempalace_diary_write agent_name="doit" entry="<compact summary>" topic="worklog
 worklog:
   enabled: true          # 默认启用
   format: json           # json | markdown
-  storage: auto          # auto (三层尝试) | mempalace | filesystem
+  storage: auto          # auto (两层尝试) | mempalace | filesystem
   report:
     daily: true          # 生成日报
     weekly: false        # 生成周报

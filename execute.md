@@ -20,6 +20,7 @@
   - **Fallback:** If lean-ctx not available -> native Read/Grep/Bash tools
 
 - **Context-Mode for context management.** Auto-indexes command output, provides semantic search.
+- **Tool source annotation:** lean-ctx `ctx_search` = code search (grep replacement), Context-Mode `ctx_search` = indexed content search (session output). Use lean-ctx for code, Context-Mode for session output.
   - `ctx_execute` — run commands, output auto-indexed
   - `ctx_execute_file` — process large files without loading into context
   - `ctx_search` — search previously indexed content
@@ -125,13 +126,13 @@ After RED->GREEN->REFACTOR completes, **before moving to next REQ**:
 **[CALL] Execute these MCP tool calls after every REQ completion. No skip.**
 
 ```
-[CALL] agentmemory_remember content="<worklog JSON>" — primary semantic search index
+[CALL] mempalace_add_drawer wing="<project>" room="worklog" content="<worklog JSON>"
 ```
-If agentmemory fails:
+If mempalace fails:
 ```
 [CALL] mempalace_add_drawer wing="<project>" room="worklog" content="<summary>"
 ```
-If both fail, final fallback:
+If mempalace fails, final fallback:
 ```
 [CALL] ctx_shell("echo '<worklog JSON>' >> .doit/worklog.json")
 ```
