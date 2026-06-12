@@ -118,6 +118,69 @@ mempalace_search wing="sessions" room="problems" limit=3 max_distance=0.7
 
 If MemPalace unavailable (any call errors) → skip all MP steps silently for this session. Filesystem remains primary.
 
+**Step 3 — Create Phase Task List (MANDATORY).** After classification, create TaskCreate tasks for each phase in the workflow. This is the model's visible checklist — context can grow, but the task list persists.
+
+**[CALL] Create tasks based on type. Execute ALL TaskCreate calls in parallel:**
+
+```
+# Type F (full feature workflow):
+TaskCreate subject="Phase 0 - Classify" description="Classify request, announce type, create task list"
+TaskCreate subject="Phase 1 - Spec" description="Grill 5+ questions, write spec, create branch"
+TaskCreate subject="Phase 2 - Plan" description="Impact analysis, codegraph + tokensave context, order REQs"
+TaskCreate subject="Phase 3 - Execute" description="TDD per REQ, per-REQ review+simplify"
+TaskCreate subject="Phase 4 - E2E" description="End-to-end tests in real environment"
+TaskCreate subject="Phase 5 - Review" description="Feature review, merge duplicates"
+TaskCreate subject="Phase 6 - Simplify" description="Remove dead code, flatten abstractions"
+TaskCreate subject="Phase 7 - E2E Verify" description="Re-run E2E vs spec REQs"
+TaskCreate subject="Phase 8 - Commit+Push" description="Pre-commit gate, commit, push to remote"
+TaskCreate subject="Phase 9 - Cleanup" description="Remove intermediate files, keep archive"
+TaskCreate subject="Phase 9.5 - Summary" description="Completion summary, knowledge extraction"
+TaskCreate subject="Phase 10 - Session End" description="Stats, MP diary, /compact"
+```
+
+```
+# Type S (simple workflow):
+TaskCreate subject="Phase 0 - Classify" description="Classify request, announce type"
+TaskCreate subject="Execute" description="Execute the simple change directly"
+TaskCreate subject="Phase 9.5 - Summary" description="Completion summary"
+TaskCreate subject="Phase 10 - Session End" description="Stats, /compact"
+```
+
+```
+# Type B (bug workflow):
+TaskCreate subject="Phase 0 - Classify" description="Classify request, announce type"
+TaskCreate subject="D0-D6 Debug" description="Debug workflow per debug.md"
+TaskCreate subject="Phase 8 - Commit+Push" description="Commit fix, push to remote"
+TaskCreate subject="Phase 9.5 - Summary" description="Completion summary"
+TaskCreate subject="Phase 10 - Session End" description="Stats, /compact"
+```
+
+```
+# Type R (resume): Create tasks for remaining phases from detected phase.
+```
+
+**After creating tasks, mark Phase 0 as done:**
+```
+TaskUpdate taskId="<phase0_task_id>" status="completed"
+```
+
+**At each phase boundary, update the task status:**
+```
+TaskUpdate taskId="<phase_task_id>" status="in_progress"  # at phase start
+TaskUpdate taskId="<phase_task_id>" status="completed"   # at phase end
+```
+
+**Why:** The task list is visible in the UI. Even when context grows and the model forgets which phase it's in, the task list shows what's pending/in-progress/completed. This prevents phase skipping.
+
+**铁律: 不创建 task list = Phase 0 未完成 = 工作流未开始。**
+
+**[CALL] After creating tasks, verify with TaskList.** The task list should show all phases as `pending`.
+
+**At each phase boundary:**
+1. `TaskUpdate taskId="<N>" status="in_progress"` — when entering a phase
+2. `TaskUpdate taskId="<N>" status="completed"` — when completing a phase
+3. Never skip a task. A visible `pending` task at Phase 10 means the workflow is incomplete.
+
 **Before proceeding: check if user's prompt contains reference documentation.** If yes, capture it before any phase runs. See [doc-capture.md](doc-capture.md). Doc capture is independent of classification type (R/S/F/B) — always run first.
 
 ## Phase 1 — Spec (完整 grill 协议)

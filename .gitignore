@@ -4,7 +4,8 @@
 __pycache__/
 *.py[oc]
 build/
-dist/
+dist/output/
+dist/*.tar.gz
 wheels/
 *.egg-info
 .scratch/

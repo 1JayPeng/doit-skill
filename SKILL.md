@@ -7,7 +7,7 @@ description: "Spec-driven TDD workflow. Auto-classifies simple/feature/bug. Trig
 
 Spec-driven TDD. 10 phases. Nothing ships without spec. Review + Simplify + E2E + commit mandatory.
 
-**Phase 0 是强制入口。** 任何 `/doit` 调用，必须先执行 Phase 0 分类，然后 announce 分类结果给用户。不 announce = 用户不知道工作流在做什么 = 跳过。
+**Phase 0 是强制入口。** 任何 `/doit` 调用，必须先执行 Phase 0 分类，然后 announce 分类结果给用户，然后创建 Phase Task List（TaskCreate）。不 announce = 用户不知道工作流在做什么 = 跳过。不创建 task 列表 = 模型无法跟踪进度 = 跳过。
 
 ## Skill Router
 
@@ -27,7 +27,7 @@ Non-Interruptive Q | Background >10s | Commit+Push | MP 读写对称 | 工作流
 | Phase | [LOAD] | 说明 |
 |-------|--------|------|
 | **-1** | [env-check.md](env-check.md) | 环境检测 → CLAUDE.md + config |
-| **0** | [phases.md](phases.md)#phase-0 | Sync → [LOAD:session] caveman → 分类(R/S/F/B) → MP sweep 10 并行 |
+| **0** | [phases.md](phases.md)#phase-0 | Sync → [LOAD:session] caveman → 分类(R/S/F/B) → MP sweep 10 并行 → **TaskCreate task list** |
 | **1** | [phases.md](phases.md)#phase-1, [learn/inject.md](learn/inject.md) | [LOAD:phase-1] grill-me → Grill(5+/3+) → Spec → Branch → Gate → [RELEASE:phase-1] grill-me → ctx_compress |
 | **2** | [learn/inject.md](learn/inject.md), [plan.md](plan.md) | codegraph_context + tokensave_context → Impact → Order |
 | **3** | [execute.md](execute.md) | [LOAD:phase-3] tdd → TDD per REQ → per-REQ review+simplify |

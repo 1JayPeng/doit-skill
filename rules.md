@@ -145,6 +145,8 @@ Phase -1 → Phase 0 → Phase 1 → Phase 2 → Phase 3 → Phase 4 → Phase 5
 - **禁止**跳过 Phase 8（Commit + Push）说"完成" — 未提交等于丢失
 - **禁止**跳过 Phase 10（Session Summary）结束对话 — 不记录统计信息
 - **禁止**在 Phase 10 不调用 `/compact` — Phase 10 不完整 = 工作流未结束
+- **禁止**在 Phase 0 不创建 TaskCreate task 列表 — 不创建 task = 模型无法跟踪进度 = 跳过
+- **禁止**在 Phase 10 完成时 TaskList 还有 `pending` 任务 — 有 pending = 工作流未完整执行
 
 **Phase 完成后必须继续，不能停在中间：**
 - Phase 3 完成 → 立即 Phase 4，不要停
