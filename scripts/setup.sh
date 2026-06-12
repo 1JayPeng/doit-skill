@@ -632,7 +632,7 @@ with open('$_claude_settings', 'w') as f:
       plugin_cmd 600 mempalace init . --yes || echo_warn "Failed to initialize mempalace (run manually: mempalace init . --yes)"
       if [ -f "mempalace.yaml" ]; then
         echo_info "Mining mempalace index..."
-        mempalace mine . 2>&1 || echo_warn "Failed to mine mempalace (run manually: mempalace mine .)"
+        plugin_cmd 300 mempalace mine . 2>&1 || echo_warn "mempalace mine timed out (run manually: mempalace mine .)"
       fi
     else
       echo_warn "mempalace CLI not found, skipping init"
@@ -657,16 +657,16 @@ if [ "$SKIP_OPTIONAL" = false ]; then
   if command -v lean-ctx >/dev/null 2>&1; then
     lean-ctx --version 2>&1 || true
     echo_info "Connecting lean-ctx to all AI tools..."
-    lean-ctx onboard < /dev/null 2>&1 || echo_warn "lean-ctx onboard failed"
+    plugin_cmd 120 lean-ctx onboard 2>&1 || echo_warn "lean-ctx onboard failed"
     source "$HOME/.bashrc" 2>/dev/null || true
-    lean-ctx init --agent claude < /dev/null 2>&1 || echo_warn "lean-ctx init --agent claude failed (may need manual: claude mcp add lean-ctx lean-ctx)"
+    plugin_cmd 120 lean-ctx init --agent claude 2>&1 || echo_warn "lean-ctx init --agent claude timed out (may need manual: claude mcp add lean-ctx lean-ctx)"
     echo_success "lean-ctx installed"
   fi
 
   if [ -f "$HOME/.claude/rules/lean-ctx.md" ]; then
     echo_success "lean-ctx rules configured at ~/.claude/rules/lean-ctx.md"
   else
-    echo_warn "lean-ctx rules not found — run: lean-ctx init --agent claude"
+    echo_warn "lean-ctx rules not found after init — you may need to run: lean-ctx init --agent claude"
   fi
 fi
 
@@ -682,7 +682,7 @@ if [ "$SKIP_OPTIONAL" = false ]; then
   else
     echo_info "Installing headroom..."
     if command -v uv >/dev/null 2>&1; then
-      uv tool install "headroom-ai[mcp,proxy]" 2>&1 || echo_warn "Failed to install headroom via uv"
+      plugin_cmd 180 uv tool install "headroom-ai[mcp,proxy]" 2>&1 || echo_warn "Failed to install headroom via uv"
     else
       echo_warn "uv not found — install headroom manually: uv tool install 'headroom-ai[mcp,proxy]'"
     fi
@@ -694,11 +694,11 @@ if [ "$SKIP_OPTIONAL" = false ]; then
       echo_success "headroom MCP already configured"
     else
       echo_info "Configuring headroom MCP..."
-      headroom mcp install 2>&1 || echo_warn "Failed to configure headroom MCP (run manually: headroom mcp install)"
+      plugin_cmd 120 headroom mcp install 2>&1 || echo_warn "headroom mcp install timed out (run manually: headroom mcp install)"
       if claude mcp list 2>/dev/null | grep -q headroom; then
         echo_success "headroom MCP configured"
       else
-        echo_warn "headroom MCP not detected — configure manually: headroom mcp install"
+        echo_warn "headroom MCP not detected after install — you may need to run: headroom mcp install"
       fi
     fi
   fi
@@ -724,11 +724,11 @@ if [ "$SKIP_OPTIONAL" = false ]; then
       echo_success "codegraph MCP already configured"
     else
       echo_info "Configuring codegraph MCP server..."
-      codegraph install --yes 2>&1 || echo_warn "Failed to configure codegraph MCP (run manually: codegraph install --yes)"
+      plugin_cmd 120 codegraph install --yes 2>&1 || echo_warn "codegraph install timed out (run manually: codegraph install --yes)"
       if claude mcp list 2>/dev/null | grep -qi codegraph; then
         echo_success "codegraph MCP configured"
       else
-        echo_warn "codegraph MCP not detected — configure manually: codegraph install --yes"
+        echo_warn "codegraph MCP not detected after install — you may need to run: codegraph install --yes"
       fi
     fi
 
@@ -737,7 +737,7 @@ if [ "$SKIP_OPTIONAL" = false ]; then
       echo_success "codegraph index already exists"
     else
       echo_info "Initializing codegraph index..."
-      codegraph init -i 2>&1 || echo_warn "Failed to initialize codegraph index (run manually: codegraph init -i)"
+      plugin_cmd 300 codegraph init -i 2>&1 || echo_warn "codegraph init timed out (run manually: codegraph init -i)"
       if [ -d ".codegraph" ]; then
         echo_success "codegraph index initialized"
       fi
