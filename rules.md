@@ -137,12 +137,14 @@ Phase -1 → Phase 0 → Phase 1 → Phase 2 → Phase 3 → Phase 4 → Phase 5
 ```
 
 **禁止行为：**
+- **禁止**跳过 Phase 0（分类）直接开始工作 — 不分类不工作，分类结果必须 announce 给用户
 - **禁止**跳过 Phase 1（规格）直接写代码 — 没有 spec 不写代码
 - **禁止**跳过 Phase 4（E2E）直接进入审查 — 没有 E2E 不审查
-- **禁止**跳过 Phase 5-6（Review + Simplify）直接提交 — 没有审查不提交
+- **禁止**跳过 Phase 5-6（Review + Simplify）直接提交 — 没有审查不提交。Phase 8 Pre-Commit Gate 会检查。
 - **禁止**跳过 Phase 7（E2E 验证）直接提交 — 简化后必须重新验证
 - **禁止**跳过 Phase 8（Commit + Push）说"完成" — 未提交等于丢失
 - **禁止**跳过 Phase 10（Session Summary）结束对话 — 不记录统计信息
+- **禁止**在 Phase 10 不调用 `/compact` — Phase 10 不完整 = 工作流未结束
 
 **Phase 完成后必须继续，不能停在中间：**
 - Phase 3 完成 → 立即 Phase 4，不要停

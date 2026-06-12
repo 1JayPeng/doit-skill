@@ -6,6 +6,29 @@
 
 Commit runs only after E2E Verification Loop passes (e2e tests all green AND spec alignment verified — output matches spec REQs).
 
+## Pre-Commit Gate (MANDATORY — Execute Before Step 1)
+
+**[CALL] This gate runs once before any commit. No skip. No rationalizing.**
+
+Before staging anything, verify the full workflow was followed:
+
+```
+[Pre-Commit Gate] Check workflow compliance:
+  □ Phase 0 — Classification announced? (Type R/S/F/B visible in conversation)
+  □ Phase 5 — Review completed? (review.md checklist done)
+  □ Phase 6 — Simplify completed? (review-simplify.md steps executed)
+  □ Phase 7 — E2E Verification Loop passed? (e2e-verify.md flow completed)
+```
+
+**If ANY box is unchecked:**
+1. **STOP. Do not commit.**
+2. Announce which phases are missing: `[PRE-COMMIT GATE] Missing: Phase X (description)`
+3. Execute the missing phase(s) NOW
+4. Re-run this gate
+5. Only proceed when ALL boxes are checked
+
+**铁律: 没有通过 Pre-Commit Gate = 禁止 commit。跳过 Review 直接 commit = 工作流违规。**
+
 ## Steps
 
 ### 1. Check Git Status

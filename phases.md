@@ -51,7 +51,17 @@ CLAUDE.md `## Skill Loading` section (written by Phase -1) also enforces this, s
 - **F (feature)** — new functionality, cross-module, user-facing. Run phases 1-8.
 - **B (bug)** — something broken. Run debug workflow D0-D6. See [debug.md](debug.md).
 
-**Classify, announce type to user, proceed. If user disputes type, use their type.**
+**Classify, announce type to user (MANDATORY), proceed. If user disputes type, use their type.**
+**铁律: 分类结果必须 announce 给用户，格式为 `## Phase 0: 分类 → Type X`。不 announce = 用户不知道工作流在做什么 = 跳过。**
+
+**Announcement format (MANDATORY — not announcing = skipping Phase 0):**
+```
+## Phase 0: 意图分类
+
+分类: Type X (reason)
+流程: Phase 0 → [phases based on type]
+```
+**Why:** User needs to see the classification. Without it, the agent can skip Phase 0 and the user won't know.
 
 **Step 2.5 — Memory Context Sweep (MANDATORY).** Before any phase logic executes, load project context from MemPalace. Type S (simple) can skip.
 
@@ -275,7 +285,13 @@ RTK unavailable → `[WARN] RTK not installed` and continue.
 6. **[CALL] Caveman compress:** Run `/caveman:compress CLAUDE.md` to compress CLAUDE.md.
 
 **This phase always runs last.** It gathers session statistics and preserves knowledge for future sessions.
-**MANDATORY: End with `/compact` to compress conversation context.**
+
+**Phase 10 硬门控 — `/compact` 是最后一步，不可跳过：**
+```
+/compact
+```
+**Why:** Without compact, context grows unbounded. Next session starts with stale, bloated context. This is a hard gate — Phase 10 is NOT complete until `/compact` is called.
+**铁律: Phase 10 不调用 `/compact` = Phase 10 未完成 = 工作流未结束。**
 
 **⚠️ Compact 副作用：** `/compact` 压缩上下文后，TaskUpdate 的 `taskId` 会丢失。如果 compact 后遇到 `InputValidationError: taskId is missing`，参见 [errors.md](errors.md)#compact-后-task-丢失。
 

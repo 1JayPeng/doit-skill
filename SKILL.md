@@ -7,6 +7,8 @@ description: "Spec-driven TDD workflow. Auto-classifies simple/feature/bug. Trig
 
 Spec-driven TDD. 10 phases. Nothing ships without spec. Review + Simplify + E2E + commit mandatory.
 
+**Phase 0 是强制入口。** 任何 `/doit` 调用，必须先执行 Phase 0 分类，然后 announce 分类结果给用户。不 announce = 用户不知道工作流在做什么 = 跳过。
+
 ## Skill Router
 
 On-demand load. **[RELEASE]** after phase + `ctx_compress`。
