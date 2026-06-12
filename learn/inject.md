@@ -27,17 +27,22 @@ Extract keywords from user's request:
 
 Search query = `"<user request keywords>" <project> <type>`
 
-### Step 2: Search MemPalace
+### Step 2: Search Knowledge Base
 
-Search MemPalace as the primary knowledge source:
+Search AgentMemory as primary, MemPalace as secondary (KG + semantic):
 
-**MemPalace (Primary):**
+**AgentMemory (Primary):**
 ```
-mempalace_search query="<search query>" wing="<project>" room="knowledge_distillation" limit=5
+memory_smart_search query="<search query>" limit=5
+```
+
+**MemPalace (Secondary — KG + room-specific):**
+```
+mempalace_search query="<search query>" wing="<project>" room="knowledge_distillation" limit=3
 mempalace_search query="<search query>" wing="<project>" limit=3
 ```
 
-**Fallback (if MemPalace unavailable):**
+**Fallback (if both unavailable):**
 ```bash
 # Search .doit/knowledge/ for matching records
 grep -r "<keyword>" .doit/knowledge/*.json 2>/dev/null | head -20
@@ -124,7 +129,9 @@ This helps the user avoid known pitfalls without blocking the workflow.
 
 | Available Tools | Behavior |
 |----------------|----------|
-| MemPalace | MemPalace search |
+| AgentMemory + MemPalace | AgentMemory primary + MemPalace KG |
+| AgentMemory only | AgentMemory search |
+| MemPalace only | MemPalace search |
 | None | Filesystem search (.doit/knowledge/) |
 
 If no knowledge found:
@@ -146,5 +153,5 @@ knowledge:
     time_decay_days: 10     # Days for score to halve
     include_failed: true    # Include failed sessions as warnings
     cross_project: false    # Search across all projects (false = current only)
-    source: mempalace       # Primary search source (mempalace | filesystem)
+    source: agentmemory     # Primary search source (agentmemory | mempalace | filesystem)
 ```

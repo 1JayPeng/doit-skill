@@ -14,10 +14,10 @@ caveman: Phase 0 [LOAD:session] 不释放 | grill-me: Phase 1 [LOAD:phase-1] 结
 
 ## 铁律 + 指令 + 工具
 
-[rules.md](rules.md)。Worklog: 每 phase 记录 (`.doit/worklog.json`, Phase 10 提取到 MemPalace)。[worklog.md](worklog.md)
+[rules.md](rules.md)。Worklog: 每 phase 记录 (agentmemory > mempalace > `.doit/worklog.json`)。[worklog.md](worklog.md)
 Non-Interruptive Q | Background >10s | Commit+Push | MP 读写对称 | 工作流不可跳过 | 减少暂停 | Grill 5+/3+ | 危险操作确认 | Review+Simplify
 **[CALL]** = MCP。**[LOAD]** = 读文件。**[LOAD:phase-N]** = 加载 skill。**[RELEASE:phase-N]** = 释放 + ctx_compress。
-5 层: tokensave(主), context-mode, mempalace(default), headroom。RTK 自动 Bash, lean-ctx MCP 优先, headroom >500 行。CodeGraph 跨语言 fallback。
+5 层: tokensave, context-mode, agentmemory(default), mempalace, headroom。RTK 自动 Bash, lean-ctx MCP 优先, headroom >500 行。CodeGraph 跨语言 fallback。
 **Subagent: 默认禁用** (`subagent.enabled: false`)。配置 `true` 后 Phase 3 决策门控强制并行独立 REQ。[execute.md](execute.md)
 
 ## Phase Index

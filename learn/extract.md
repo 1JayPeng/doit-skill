@@ -83,14 +83,19 @@ Show the extracted record to the user and ask for confirmation/edits:
 
 Once confirmed, save to primary layers:
 
-**Layer 1: MemPalace (Primary)**
+**Layer 1: AgentMemory (Primary)**
 ```
-mempalace_check_duplicate content="<summary>"   # Check for duplicates
-mempalace_add_drawer wing="<project>" room="knowledge_distillation" content="<summary>"
-mempalace_kg_add subject="<project>" predicate="shipped" object="<feature>" valid_from="<today>"
+memory_save content="<JSON record>" type="workflow" project="<project>" concepts="<tags>"
 ```
 
-**Layer 2: Filesystem (Backup)**
+**Layer 2: MemPalace (KG + semantic backup)**
+```
+mempalace_kg_add subject="<project>" predicate="shipped" object="<feature>" valid_from="<today>"
+mempalace_check_duplicate content="<summary>"   # Check for duplicates
+mempalace_add_drawer wing="<project>" room="knowledge_distillation" content="<summary>"
+```
+
+**Layer 3: Filesystem (Backup)**
 ```bash
 mkdir -p .doit/knowledge/
 cp <record> .doit/knowledge/<date>-<project>-<short-id>.json
@@ -100,6 +105,7 @@ cp <record> .doit/knowledge/<date>-<project>-<short-id>.json
 
 ```
 [KNOWLEDGE EXTRACTION] Saved to:
+  ✓ AgentMemory (primary)
   ✓ MemPalace (KG updated)
   ✓ Filesystem (.doit/knowledge/)
 [KNOWLEDGE EXTRACTION] Total records: N (this project)
@@ -151,7 +157,9 @@ Failed sessions are still valuable — they teach what NOT to do. When injected 
 
 | Available Tools | Behavior |
 |----------------|----------|
-| MemPalace | MemPalace save + filesystem backup |
+| AgentMemory + MemPalace | AgentMemory primary + MemPalace KG + filesystem backup |
+| AgentMemory only | AgentMemory save + filesystem backup |
+| MemPalace only | MemPalace save + filesystem backup |
 | None | Filesystem backup only (.doit/knowledge/) |
 
 If all layers fail:
@@ -171,6 +179,7 @@ knowledge:
   extract_failed: true       # Also extract failed sessions
   max_records: 1000          # Max records per project (cleanup oldest)
   layers:                    # Which layers to use
-    mempalace: true
-    filesystem: true
+    agentmemory: true        # Primary
+    mempalace: true          # KG + semantic backup
+    filesystem: true         # Always
 ```

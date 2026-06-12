@@ -221,6 +221,7 @@ For each category, construct the knowledge entry from the session data:
 
 3. **[CALL] Storage (execute ALL):**
 ```
+[CALL] memory_save content="<JSON record>" type="workflow" project="<project>" — AgentMemory primary
 [CALL] mempalace_check_duplicate content="<summary>" — check duplicates
 [CALL] mempalace_add_drawer wing="<project>" room="knowledge_distillation" content="<summary>"
 [CALL] mempalace_kg_add subject="<project>" predicate="shipped" object="<feature>" valid_from="<today>"
@@ -231,7 +232,7 @@ For each category, construct the knowledge entry from the session data:
 [CALL] ctx_shell("mkdir -p .doit/knowledge && echo '<JSON>' > .doit/knowledge/<date>-<short-id>.json")
 ```
 
-5. **Report:** `[KNOWLEDGE] Saved to: mempalace ✓, filesystem ✓`
+5. **Report:** `[KNOWLEDGE] Saved to: agentmemory ✓, mempalace ✓, filesystem ✓`
 
 **Failed session?** Still extract with `status: "failed"` + root cause. These teach what NOT to do.
 **Layer fails?** Skip that layer, continue. Filesystem always available as final fallback.
@@ -258,15 +259,14 @@ RTK unavailable → `[WARN] RTK not installed` and continue.
 [CALL] headroom_stats (MCP tool) — show compression statistics for session
 ```
 
-4. **[CALL] Worklog → MemPalace (batch extract):** Read `.doit/worklog.json`, summarize the session's worklog entries, and extract to MemPalace:
+4. **[CALL] Worklog → AgentMemory (batch extract):** Read `.doit/worklog.json`, summarize the session's worklog entries, and extract to AgentMemory:
 ```
-[CALL] mempalace_add_drawer wing="<project>" room="worklog" content="<session worklog summary>"
-[CALL] mempalace_diary_write agent_name="doit" entry="<compact session summary>" topic="worklog"
+[CALL] memory_save content="<session worklog summary>" type="workflow" project="<project>"
 ```
 
-5. **[CALL] MemPalace diary:**
+5. **[CALL] MemPalace KG + diary:**
 ```
-[CALL] mempalace_diary_write agent_name="doit" entry="<compact summary>" topic="compact"
+[CALL] mempalace_diary_write agent_name="doit" entry="<compact session summary>" topic="worklog"
 [CALL] mempalace_memories_filed_away — verify auto-save checkpoint
 [CALL] mempalace_kg_stats — verify KG populated
 ```
