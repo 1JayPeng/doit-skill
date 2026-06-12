@@ -144,12 +144,24 @@ if [ -t 0 ] && [ -t 1 ]; then
   esac
 fi
 
+# Ask about auto commit (interactive, skip if piped/non-tty)
+AUTO_COMMIT="false"
+if [ -t 0 ] && [ -t 1 ]; then
+  read -r -p "Enable auto commit (skip confirmation before commit/push)? [y/N] " answer
+  case "${answer:-N}" in
+    [yY][eE][sS]|[yY]) AUTO_COMMIT="true" ;;
+    *) AUTO_COMMIT="false" ;;
+  esac
+fi
+
 # Write ~/.doit/config.yaml from user choices (idempotent — only create if not present)
 mkdir -p "$HOME/.doit"
 if [ ! -f "$HOME/.doit/config.yaml" ]; then
   cat > "$HOME/.doit/config.yaml" <<CONFIG_EOF
 subagent:
   enabled: ${SUBAGENT_ENABLED}
+auto_commit:
+  enabled: ${AUTO_COMMIT}
 doc-capture:
   enabled: ${DOC_CAPTURE}
 commit:
@@ -243,6 +255,7 @@ echo "    • code-review      (claude plugin install code-review)"
   echo "  Options (configurable at install):"
   echo "    • doc-capture    (persist reference docs, default: enabled)"
   echo "    • subagent       (parallel orchestration, default: disabled)"
+  echo "    • auto_commit    (skip commit/push confirmation, default: disabled)"
   echo "    • --global       install to ~/.claude/skills/ instead of .claude/skills/"
 
   echo ""
@@ -768,15 +781,18 @@ _CONFIG_FILE="$HOME/.doit/config.yaml"
 if [ -f "$_CONFIG_FILE" ]; then
   _DOC_CAPTURE=$(grep -A1 'doc-capture:' "$_CONFIG_FILE" 2>/dev/null | grep 'enabled:' | awk '{print $2}' || echo "true")
   _SUBAGENT=$(grep -A1 'subagent:' "$_CONFIG_FILE" 2>/dev/null | grep 'enabled:' | awk '{print $2}' || echo "false")
+  _AUTO_COMMIT=$(grep -A1 'auto_commit:' "$_CONFIG_FILE" 2>/dev/null | grep 'enabled:' | awk '{print $2}' || echo "false")
   _COMMIT_BRANCH=$(grep -A1 'commit:' "$_CONFIG_FILE" 2>/dev/null | grep 'branch:' | awk '{print $2}' || echo "branch")
 else
   _DOC_CAPTURE="$DOC_CAPTURE"
   _SUBAGENT="$SUBAGENT_ENABLED"
+  _AUTO_COMMIT="$AUTO_COMMIT"
   _COMMIT_BRANCH="branch"
 fi
 
 echo "    doc-capture.enabled: $_DOC_CAPTURE"
 echo "    subagent.enabled: $_SUBAGENT"
+echo "    auto_commit.enabled: $_AUTO_COMMIT"
 echo "    commit.branch: $_COMMIT_BRANCH"
 echo ""
 echo "  To update: re-run this curl command (downloads latest and installs)"

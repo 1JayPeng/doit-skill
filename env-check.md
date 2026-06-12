@@ -601,7 +601,7 @@ print('[ENV] Cache saved to .doit/env-cache.json (24h TTL)')
 
 Check if `.doit/config.yaml` exists:
 
-**First, ask user about subagent preference:**
+**First, ask user about subagent and auto_commit preferences:**
 
 ```
 AskUserQuestion:
@@ -614,7 +614,19 @@ AskUserQuestion:
       description: "串行执行 -> token 节省，速度稳定。Trade-off: 多 REQ 时等待时间长。适合: 预算有限或单 REQ 项目。"
 ```
 
+```
+AskUserQuestion:
+  question: "启用自动提交？— 每个 Phase 完成后自动 commit + push，无需确认。"
+  header: "自动提交"
+  options:
+    - label: "启用"
+      description: "自动 commit + push -> 无需确认，节省交互时间。Trade-off: 提交前无审查机会。适合: 信任工作流、快速迭代。"
+    - label: "关闭"
+      description: "提交前需确认 -> 更多控制，可审查变更。Trade-off: 每次提交需交互。适合: 谨慎提交、需要审查的项目。"
+```
+
 User selects "启用" → `subagent.enabled: true`. User selects "关闭" → `subagent.enabled: false`. User doesn't answer → default `false`.
+User selects "启用" → `auto_commit.enabled: true`. User selects "关闭" → `auto_commit.enabled: false`. User doesn't answer → default `false`.
 
 ```bash
 if [ ! -f .doit/config.yaml ]; then
@@ -626,6 +638,9 @@ doc-capture:
   path: .doit/docs
 
 subagent:
+  enabled: false
+
+auto_commit:
   enabled: false
 
 commit:

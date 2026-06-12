@@ -185,6 +185,17 @@ TaskUpdate taskId="<phase_task_id>" status="completed"   # at phase end
 
 ## Phase 1 — Spec (完整 grill 协议)
 
+**Step 0 — Read Config (MANDATORY):**
+
+Read `.doit/config.yaml` and announce effective settings:
+
+```
+[CONFIG] subagent.enabled: true/false
+[CONFIG] auto_commit.enabled: true/false
+```
+
+If config file doesn't exist, use defaults (subagent: false, auto_commit: false).
+
 **Step 0.5 — Knowledge Injection (before grill):**
 
 Before asking grill questions, inject relevant past knowledge to inform decisions:

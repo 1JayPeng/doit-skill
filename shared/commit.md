@@ -135,7 +135,22 @@ Status: done
 
 ### 6. Auto-Push
 
-**Do NOT ask user. Push directly.** The workflow specifies commit + push — execute both.
+Read `.doit/config.yaml` — check `auto_commit.enabled`:
+
+**`auto_commit.enabled: true`** — Do NOT ask user. Commit and push directly.
+
+**`auto_commit.enabled: false` (default)** — Ask user for confirmation before commit + push:
+```
+AskUserQuestion:
+  question: "Ready to commit and push?"
+  header: "Commit"
+  options:
+    - label: "Yes, commit and push"
+      description: "Commit changes and push to remote"
+    - label: "Not yet"
+      description: "Skip commit, continue working"
+```
+If user says "Not yet" → skip commit and push, continue to Phase 9 cleanup.
 
 Read `.doit/config.yaml` — check `commit.branch`:
 
