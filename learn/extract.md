@@ -90,6 +90,15 @@ mempalace_check_duplicate content="<summary>"   # Check for duplicates
 mempalace_add_drawer wing="<project>" room="knowledge_distillation" content="<summary>"
 ```
 
+**Layer 1.5: lean-ctx Knowledge Graph (Cross-session, embeddable)**
+```
+[CALL] ctx_knowledge(action="remember", key="<feature>", value="<summary>", category="architecture")
+[CALL] ctx_knowledge(action="pattern", pattern_type="<pattern_name>", value="<code pattern>", examples=[<file_paths>])
+[CALL] ctx_knowledge(action="feedback", value="<lesson_learned>", category="workflow")
+[CALL] ctx_knowledge(action="relate", query="<feature>", value="<related_concept>") — link to existing knowledge
+```
+**Why:** `ctx_knowledge` stores in lean-ctx's persistent knowledge graph with embeddings, searchable across sessions via `ctx_semantic_search`. Complements MemPalace — lean-ctx is faster for code-adjacent queries, MemPalace for deep project history.
+
 **Layer 2: Filesystem (Backup)**
 ```bash
 mkdir -p .doit/knowledge/

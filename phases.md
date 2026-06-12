@@ -64,6 +64,14 @@ CLAUDE.md `## Skill Loading` section (written by Phase -1) also enforces this, s
 ```
 **Why:** User needs to see the classification. Without it, the agent can skip Phase 0 and the user won't know.
 
+**Step 2.25 — Context Orientation (MANDATORY, Type Q/S can skip).** Before MP sweep, orient with lean-ctx tools for token-efficient codebase understanding:
+```
+[CALL] ctx_repomap(max_tokens=2048) — PageRank repo map, most important symbols
+[CALL] ctx_session(action="status") — session memory status
+[CALL] ctx_knowledge(action="wakeup") — surface prior findings
+```
+**Why:** `ctx_repomap` gives a PageRank-based importance map of the codebase in ~2K tokens, replacing 5-10 file reads. `ctx_session` and `ctx_knowledge` restore cross-session context.
+
 **Step 2.5 — Memory Context Sweep (MANDATORY).** Before any phase logic executes, load project context from MemPalace. Type Q and Type S can skip.
 
 **Step A — Refresh index (sequential, must complete first):**
@@ -227,6 +235,7 @@ If no knowledge found → proceed with standard grill. If knowledge tools unavai
   - Provide 2-4 concrete options, each with: **named approach** + **`->` consequence** + **`Trade-off:`** + **`适合:` project fit**
   - Exactly one option marked `(Recommended)` with project-specific reason
 - Internet search for existing solutions — Tavily MCP or WebSearch
+- **External docs:** `[CALL] ctx_url_read(url, mode="markdown")` — fetch web pages/PDFs as compressed context. `mode="facts"` for claim extraction, `mode="transcript"` for YouTube. Replaces WebFetch, saves 40-60% tokens.
 - MP search for prior specs/knowledge — `mempalace_search wing="<project>"`
 - Write grill summary to `.doit/grill-summary.json` (questions asked, checklist, answers)
 - **Do NOT write any REQs until grill is complete.**
@@ -343,7 +352,12 @@ For each category, construct the knowledge entry from the session data:
 ```
 RTK unavailable → `[WARN] RTK not installed` and continue.
 
-2. **[CALL] Context-Mode stats:**
+2. **[CALL] lean-ctx stats:**
+```
+[CALL] ctx_stats() — lean-ctx token savings (cached reads, compressed shell)
+```
+
+2b. **[CALL] Context-Mode stats:**
 ```
 [CALL] ctx stats — log session token savings
 ```
@@ -367,7 +381,13 @@ RTK unavailable → `[WARN] RTK not installed` and continue.
 [CALL] mempalace_kg_timeline entity="<project>" — log project timeline
 ```
 
-6. **[CALL] Caveman compress:** Run `/caveman:compress CLAUDE.md` to compress CLAUDE.md.
+6. **[CALL] Session decision:**
+```
+[CALL] ctx_session(action="decision", content="<what was done + next steps>")
+```
+**Why:** persists session decisions for cross-session recovery. Complements MemPalace diary.
+
+7. **[CALL] Caveman compress:** Run `/caveman:compress CLAUDE.md` to compress CLAUDE.md.
 
 **This phase always runs last.** It gathers session statistics and preserves knowledge for future sessions.
 

@@ -323,6 +323,33 @@ See [dangerous-ops.md](dangerous-ops.md) for full patterns and hook configuratio
 **应用于：** Phase 3 每 REQ 可测试验证, Phase 4 真实断言, Phase 7 对比 spec REQ
 - **禁止**Simplify 后不重新运行 E2E（Phase 7）— 简化可能破坏功能
 
+## 铁律 — ctx_read 高级模式选择策略
+**ctx_read 不是只有 `full` 模式。根据文件特性和任务需求选择最优模式，最大化 token 节省。**
+**模式选择决策树（每次 ctx_read 前快速判断）：**
+| 场景 | 模式 | 节省 | 信号 |
+|------|------|------|------|
+| 文件 >500 行，需要完整理解 | `aggressive` | ~90% | 大文件，非编辑 |
+| 文件与当前任务相关，需提取相关部分 | `task` | ~85% | 有任务描述，需上下文 |
+| 跨会话引用同一文件 | `reference` | ~80% | 需要保留标识符，跨会话 |
+| 数据文件、日志、混合内容 | `entropy` | ~70% | JSON, CSV, log, 高熵内容 |
+| 编辑后增量验证 | `delta` | ~98% | 刚编辑过，只需变化行 |
+| 文件 >500 行，只需结构了解 | `map` | ~95% | 不需要代码内容 |
+| 只需函数签名和类型 | `signatures` | ~90% | 理解 API 表面 |
+| 编辑文件前 | `full` | 0% | 必须用 full 才能编辑 |
+| 已知行范围 | `lines:N-M` | 变动的 | 精确位置 |
+| 不确定 | `auto` | 变动的 | 系统自动选择 |
+**高级模式使用规则：**
+- **>500 行的文件，默认 `aggressive` 而非 `full`** — 首次读取用 `aggressive` 概览，需要编辑时再切 `full`
+- **有任务描述时，用 `task` 模式** — 比 `auto` 多省 20-30%，因为会根据任务提取相关部分
+- **跨会话场景，用 `reference` 模式** — 保留函数名、变量名等标识符，压缩注释和字符串
+- **数据文件（JSON/CSV/XML），用 `entropy` 模式** — 只保留高信息量部分，跳过重复结构
+- **编辑后立即验证，用 `delta` 模式** — 只返回变化行，比 `diff` 模式更省
+- **批量读取多文件，用 `ctx_multi_read`** — 一次调用替代 N 次，节省 ~3000 token（5-10 个文件）
+**禁止：**
+- **禁止对大文件 (>500 行) 默认使用 `full` 模式** — 先用 `aggressive`/`map`/`task`，需要编辑再切 `full`
+- **禁止在已知行范围时使用 `full` 模式** — 用 `lines:N-M` 精确读取
+- **禁止编辑后重新读取整个文件验证** — 用 `delta` 模式只读变化行
+- **禁止串行读取 3+ 个文件的 signatures** — 用 `ctx_multi_read` 批量读取
 ## 铁律 — 无命令不调用 Bash
 
 **每个 Bash/ctx_shell/ctx_execute 调用必须有完整的 command 参数。空 command = InputValidationError = 浪费一轮对话。**

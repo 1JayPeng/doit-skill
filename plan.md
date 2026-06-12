@@ -8,9 +8,26 @@
 
 ## Process
 
+### Step 0.5: Architecture Orientation (before code graph scan)
+
+**lean-ctx architecture tools** — fast, compressed overview before deep code graph scan:
+```
+[CALL] ctx_architecture(action="overview") — architecture overview, clusters, layers
+[CALL] ctx_repomap(max_tokens=2048) — PageRank importance map of symbols
+```
+**Web projects:** additionally `[CALL] ctx_routes` — extract HTTP routes from Express, Flask, FastAPI, Actix, Spring, Rails, Next.js.
+
+**Why:** `ctx_architecture` gives cluster/layer/cycle analysis in ~1K tokens, replacing 3-5 manual file reads. `ctx_repomap` shows which symbols are most important by PageRank — focuses the code graph scan.
+
 ### Step 1: Code Graph Scan
 
 **CodeGraph + TokenSave 互补并行** — 两个工具同等地位，各自优势互补：
+
+**lean-ctx batch read** — after identifying relevant files, batch read signatures:
+```
+[CALL] ctx_multi_read(paths=[<relevant_files>], mode="signatures") — batch read API surface
+```
+**Why:** one `ctx_multi_read` call replaces N individual `ctx_read` calls, saving ~3000 tokens for 5-10 files.
 
 **CodeGraph**（精准代码图查询，跨语言 AST）：
 1. `codegraph_context(task="<feature description>")` — 理解功能流，获取相关符号 + 关系 + 代码
