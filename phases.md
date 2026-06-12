@@ -62,6 +62,7 @@ CLAUDE.md `## Skill Loading` section (written by Phase -1) also enforces this, s
 分类: Type X (reason)
 流程: Phase 0 → [phases based on type]
 ```
+**Step 2.1 — Proxy Status Check:** If `ANTHROPIC_BASE_URL` contains `127.0.0.1:8787`, announce `[PROXY] headroom active, auto-compressing tool outputs (60-95% token savings)`. If not set but `.doit/config.yaml` has `headroom.proxy.enabled: true`, offer to start: `headroom proxy --port 8787 &` + `export ANTHROPIC_BASE_URL=http://127.0.0.1:8787`.
 **Why:** User needs to see the classification. Without it, the agent can skip Phase 0 and the user won't know.
 
 **Step 2.25 — Context Orientation (MANDATORY, Type Q/S can skip).** Before MP sweep, orient with lean-ctx tools for token-efficient codebase understanding:
@@ -362,10 +363,15 @@ RTK unavailable → `[WARN] RTK not installed` and continue.
 [CALL] ctx stats — log session token savings
 ```
 
-3. **[CALL] Headroom compression:**
+3. **[CALL] Headroom stats:**
 ```
-[CALL] headroom_stats (MCP tool) — show compression statistics for session
+[CALL] headroom_stats (MCP tool) — compression statistics
+[CALL] ctx_shell("headroom proxy stats") — proxy mode detailed stats (if proxy active)
 ```
+**Proxy mode:** If `ANTHROPIC_BASE_URL` contains `127.0.0.1:8787`, proxy is active. Show:
+- Total tokens compressed
+- Savings percentage
+- Top compressed content types
 
 4. **[CALL] MemPalace KG + diary:**
 ```

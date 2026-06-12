@@ -153,6 +153,15 @@ if [ -t 0 ] && [ -t 1 ]; then
     *) AUTO_COMMIT="false" ;;
   esac
 fi
+# Ask about headroom proxy (interactive, skip if piped/non-tty)
+HEADROOM_PROXY="false"
+if [ -t 0 ] && [ -t 1 ]; then
+  read -r -p "Enable headroom proxy (auto-compress all tool output, 60-95% token savings)? [y/N] " answer
+  case "${answer:-N}" in
+    [yY][eE][sS]|[yY]) HEADROOM_PROXY="true" ;;
+    *) HEADROOM_PROXY="false" ;;
+  esac
+fi
 
 # Write ~/.doit/config.yaml from user choices (idempotent — only create if not present)
 mkdir -p "$HOME/.doit"
@@ -164,6 +173,10 @@ auto_commit:
   enabled: ${AUTO_COMMIT}
 doc-capture:
   enabled: ${DOC_CAPTURE}
+headroom:
+  proxy:
+    enabled: ${HEADROOM_PROXY}
+    port: 8787
 commit:
   branch: branch
 CONFIG_EOF
@@ -220,6 +233,24 @@ if [ -n "$TAVILY_API_KEY" ]; then
   else
     echo_warn "Failed to install Tavily MCP (install manually: claude mcp add --transport http tavily https://mcp.tavily.com/mcp/?tavilyApiKey=<your-key>)"
   fi
+fi
+
+# Start Headroom Proxy if enabled (before git clone so Tavily + Proxy are ready early)
+if [ -f "$HOME/.doit/config.yaml" ]; then
+  _hr_proxy=$(grep -A1 'proxy:' "$HOME/.doit/config.yaml" 2>/dev/null | grep 'enabled:' | awk '{print $2}')
+  _hr_port=$(grep -A2 'proxy:' "$HOME/.doit/config.yaml" 2>/dev/null | grep 'port:' | awk '{print $2}')
+else
+  _hr_proxy="false"
+  _hr_port="8787"
+fi
+if [ "$_hr_proxy" = "true" ] && cmd -v headroom >/dev/null 2>&1; then
+  echo_info "Starting headroom proxy on port ${_hr_port:-8787}..."
+  headroom proxy --port ${_hr_port:-8787} &
+  HEADROOM_PID=$!
+  export ANTHROPIC_BASE_URL=http://127.0.0.1:${_hr_port:-8787}
+  echo "HEADROOM_PID=$HEADROOM_PID" > /tmp/headroom-proxy.pid
+  echo_success "headroom proxy started (PID $HEADROOM_PID)"
+  echo_info "All tool outputs now auto-compressed (60-95% token savings)"
 fi
 
 # Handle dry-run

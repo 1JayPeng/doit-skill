@@ -21,7 +21,7 @@ caveman: Phase 0 [LOAD:session] 不释放 | grill-me: Phase 1 [LOAD:phase-1] 结
 [rules.md](rules.md)。Worklog: 每 phase 记录 (mempalace > `.doit/worklog.json`)。[worklog.md](worklog.md)
 Non-Interruptive Q | Background >10s | Commit+Push | MP 读写对称 | 工作流不可跳过 | 减少暂停 | Grill 5+/3+ | 危险操作确认 | Review+Simplify
 **[CALL]** = MCP。**[LOAD]** = 读文件。**[LOAD:phase-N]** = 加载 skill。**[RELEASE:phase-N]** = 释放 + headroom_compress。
-4 层: codegraph + tokensave, context-mode, mempalace, headroom。RTK 自动 Bash, lean-ctx MCP 优先, headroom >500 行。CodeGraph 精准代码图查询，TokenSave 即时检测 + 高级分析（diagnostics, dead_code, complexity, test_map, 代码编辑）。
+5 层: codegraph + tokensave, lean-ctx, context-mode, headroom (Proxy 60-95% 节省), mempalace。RTK 自动 Bash, lean-ctx MCP 优先, headroom Proxy 自动压缩所有工具输出。CodeGraph 精准代码图查询，TokenSave 即时检测 + 高级分析（diagnostics, dead_code, complexity, test_map, 代码编辑）。
 **Subagent: 由 `.doit/config.yaml` 控制** (`subagent.enabled`)。配置 `true` 后 Phase 3 决策门控强制并行独立 REQ。子代理与主代理拥有相同工具权限。[execute.md](execute.md)
 
 ## Phase Index

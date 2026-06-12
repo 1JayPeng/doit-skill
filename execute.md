@@ -37,9 +37,11 @@
     - `ctx_search` -> `grep`/`find`
     - `ctx_batch_execute` -> parallel Bash calls
 
-- **headroom for large output compression.** 当任何工具返回 >500 行输出时，先压缩再处理。
-  - `headroom_compress(large_output)` — 压缩大输出，返回 hash + 摘要
+- **headroom for large output compression.**
+  - **Proxy 模式（推荐）：** 如果 `ANTHROPIC_BASE_URL` 指向 headroom proxy (127.0.0.1:8787)，所有输出自动压缩，无需手动调用。60-95% token 节省。
+  - **MCP 模式：** `headroom_compress(large_output)` — 压缩大输出，返回 hash + 摘要（仅当 Proxy 模式未启用时使用）
   - `headroom_retrieve(hash)` — 通过 hash 还原完整内容
+  - **Proxy 模式优先于 MCP 模式** — proxy 更优因为零手动操作
   - **Fallback:** If headroom not available -> 直接处理大输出（消耗更多 token）
 - **Vertical slice TDD.** One REQ at a time. RED -> GREEN -> REFACTOR. No horizontal slicing.
 - **No empty tool calls.** Every Bash/ctx_shell/ctx_execute call MUST have a complete `command` parameter. **Mandatory preflight:** before each Bash call, write `[BASH PREFLIGHT]` in thinking with the full command text. Empty command = InputValidationError = wasted turn. If you can't articulate the command in the preflight, don't call the tool.
