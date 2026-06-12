@@ -10,20 +10,20 @@
 
 ### Step 1: Code Graph Scan
 
-Use **CodeGraph** for code intelligence (pre-built index, cross-language):
-1. `codegraph_explore("how does X work")` — understand feature flow, survey code area (PRIMARY, returns symbols grouped by file)
-2. `codegraph_search("symbolName")` — locate specific symbols by name
-3. `codegraph_callers(node_id)` — who calls this symbol (upward call flow)
-4. `codegraph_callees(node_id)` — what does this symbol call (downward call flow)
-5. `codegraph_impact(node_id)` — assess edit blast radius before changes
-6. `codegraph_node("symbolName")` — full source of a specific symbol (all overloads)
+Use **TokenSave** for code intelligence (primary code graph tool):
+1. `tokensave_context(task="<feature description>")` — understand feature flow, get relevant symbols + relationships + code (PRIMARY)
+2. `tokensave_search("symbolName")` — locate specific symbols by name
+3. `tokensave_callers(node_id)` — who calls this symbol (upward call flow)
+4. `tokensave_callees(node_id)` — what does this symbol call (downward call flow)
+5. `tokensave_impact(node_id)` — assess edit blast radius before changes
+6. `tokensave_node(node_id)` — full source of a specific symbol
 
-- **Fallback:** If CodeGraph not installed -> use **TokenSave** (`tokensave_context`, `tokensave_search`, `tokensave_impact`). If both unavailable -> `grep -rn` + `find` + `Read`.
+- **Fallback:** If TokenSave not installed -> use **CodeGraph** (`codegraph_context`, `codegraph_search`, `codegraph_impact`). If both unavailable -> `grep -rn` + `find` + `Read`.
 
-**CodeGraph key principles:**
+**TokenSave key principles:**
 - **Trust the results** — don't re-verify with grep. The index is pre-built.
 - **Treat returned source as already read** — no need to re-read files.
-- **Check staleness banner** after edits — re-index if needed with `codegraph init -i`.
+- **Auto-sync** — file watcher debounces ~500ms; don't re-query immediately after edits.
 
 **[MP-READ] MemPalace — search for prior implementation context (Phase 0 sweep already ran):**
 - `mempalace_search query="<feature name> implementation" wing="<project>" limit=3` — find prior implementation context
@@ -33,15 +33,19 @@ Use **CodeGraph** for code intelligence (pre-built index, cross-language):
 - `mempalace_check_duplicate content="<ADR: decision, rationale, tradeoff>" threshold=0.87`
 - `mempalace_add_drawer wing="<project>" room="decisions" content="<ADR: decision, rationale, tradeoff>"`
 
-**TokenSave (when available, deeper Rust-specific analysis):**
+**TokenSave 高级分析工具（按需使用）：**
 - `tokensave_type_hierarchy(node_id="<id>")` — full type hierarchy tree
 - `tokensave_impls(trait="<name>")` — list all impl blocks for a trait
 - `tokensave_derives(qualified_name="<type>")` — list #[derive(...)] macros
 - `tokensave_inheritance_depth(limit=5)` — deepest class/interface hierarchies
-- `tokensave_port_status(source_dir="<src>", target_dir="<tgt>")` — compare symbols between directories
-- `tokensave_branch_diff(head="<head>", base="<base>")` — symbols changed between branches
+- `tokensave_dsm(path="<src_dir>", format="clusters")` — design structure matrix
+- `tokensave_coupling(direction="fan_in")` — most depended-on files
+- `tokensave_hotspots()` — highest connectivity symbols
+- `tokensave_dead_code()` — potentially unreachable code
+- `tokensave_complexity()` — functions ranked by complexity
+- `tokensave_signature_search(returns="Result<", params=["&mut self"])` — search by signature shape
 
-**Rule:** `codegraph_explore` first, then narrow with `codegraph_search`/`codegraph_impact`.
+**Rule:** `tokensave_context` first, then narrow with `tokensave_search`/`tokensave_impact`.
 
 #### Subagent Parallel Code Analysis (Optional, when 2+ independent modules)
 

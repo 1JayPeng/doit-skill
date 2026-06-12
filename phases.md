@@ -219,14 +219,11 @@ For each category, construct the knowledge entry from the session data:
 
 2. **[CALL] Generate knowledge record** — construct JSON per [learn/schema.json](learn/schema.json)
 
-3. **[CALL] Multi-layer storage (execute ALL):**
+3. **[CALL] Storage (execute ALL):**
 ```
-[CALL] agentmemory_recall query="<summary>" limit=1 — check duplicates
-[CALL] agentmemory_remember content="<full JSON record>" — save to AgentMemory
-[CALL] mempalace_check_duplicate content="<summary>" — check MP duplicates
+[CALL] mempalace_check_duplicate content="<summary>" — check duplicates
 [CALL] mempalace_add_drawer wing="<project>" room="knowledge_distillation" content="<summary>"
 [CALL] mempalace_kg_add subject="<project>" predicate="shipped" object="<feature>" valid_from="<today>"
-[CALL] ctx_index content="<full JSON>" source="knowledge:<project>:<date>"
 ```
 
 4. **[CALL] Filesystem backup:**
@@ -234,7 +231,7 @@ For each category, construct the knowledge entry from the session data:
 [CALL] ctx_shell("mkdir -p .doit/knowledge && echo '<JSON>' > .doit/knowledge/<date>-<short-id>.json")
 ```
 
-5. **Report:** `[KNOWLEDGE] Saved to: agentmemory ✓, mempalace ✓, context-mode ✓, filesystem ✓`
+5. **Report:** `[KNOWLEDGE] Saved to: mempalace ✓, filesystem ✓`
 
 **Failed session?** Still extract with `status: "failed"` + root cause. These teach what NOT to do.
 **Layer fails?** Skip that layer, continue. Filesystem always available as final fallback.

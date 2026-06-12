@@ -1,10 +1,18 @@
 # CodeGraph Integration
 
-**Pre-built code graph index** — answers structural questions without grep/read loops.
+**跨语言代码图 fallback** — 当 TokenSave 不可用时提供代码图查询能力。
 
 ---
 
-## Installation
+## 定位
+
+**TokenSave 是主代码图工具**，CodeGraph 是其 fallback。仅在以下场景使用：
+- TokenSave 未安装或不支持当前项目语言
+- 需要跨语言代码图查询（TokenSave 主要支持 Rust）
+
+---
+
+## 安装
 
 ```bash
 # Global install
@@ -17,7 +25,7 @@ codegraph install --yes
 codegraph init -i
 ```
 
-**Verify:**
+**验证：**
 ```bash
 codegraph --version
 claude mcp list | grep codegraph
@@ -25,63 +33,54 @@ claude mcp list | grep codegraph
 
 ---
 
-## MCP Tools (Available in Workflow)
+## MCP 工具
 
-CodeGraph delivers its usage guidance automatically via MCP initialize response — no instructions file needed.
-
-| Tool | Use For |
-|------|---------|
-| `codegraph_explore` | **Primary** — "how does X work", flows, surveying an area (returns symbols grouped by file) |
-| `codegraph_search` | Locate a symbol by name |
-| `codegraph_callers` | Who calls this symbol (upward call flow) |
-| `codegraph_callees` | What does this symbol call (downward call flow) |
-| `codegraph_impact` | Impact radius before editing |
-| `codegraph_node` | Full source of one specific symbol (all overloads) |
+| 工具 | 用途 |
+|------|------|
+| `codegraph_context` | **主要** — "X 如何工作"，获取综合上下文 |
+| `codegraph_search` | 按名称定位符号 |
+| `codegraph_callers` | 谁调用了此符号 |
+| `codegraph_callees` | 此符号调用了谁 |
+| `codegraph_impact` | 编辑影响面 |
+| `codegraph_node` | 符号完整源码 |
 
 ---
 
-## Usage in Doit Workflow
+## 工作流中的使用
 
-### Phase 2 — Plan (Code Graph Scan)
+### Phase 2 — 计划（代码图扫描）
 
-**PRIMARY code graph tool** — first choice for code exploration:
+当 TokenSave 不可用时使用 CodeGraph：
 
-1. `codegraph_explore` — understand how a feature works, survey code area (PRIMARY)
-2. `codegraph_search` — locate specific symbols by name
-3. `codegraph_callers` / `codegraph_callees` — walk call flow
-4. `codegraph_impact` — assess edit blast radius
-5. `codegraph_node` — get full source of a specific symbol
+1. `codegraph_context` — 理解功能如何工作，获取相关代码
+2. `codegraph_search` — 定位特定符号
+3. `codegraph_callers` / `codegraph_callees` — 调用链
+4. `codegraph_impact` — 评估编辑影响面
+5. `codegraph_node` — 获取符号完整源码
 
-**Fallback:** TokenSave for Rust-specific deep analysis (traits, derives, impl blocks).
+### 关键原则
 
-### Phase 3 — Execute
-
-- `codegraph_impact` before high-impact edits
-- `codegraph_explore` for understanding existing implementation before modification
-
-### Key Principles
-
-- **Trust the results** — don't re-verify with grep. The index is pre-built.
-- **Treat returned source as already read** — no need to re-read files.
-- **Check staleness banner** after edits — re-index if needed.
-- **If `.codegraph/` doesn't exist**, offer to run `codegraph init -i`.
+- **信任结果** — 不要使用 grep 重新验证。索引是预构建的。
+- **将返回的源码视为已读取** — 无需重新读取文件。
+- **编辑后检查 staleness banner** — 需要时重新索引。
+- **如果 `.codegraph/` 不存在**，提供运行 `codegraph init -i`。
 
 ---
 
-## Integration Points
+## 集成点
 
-| File | Change |
-|------|--------|
-| `package.json` | Added to `tools` section |
-| `scripts/setup.sh` | Step 3.8: install + init |
-| `env-check.md` | Tool availability check |
-| `tool-integration-guide.md` | Tool overview + Phase usage |
+| 文件 | 变更 |
+|------|------|
+| `package.json` | 添加到 `tools` 部分 |
+| `scripts/setup.sh` | Step 3.8: 安装 + 初始化 |
+| `env-check.md` | 工具可用性检查 |
+| `tool-integration-guide.md` | 工具概览 + Phase 使用 |
 | `.gitignore` | `.codegraph/` |
 
 ---
 
-## What CodeGraph is NOT
+## CodeGraph 不是什么
 
-- **Not an editor** — read-only code graph queries. Use native Edit/Write for file modification.
-- **Not a memory system** — code structure only, no semantic memory. Use MemPalace/AgentMemory for that.
-- **TokenSave relationship**: CodeGraph is primary; TokenSave is fallback for Rust-specific deep analysis (traits, derives, impl blocks).
+- **不是编辑器** — 只读代码图查询。使用原生 Edit/Write 修改文件。
+- **不是记忆系统** — 仅代码结构，无语义记忆。使用 MemPalace/AgentMemory。
+- **TokenSave 关系**：TokenSave 是主工具；CodeGraph 是跨语言 fallback。
