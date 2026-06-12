@@ -114,21 +114,4 @@ Compact 压缩上下文后，`TaskUpdate` 可能因 `taskId` 丢失而报错：
 | `questions is missing` (AskUserQuestion) | Missing questions array | Array of {question, header, options, multiSelect} |
 | `path is missing` (ctx_read) | Missing file path | Use absolute path for ctx_read |
 
-**关键原则：** 永远不要用相同参数重试失败的工具调用。先检查 [tool-params.md](tool-params.md) 确认签名。
-
-## InputValidationError 路由表
-
-**当出现 InputValidationError 时，[LOAD] [tool-params.md](tool-params.md) 查看工具签名。**
-
-| Error | Root Cause | Fix |
-|-------|-----------|-----|
-| `command is missing` (Bash) | Empty command param | [BASH PREFLIGHT] in thinking first |
-| `file_path is missing` (Read/Edit) | Forgot absolute path | Use absolute path, Read before Edit |
-| `old_string is missing` (Edit) | Forgot search string | Provide exact text from Read output |
-| `description is missing` (Agent) | Missing description+prompt | Both `description` AND `prompt` required |
-| `subject is missing` (TaskCreate) | Missing required fields | Both `subject` AND `description` required |
-| `taskId is missing` (TaskUpdate) | Compact lost taskId | See "Compact 后 Task 丢失" above |
-| `questions is missing` (AskUserQuestion) | Missing questions array | Array of {question, header, options, multiSelect} |
-| `path is missing` (ctx_read) | Missing file path | Use absolute path for ctx_read |
-
 **关键原则：** 永远不要用相同参数重试失败的工具调用。先检查 [tool-params.md](tool-params.md) 确认正确签名。
