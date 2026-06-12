@@ -397,9 +397,10 @@ Reason: <为什么要运行这个命令，一句话>
 |------|------|----------|
 | `command` 参数为空 | 空 Bash 调用 | 本文件"无命令不调用 Bash" |
 | `taskId` 参数缺失 | Compact 后 task 状态丢失 | [errors.md](errors.md)#compact-后-task-丢失 |
-| 其他参数缺失 | 工具调用参数不完整 | 检查工具签名，补全参数 |
+| 其他参数缺失 | 工具调用参数不完整 | **[LOAD] [tool-params.md](tool-params.md)** |
 
 **Compact 后遇到 `TaskUpdate` 报错 → 立即查看 [errors.md](errors.md) "Compact 后 Task 丢失"章节。不要重试 TaskUpdate。**
+**其他 InputValidationError → [LOAD] [tool-params.md](tool-params.md) 查看工具签名。永远不要用相同参数重试。**
 
 ## 铁律 — 不重复相同操作
 

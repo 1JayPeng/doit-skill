@@ -18,11 +18,6 @@ Phase 1 completed or Phase 2 started without minimum grill questions via AskUser
 
 **Action:** Stop. Return to Phase 1 Step 2. Complete the full grill checklist (uncertainty scan, 5+ questions, internet search, MP search, grill summary). Do not discard REQs already written — use grill findings to supplement them, then merge into existing REQs.
 
-### Phase 1 (Spec) — Grill Skipped
-Phase 1 completed or Phase 2 started without minimum grill questions via AskUserQuestion.
-
-**Action:** Stop. Return to Phase 1 Step 2. Complete the full grill checklist (uncertainty scan, 5+ questions, internet search, MP search, grill summary). Do not discard REQs already written — use grill findings to supplement them, then merge into existing REQs.
-
 ### D0 (Diagnose) Fail
 Cannot reproduce the bug.
 
@@ -103,3 +98,37 @@ Compact 压缩上下文后，`TaskUpdate` 可能因 `taskId` 丢失而报错：
 4. 如需新建 task，调用 `TaskCreate` 重新创建
 
 **预防：** Phase 10 结束必须运行 `headroom_compress`。Compact 后自动清理 task 列表，不要保留对旧 taskId 的引用。
+
+## InputValidationError 路由表
+
+**当出现 InputValidationError 时，[LOAD] [tool-params.md](tool-params.md) 查看工具签名。**
+
+| Error | Root Cause | Fix |
+|-------|-----------|-----|
+| `command is missing` (Bash) | Empty command param | [BASH PREFLIGHT] in thinking first |
+| `file_path is missing` (Read/Edit) | Forgot absolute path | Use absolute path, Read before Edit |
+| `old_string is missing` (Edit) | Forgot search string | Provide exact text from Read output |
+| `description is missing` (Agent) | Missing description+prompt | Both `description` AND `prompt` required |
+| `subject is missing` (TaskCreate) | Missing required fields | Both `subject` AND `description` required |
+| `taskId is missing` (TaskUpdate) | Compact lost taskId | See "Compact 后 Task 丢失" above |
+| `questions is missing` (AskUserQuestion) | Missing questions array | Array of {question, header, options, multiSelect} |
+| `path is missing` (ctx_read) | Missing file path | Use absolute path for ctx_read |
+
+**关键原则：** 永远不要用相同参数重试失败的工具调用。先检查 [tool-params.md](tool-params.md) 确认签名。
+
+## InputValidationError 路由表
+
+**当出现 InputValidationError 时，[LOAD] [tool-params.md](tool-params.md) 查看工具签名。**
+
+| Error | Root Cause | Fix |
+|-------|-----------|-----|
+| `command is missing` (Bash) | Empty command param | [BASH PREFLIGHT] in thinking first |
+| `file_path is missing` (Read/Edit) | Forgot absolute path | Use absolute path, Read before Edit |
+| `old_string is missing` (Edit) | Forgot search string | Provide exact text from Read output |
+| `description is missing` (Agent) | Missing description+prompt | Both `description` AND `prompt` required |
+| `subject is missing` (TaskCreate) | Missing required fields | Both `subject` AND `description` required |
+| `taskId is missing` (TaskUpdate) | Compact lost taskId | See "Compact 后 Task 丢失" above |
+| `questions is missing` (AskUserQuestion) | Missing questions array | Array of {question, header, options, multiSelect} |
+| `path is missing` (ctx_read) | Missing file path | Use absolute path for ctx_read |
+
+**关键原则：** 永远不要用相同参数重试失败的工具调用。先检查 [tool-params.md](tool-params.md) 确认正确签名。
