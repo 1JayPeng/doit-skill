@@ -5,6 +5,7 @@
 # Installs doit-skill and all dependencies.
 # Supports:
 #   --skip-optional    Skip optional skills and external tools
+#   --skip-updates     Skip updating already-installed tools
 
 # No set -e: we handle errors explicitly. set -e + 2>/dev/null = silent death.
 trap 'echo_error "Installation interrupted by user. Partial install may be in place." && exit 130' INT
@@ -13,9 +14,16 @@ trap 'echo_error "Installation interrupted by user. Partial install may be in pl
 # Claude Code loads skills from project-local .claude/skills/ (not ~/.claude/skills/)
 SKILL_DIR=".claude/skills"
 GLOBAL_SKILL_DIR="$HOME/.claude/skills"
-REPO_URL="https://v6.gh-proxy.org/https://github.com/1JayPeng/doit-skill"
+GH_PROXY="https://v6.gh-proxy.org"
+REPO_URL="${GH_PROXY}/https://github.com/1JayPeng/doit-skill"
+
+# Configure git to route all GitHub traffic through the proxy.
+# This is required for tools (npx skills, claude plugin install, etc.) that
+# internally call git clone — they won't know about our GH_PROXY variable.
+git config --global url."${GH_PROXY}/https://github.com/".insteadOf "https://github.com/" 2>/dev/null || true
 DRY_RUN=false
 SKIP_OPTIONAL=false
+SKIP_UPDATES=false
 INSTALL_GLOBAL=false
 UPDATED_FILES=()
 
@@ -157,6 +165,7 @@ for arg in "$@"; do
   case $arg in
     --dry-run) DRY_RUN=true ;;
     --skip-optional) SKIP_OPTIONAL=true ;;
+    --skip-updates) SKIP_UPDATES=true ;;
     --global) INSTALL_GLOBAL=true; SKILL_DIR="$GLOBAL_SKILL_DIR" ;;
   esac
 done
@@ -166,10 +175,12 @@ RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
+CYAN='\033[0;36m'
 NC='\033[0m'
 
 echo_info()    { echo -e "${BLUE}[INFO]${NC} $1"; }
 echo_success() { echo -e "${GREEN}[✓]${NC} $1"; }
+echo_skip()    { echo -e "${CYAN}[~]${NC} $1"; }
 echo_warn()    { echo -e "${YELLOW}[!]${NC} $1"; }
 echo_error()   { echo -e "${RED}[✗]${NC} $1"; }
 
@@ -216,6 +227,14 @@ if [ -t 0 ] && [ -t 1 ]; then
     [yY][eE][sS]|[yY]) HEADROOM_PROXY="true" ;;
     *) HEADROOM_PROXY="false" ;;
   esac
+fi
+
+# Show config summary so piped installs know what defaults were used
+echo ""
+echo "  [CONFIG] doc-capture: $DOC_CAPTURE | subagent: $SUBAGENT_ENABLED | auto-commit: $AUTO_COMMIT | headroom-proxy: $HEADROOM_PROXY"
+if [ ! -t 0 ]; then
+  echo "  💡 stdin is piped — defaults used above. Re-run interactively to customize."
+  echo "     Or edit ~/.doit/config.yaml after install."
 fi
 
 # Write ~/.doit/config.yaml from user choices (idempotent — only create if not present)
@@ -496,11 +515,21 @@ else
   echo "=========================================="
   echo ""
 
-# Skill-Creator (from anthropics/skills) — always check for updates
+# Skill-Creator (from anthropics/skills)
   if command -v npx >/dev/null 2>&1; then
-    echo_info "Updating skill-creator..."
-    npx skills add anthropics/skills@skill-creator -y --non-interactive </dev/null 2>&1 || \
-      echo_warn "Failed to update skill-creator (some agents may not support installation — this is non-blocking)"
+    if [ -d "$HOME/.agents/skills/skill-creator" ] || [ -d ".agents/skills/skill-creator" ]; then
+      if [ "$SKIP_UPDATES" = true ]; then
+        echo_skip "skill-creator already installed (skipping update)"
+      else
+        echo_info "Updating skill-creator..."
+        npx skills add anthropics/skills@skill-creator -y --non-interactive </dev/null 2>&1 || \
+          echo_warn "Failed to update skill-creator (some agents may not support installation — this is non-blocking)"
+      fi
+    else
+      echo_info "Installing skill-creator..."
+      npx skills add anthropics/skills@skill-creator -y --non-interactive </dev/null 2>&1 || \
+        echo_warn "Failed to install skill-creator (some agents may not support installation — this is non-blocking)"
+    fi
   else
     echo_warn "npx not found — skill-creator requires Node.js. Install manually:"
     echo "     npx skills add anthropics/skills@skill-creator"
@@ -519,11 +548,15 @@ else
   echo "=========================================="
   echo ""
 
-# Context-Mode (Claude Code plugin) — always check for updates
+# Context-Mode (Claude Code plugin)
   if grep -rl "context-mode" "$HOME/.claude/plugins/" > /dev/null 2>&1; then
-    echo_info "Updating context-mode..."
-    spin 180 "context-mode update" claude plugin install context-mode@context-mode || echo_warn "context-mode update failed"
-    echo_success "context-mode updated"
+    if [ "$SKIP_UPDATES" = true ]; then
+      echo_skip "context-mode already installed (skipping update)"
+    else
+      echo_info "Updating context-mode..."
+      spin 60 "context-mode update" claude plugin install context-mode@context-mode || echo_warn "context-mode update failed"
+      echo_success "context-mode updated"
+    fi
   else
     echo_info "Installing context-mode..."
     spin 120 "context-mode marketplace add" claude plugin marketplace add mksglu/context-mode || echo_warn "Failed to add context-mode marketplace"
@@ -546,17 +579,35 @@ else
     fi
   done
 
-  echo_info "Updating rtk..."
-  spin 60 "rtk install (curl | sh)" "curl -fsSL https://v6.gh-proxy.org/https://raw.githubusercontent.com/rtk-ai/rtk/refs/heads/master/install.sh 2>/dev/null | sh" || echo_warn "Failed to update rtk"
+  if command -v rtk >/dev/null 2>&1; then
+    if [ "$SKIP_UPDATES" = true ]; then
+      echo_skip "rtk already installed (skipping update)"
+    else
+      echo_info "Updating rtk..."
+      spin 60 "rtk install (curl | sh)" "curl -fsSL ${GH_PROXY}/https://raw.githubusercontent.com/rtk-ai/rtk/refs/heads/master/install.sh 2>/dev/null | sh" || echo_warn "Failed to update rtk"
+    fi
+  else
+    echo_info "Installing rtk..."
+    spin 60 "rtk install (curl | sh)" "curl -fsSL ${GH_PROXY}/https://raw.githubusercontent.com/rtk-ai/rtk/refs/heads/master/install.sh 2>/dev/null | sh" || echo_warn "Failed to install rtk"
+  fi
   if command -v rtk >/dev/null 2>&1; then
     echo_info "Initializing rtk for Claude Code..."
     spin 30 "rtk init" "rtk init -g < /dev/null" 2>/dev/null || true
     echo_success "rtk installed and initialized"
   fi
 
-  # UV — always check for updates
-  echo_info "Updating uv..."
-  spin 60 "uv update (pip)" "pip install --upgrade uv" 2>&1 || spin 60 "uv update (pip3)" "pip3 install --upgrade uv" 2>&1 || echo_warn "Failed to update uv"
+  # UV
+  if command -v uv >/dev/null 2>&1; then
+    if [ "$SKIP_UPDATES" = true ]; then
+      echo_skip "uv already installed (skipping update)"
+    else
+      echo_info "Updating uv..."
+      spin 60 "uv update (pip)" "pip install --upgrade uv" 2>&1 || spin 60 "uv update (pip3)" "pip3 install --upgrade uv" 2>&1 || echo_warn "Failed to update uv"
+    fi
+  else
+    echo_info "Installing uv..."
+    spin 60 "uv install (pip)" "pip install uv" 2>&1 || spin 60 "uv install (pip3)" "pip3 install uv" 2>&1 || echo_warn "Failed to install uv"
+  fi
 
   # Rust (required by tokensave) — always check for updates
   if command -v cargo >/dev/null 2>&1; then
@@ -594,15 +645,19 @@ CARGO_EOF
     }
   fi
 
-  # TokenSave — always check for updates
+  # TokenSave
   if command -v tokensave >/dev/null 2>&1; then
-    _ts_installed=$(tokensave --version 2>/dev/null | head -1)
-    _ts_latest=$(cargo search tokensave 2>/dev/null | head -1 | grep -oP 'tokensave = "\K[^"]+')
-    if [ -n "$_ts_latest" ] && [ "$_ts_installed" != "$_ts_latest" ]; then
-      echo_info "Updating tokensave (${_ts_installed} → ${_ts_latest})..."
-      spin 600 "tokensave update (cargo install)" cargo install tokensave || echo_warn "Failed to update tokensave"
+    if [ "$SKIP_UPDATES" = true ]; then
+      echo_skip "tokensave already installed (skipping update)"
     else
-      echo_success "tokensave up to date"
+      _ts_installed=$(tokensave --version 2>/dev/null | head -1)
+      _ts_latest=$(cargo search tokensave 2>/dev/null | head -1 | grep -oP 'tokensave = "\K[^"]+')
+      if [ -n "$_ts_latest" ] && [ "$_ts_installed" != "$_ts_latest" ]; then
+        echo_info "Updating tokensave (${_ts_installed} → ${_ts_latest})..."
+        spin 600 "tokensave update (cargo install)" cargo install tokensave || echo_warn "Failed to update tokensave"
+      else
+        echo_success "tokensave up to date"
+      fi
     fi
   else
     echo_info "Installing tokensave (compiling Rust — may take several minutes)..."
@@ -620,9 +675,13 @@ CARGO_EOF
 
 # Caveman (token-compact mode + statusline)
   if grep -rl "caveman" "$HOME/.claude/plugins/" > /dev/null 2>&1; then
-    echo_info "Updating caveman..."
-    spin 180 "caveman update" claude plugin install caveman@caveman || echo_warn "caveman update failed"
-    echo_success "caveman updated"
+    if [ "$SKIP_UPDATES" = true ]; then
+      echo_skip "caveman already installed (skipping update)"
+    else
+      echo_info "Updating caveman..."
+      spin 60 "caveman update" claude plugin install caveman@caveman || echo_warn "caveman update failed"
+      echo_success "caveman updated"
+    fi
   else
     echo_info "Installing caveman (marketplace -> plugin -> npx fallback)..."
     if spin 120 "caveman marketplace add" claude plugin marketplace add JuliusBrussee/caveman && \
@@ -630,7 +689,7 @@ CARGO_EOF
       echo_success "caveman installed (claude plugin)"
     else
       echo_warn "claude plugin install failed, trying npx installer..."
-      if npx -y "github:JuliusBrussee/caveman" --all 2>&1; then
+      if curl -fsSL "${GH_PROXY}/https://raw.githubusercontent.com/JuliusBrussee/caveman/main/install.sh" 2>/dev/null | bash -s -- --all 2>&1; then
         echo_success "caveman installed (npx installer)"
       else
         echo_warn "Failed to install caveman"
@@ -643,7 +702,7 @@ CARGO_EOF
     echo_success "caveman statusline hooks already installed"
   else
     echo_info "Installing caveman hooks (statusline)..."
-    if npx -y "github:JuliusBrussee/caveman" --with-hooks --skip-skills 2>&1; then
+    if curl -fsSL "${GH_PROXY}/https://raw.githubusercontent.com/JuliusBrussee/caveman/main/install.sh" 2>/dev/null | bash -s -- --with-hooks --skip-skills 2>&1; then
       echo_success "caveman statusline hooks installed"
     else
       echo_warn "caveman hook install failed — statusline not configured"
@@ -684,32 +743,49 @@ with open('$_claude_settings', 'w') as f:
     fi
   fi
 
-  # Code Review — always check for updates
+  # Code Review
   if grep -rl "code-review" "$HOME/.claude/plugins/" > /dev/null 2>&1; then
-    echo_info "Updating code-review..."
-    spin 180 "code-review update" claude plugin install code-review || echo_warn "code-review update failed"
-    echo_success "code-review updated"
+    if [ "$SKIP_UPDATES" = true ]; then
+      echo_skip "code-review already installed (skipping update)"
+    else
+      echo_info "Updating code-review..."
+      spin 60 "code-review update" claude plugin install code-review || echo_warn "code-review update failed"
+      echo_success "code-review updated"
+    fi
   else
     echo_info "Installing code-review..."
     spin 180 "code-review install" claude plugin install code-review || echo_warn "Failed to install code-review (install manually: claude plugin install code-review)"
   fi
 
-  # MemPalace — primary memory layer, always check for updates
+  # MemPalace — primary memory layer
   if grep -rl "mempalace" "$HOME/.claude/plugins/" > /dev/null 2>&1; then
-    echo_info "Updating mempalace..."
-    spin 180 "mempalace update" claude plugin install --scope user mempalace || echo_warn "mempalace update failed"
-    echo_success "mempalace updated"
+    if [ "$SKIP_UPDATES" = true ]; then
+      echo_skip "mempalace already installed (skipping update)"
+    else
+      echo_info "Updating mempalace..."
+      spin 60 "mempalace update" claude plugin install --scope user mempalace || echo_warn "mempalace update failed"
+      echo_success "mempalace updated"
+    fi
   else
     echo_info "Installing mempalace..."
     spin 120 "mempalace marketplace add" claude plugin marketplace add MemPalace/mempalace || echo_warn "Failed to add mempalace marketplace"
     spin 180 "mempalace install" claude plugin install --scope user mempalace || echo_warn "Failed to install mempalace (install manually: claude plugin install --scope user mempalace)"
   fi
 
-  # MemPalace CLI (uv tool) — always check for updates
+  # MemPalace CLI (uv tool)
   if command -v uv >/dev/null 2>&1; then
-    echo_info "Updating mempalace CLI..."
-    spin 180 "mempalace CLI update" uv tool install mempalace || echo_warn "mempalace CLI update failed"
-    echo_success "mempalace CLI updated"
+    if command -v mempalace >/dev/null 2>&1; then
+      if [ "$SKIP_UPDATES" = true ]; then
+        echo_skip "mempalace CLI already installed (skipping update)"
+      else
+        echo_info "Updating mempalace CLI..."
+        spin 180 "mempalace CLI update" uv tool install mempalace || echo_warn "mempalace CLI update failed"
+        echo_success "mempalace CLI updated"
+      fi
+    else
+      echo_info "Installing mempalace CLI..."
+      spin 180 "mempalace CLI install" uv tool install mempalace || echo_warn "mempalace CLI install failed"
+    fi
   else
     echo_warn "uv not found, skipping mempalace CLI"
   fi
@@ -738,8 +814,17 @@ if [ "$SKIP_OPTIONAL" = false ]; then
   echo "=========================================="
   echo ""
 
-  echo_info "Updating lean-ctx..."
-  spin 60 "lean-ctx install (curl | sh)" "curl -fsSL https://leanctx.com/install.sh 2>/dev/null | sh" || echo_warn "Failed to update lean-ctx"
+  if command -v lean-ctx >/dev/null 2>&1; then
+    if [ "$SKIP_UPDATES" = true ]; then
+      echo_skip "lean-ctx already installed (skipping update)"
+    else
+      echo_info "Updating lean-ctx..."
+      spin 60 "lean-ctx install (curl | sh)" "curl -fsSL https://leanctx.com/install.sh 2>/dev/null | sh" || echo_warn "Failed to update lean-ctx"
+    fi
+  else
+    echo_info "Installing lean-ctx..."
+    spin 60 "lean-ctx install (curl | sh)" "curl -fsSL https://leanctx.com/install.sh 2>/dev/null | sh" || echo_warn "Failed to install lean-ctx"
+  fi
 
   if command -v lean-ctx >/dev/null 2>&1; then
     lean-ctx --version 2>&1 || true
@@ -764,11 +849,20 @@ if [ "$SKIP_OPTIONAL" = false ]; then
   echo "=========================================="
   echo ""
 
-  # Headroom — always check for updates
+  # Headroom
   if command -v uv >/dev/null 2>&1; then
-    echo_info "Updating headroom..."
-    spin 180 "headroom tool install" uv tool install "headroom-ai[mcp,proxy]" || echo_warn "headroom update failed"
-    echo_success "headroom updated"
+    if command -v headroom >/dev/null 2>&1; then
+      if [ "$SKIP_UPDATES" = true ]; then
+        echo_skip "headroom already installed (skipping update)"
+      else
+        echo_info "Updating headroom..."
+        spin 180 "headroom tool install" uv tool install "headroom-ai[mcp,proxy]" || echo_warn "headroom update failed"
+        echo_success "headroom updated"
+      fi
+    else
+      echo_info "Installing headroom..."
+      spin 180 "headroom tool install" uv tool install "headroom-ai[mcp,proxy]" || echo_warn "headroom install failed"
+    fi
   else
     echo_warn "uv not found — install headroom manually: uv tool install 'headroom-ai[mcp,proxy]'"
   fi
@@ -790,8 +884,17 @@ if [ "$SKIP_OPTIONAL" = false ]; then
   echo "=========================================="
   echo ""
 
-  echo_info "Updating codegraph..."
-  spin 60 "codegraph npm install" "npm i -g @colbymchenry/codegraph" 2>&1 || echo_warn "Failed to update codegraph via npm"
+  if command -v codegraph >/dev/null 2>&1; then
+    if [ "$SKIP_UPDATES" = true ]; then
+      echo_skip "codegraph already installed (skipping update)"
+    else
+      echo_info "Updating codegraph..."
+      spin 60 "codegraph npm install" "npm i -g @colbymchenry/codegraph" 2>&1 || echo_warn "Failed to update codegraph via npm"
+    fi
+  else
+    echo_info "Installing codegraph..."
+    spin 60 "codegraph npm install" "npm i -g @colbymchenry/codegraph" 2>&1 || echo_warn "Failed to install codegraph via npm"
+  fi
 
   if command -v codegraph >/dev/null 2>&1; then
     # Install MCP server
