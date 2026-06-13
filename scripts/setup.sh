@@ -17,10 +17,7 @@ GLOBAL_SKILL_DIR="$HOME/.claude/skills"
 GH_PROXY="https://v6.gh-proxy.org"
 REPO_URL="${GH_PROXY}/https://github.com/1JayPeng/doit-skill"
 
-# Configure git to route all GitHub traffic through the proxy.
 # This is required for tools (npx skills, claude plugin install, etc.) that
-# internally call git clone — they won't know about our GH_PROXY variable.
-git config --global url."${GH_PROXY}/https://github.com/".insteadOf "https://github.com/" 2>/dev/null || true
 DRY_RUN=false
 SKIP_OPTIONAL=false
 SKIP_UPDATES=false
