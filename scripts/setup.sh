@@ -21,8 +21,10 @@ REPO_URL="${GH_PROXY}/https://github.com/1JayPeng/doit-skill"
 DRY_RUN=false
 SKIP_OPTIONAL=false
 SKIP_UPDATES=false
+SKIP_INITS=false
 INSTALL_GLOBAL=false
 UPDATED_FILES=()
+INSTALL_CACHE="$HOME/.doit/install-cache.json"
 
 # Hash function: portable across Linux/macOS
 file_hash() {
@@ -157,12 +159,46 @@ collect_changes() {
   rm -f "$before_paths" "$after_paths"
 }
 
+# Check if a tool was recently installed (<24h) and still works -> skip update
+should_skip_update() {
+  local tool="$1"
+  [ ! -f "$INSTALL_CACHE" ] && return 1
+  local ts
+  ts=$(python3 -c "
+import json
+try:
+    with open('${INSTALL_CACHE}') as f:
+        d = json.load(f)
+    print(int(d.get('${tool}', {}).get('installed_at', 0)))
+except: print(0)
+" 2>/dev/null)
+  local now=$(date +%s)
+  local age=$(( now - ts ))
+  [ "$age" -lt 86400 ] && command -v "$tool" >/dev/null 2>&1 && return 0
+  return 1
+}
+
+# Record successful tool installation in cache
+record_install() {
+  mkdir -p "$HOME/.doit"
+  python3 -c "
+import json, time
+path = '${INSTALL_CACHE}'
+try:
+    with open(path) as f: d = json.load(f)
+except: d = {}
+d['${1}'] = {'installed_at': time.time()}
+with open(path, 'w') as f: json.dump(d, f, indent=2)
+" 2>/dev/null || true
+}
+
 # Parse arguments
 for arg in "$@"; do
   case $arg in
     --dry-run) DRY_RUN=true ;;
     --skip-optional) SKIP_OPTIONAL=true ;;
     --skip-updates) SKIP_UPDATES=true ;;
+    --skip-inits) SKIP_INITS=true ;;
     --global) INSTALL_GLOBAL=true; SKILL_DIR="$GLOBAL_SKILL_DIR" ;;
   esac
 done
@@ -545,7 +581,25 @@ else
   echo "=========================================="
   echo ""
 
+  # Fast-track: all tools installed recently -> skip Step 3
+  _skip_step_3=false
+  if [ ! -f "$INSTALL_CACHE" ]; then
+    _installed_count=0
+    for _t in rtk uv cargo lean-ctx codegraph headroom; do
+      command -v "$_t" >/dev/null 2>&1 && _installed_count=$(( _installed_count + 1 ))
+    done
+    grep -rl "context-mode" "$HOME/.claude/plugins/" >/dev/null 2>&1 && _installed_count=$(( _installed_count + 1 ))
+    grep -rl "caveman" "$HOME/.claude/plugins/" >/dev/null 2>&1 && _installed_count=$(( _installed_count + 1 ))
+    [ "$_installed_count" -ge 9 ] && _skip_step_3=true
+  fi
+
+  if [ "$_skip_step_3" = "true" ]; then
+    echo_skip "All tools installed — skipping Step 3 (re-run with --skip-updates=false to force)"
+    echo ""
+  fi
+
 # Context-Mode (Claude Code plugin)
+  if [ "$_skip_step_3" = "false" ]; then
   if grep -rl "context-mode" "$HOME/.claude/plugins/" > /dev/null 2>&1; then
     if [ "$SKIP_UPDATES" = true ]; then
       echo_skip "context-mode already installed (skipping update)"
@@ -644,7 +698,7 @@ CARGO_EOF
 
   # TokenSave
   if command -v tokensave >/dev/null 2>&1; then
-    if [ "$SKIP_UPDATES" = true ]; then
+    if [ "$SKIP_UPDATES" = true ] || should_skip_update tokensave; then
       echo_skip "tokensave already installed (skipping update)"
     else
       _ts_installed=$(tokensave --version 2>/dev/null | head -1)
@@ -667,6 +721,7 @@ CARGO_EOF
   if command -v tokensave >/dev/null 2>&1; then
     echo_info "Configuring tokensave for Claude Code..."
     tokensave install --agent claude || true
+    record_install tokensave
     echo_success "tokensave ready"
   fi
 
@@ -805,7 +860,7 @@ with open('$_claude_settings', 'w') as f:
 fi
 
 # Step 3.6: Install lean-ctx (context optimization)
-if [ "$SKIP_OPTIONAL" = false ]; then
+if [ "$SKIP_OPTIONAL" = false ] && [ "${_skip_step_3:-false}" = "false" ]; then
   echo "=========================================="
   echo "  Step 3.6: Installing lean-ctx"
   echo "=========================================="
@@ -840,7 +895,7 @@ if [ "$SKIP_OPTIONAL" = false ]; then
 fi
 
 # Step 3.7: Install headroom (token optimization / CCR proxy compression)
-if [ "$SKIP_OPTIONAL" = false ]; then
+if [ "$SKIP_OPTIONAL" = false ] && [ "${_skip_step_3:-false}" = "false" ]; then
   echo "=========================================="
   echo "  Step 3.7: Installing headroom"
   echo "=========================================="
@@ -875,7 +930,7 @@ if [ "$SKIP_OPTIONAL" = false ]; then
 fi
 
 # Step 3.8: Install CodeGraph (pre-built code graph index)
-if [ "$SKIP_OPTIONAL" = false ]; then
+if [ "$SKIP_OPTIONAL" = false ] && [ "${_skip_step_3:-false}" = "false" ]; then
   echo "=========================================="
   echo "  Step 3.8: Installing CodeGraph"
   echo "=========================================="
@@ -918,6 +973,7 @@ if [ "$SKIP_OPTIONAL" = false ]; then
       fi
     fi
   fi
+  fi  # end _skip_step_3 wrapper
 fi
 
 # Step 4: Run doctor before cleanup
