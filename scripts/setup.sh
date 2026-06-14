@@ -187,6 +187,12 @@ echo "  $(date)"
 echo "=========================================="
 echo ""
 
+# Show hint if re-installing (tools already present)
+if command -v tokensave >/dev/null 2>&1 || command -v rtk >/dev/null 2>&1; then
+  echo "  [HINT] Some tools already installed. Use --skip-updates to speed up re-install."
+  echo ""
+fi
+
 # Ask about doc-capture (interactive, skip if piped/non-tty)
 DOC_CAPTURE="true"
 if [ -t 0 ] && [ -t 1 ]; then
@@ -261,7 +267,10 @@ fi
 TAVILY_API_KEY="${TAVILY_API_KEY:-}"
 TAVILY_CONFIGURED=false
 if [ -f .env ] && grep -q 'TAVILY_API_KEY' .env 2>/dev/null; then
-  TAVILY_API_KEY=$(grep 'TAVILY_API_KEY' .env | cut -d'=' -f2- | tr -d '"' | tr -d "'")
+  # tail -1: .env may have multiple TAVILY_API_KEY lines (old keys, comments)
+  # -> only use the last one. Without tail, grep returns all lines ->
+  # bash -c executes each line as a separate command -> "command not found"
+  TAVILY_API_KEY=$(grep 'TAVILY_API_KEY' .env | tail -1 | cut -d'=' -f2- | tr -d '"' | tr -d "'" | tr -d '[:space:]')
   TAVILY_CONFIGURED=true
   echo_success "tavily API key found in .env"
 elif spin 30 "tavily MCP check" "claude mcp list" 2>/dev/null | grep -q tavily; then
@@ -270,6 +279,9 @@ elif spin 30 "tavily MCP check" "claude mcp list" 2>/dev/null | grep -q tavily; 
 elif grep -q 'tavily' ~/.claude/settings.json 2>/dev/null; then
   TAVILY_CONFIGURED=true
   echo_success "tavily configured in settings.json"
+elif grep -q 'tavily' ~/.claude.json 2>/dev/null; then
+  TAVILY_CONFIGURED=true
+  echo_success "tavily configured in .claude.json"
 fi
 
 # Ask about Tavily API Key only if not already configured
@@ -291,18 +303,57 @@ fi
 # Install Tavily MCP immediately after API key is obtained.
 # This runs BEFORE git clone and all other steps, so Tavily is never
 # lost if later steps fail.
+#
+# IMPORTANT: Write directly to ~/.claude.json via Python. Using `claude mcp add`
+# inside spin() → bash -c "$cmd_str" loses shell quoting on the URL, causing
+# the API key to leak into stderr and get executed as a command.
 if [ -n "$TAVILY_API_KEY" ]; then
-  echo_info "Installing Tavily MCP with your API key..."
-  # Remove existing tavily first — claude mcp add fails if name already exists
-  spin 30 "tavily MCP remove" claude mcp remove tavily 2>/dev/null || true
-  if spin 60 "tavily MCP add" claude mcp add --transport http tavily "https://mcp.tavily.com/mcp/?tavilyApiKey=$TAVILY_API_KEY" 2>&1; then
-    if spin 30 "tavily MCP verify" claude mcp list 2>/dev/null | grep -q tavily; then
-      echo_success "tavily MCP configured"
-    else
-      echo_warn "tavily MCP not detected after install — may need manual install"
-    fi
+  echo_info "Configuring Tavily MCP with your API key..."
+
+  _claude_json="$HOME/.claude.json"
+
+  # Remove old tavily entry if exists
+  if [ -f "$_claude_json" ]; then
+    PATH_FILE="$_claude_json" python3 -c "
+import json, os
+path = os.environ['PATH_FILE']
+try:
+    with open(path) as f:
+        d = json.load(f)
+    mcp = d.get('mcp', {})
+    if 'tavily' in mcp:
+        del mcp['tavily']
+        with open(path, 'w') as f:
+            json.dump(d, f, indent=2)
+except: pass
+" 2>/dev/null || true
+  fi
+
+  # Write tavily config directly via env vars — avoids spin() bash -c quoting
+  # AND prevents shell injection from API keys containing quotes/backslashes
+  CONFIG_PATH="$_claude_json" TAVILY_KEY="$TAVILY_API_KEY" python3 -c "
+import json, os
+path = os.environ['CONFIG_PATH']
+key = os.environ['TAVILY_KEY']
+try:
+    with open(path) as f:
+        d = json.load(f)
+except (FileNotFoundError, json.JSONDecodeError):
+    d = {}
+if 'mcp' not in d:
+    d['mcp'] = {}
+d['mcp']['tavily'] = {
+    'transport': 'http',
+    'url': f'https://mcp.tavily.com/mcp/?tavilyApiKey={key}'
+}
+with open(path, 'w') as f:
+    json.dump(d, f, indent=2)
+" 2>/dev/null
+
+  if [ -f "$_claude_json" ] && grep -q 'tavily' "$_claude_json" 2>/dev/null; then
+    echo_success "tavily MCP configured"
   else
-    echo_warn "Failed to install Tavily MCP (install manually: claude mcp add --transport http tavily https://mcp.tavily.com/mcp/?tavilyApiKey=<your-key>)"
+    echo_warn "Failed to write Tavily MCP config (install manually: claude mcp add --transport http tavily 'https://mcp.tavily.com/mcp/?tavilyApiKey=<your-key>')"
   fi
 fi
 
@@ -314,7 +365,7 @@ else
   _hr_proxy="false"
   _hr_port="8787"
 fi
-if [ "$_hr_proxy" = "true" ] && cmd -v headroom >/dev/null 2>&1; then
+if [ "$_hr_proxy" = "true" ] && command -v headroom >/dev/null 2>&1; then
   echo_info "Starting headroom proxy on port ${_hr_port:-8787}..."
   headroom proxy --port ${_hr_port:-8787} &
   HEADROOM_PID=$!
