@@ -22,7 +22,7 @@ fi
 - User types `/doit` with no arguments or whitespace-only arguments
 - User types `/doit 继续` or `/doit resume`
 
-**例外 — 前序提问确认：** 如果上一条助手消息以"要实现吗？"或类似确认性问题结尾（"要实现吗", "要改吗", "要这个行为吗", "OK?"），用户的 `/doit` 视为"是的，实现它" → **直接走 Type F（Feature），不走 Resume。** 此时从对话上下文提取用户确认的需求，正常走完整工作流。
+**例外 — 前序提问确认：** 如果上一条助手消息以确认性问题结尾（"要实现吗", "要改吗", "要这个行为吗", "OK?", "可以吗", "好吗", "要吗", "需要吗", "继续吗", "要加吗", "要删吗", "要优化吗", "Do it?", "Should I?", "Want this?", 以及任何"要...吗"模式的问句），用户的 `/doit` 视为"是的" → **直接走 Type F（Feature），不走 Resume。** 此时从对话上下文提取用户确认的需求，正常走完整工作流。
 
 **Action:** Do NOT start a new workflow. Check for in-progress work and resume from current phase:
 
