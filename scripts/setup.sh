@@ -70,15 +70,32 @@ spin() {
   spin_pid=$!
 
   # Run command — output streams directly to terminal in real-time
-  # Redirect stdin from /dev/null so piped installs (curl | bash) don't hang
-  # on interactive CLIs that detect non-tty stdin and wait for confirmation.
+  #
+  # When setup.sh runs via `curl | bash`, stdin is a pipe and stdout may not be
+  # a TTY either (inside ssh sessions). Interactive CLIs (claude plugin install)
+  # detect non-tty and hang waiting for confirmation.
+  #
+  # Fix: use `script -qc` to provide a real PTY with /dev/null stdin.
+  # Fall back to `bash -c < /dev/null` if script is unavailable.
   local exit_code=0
   if command -v timeout >/dev/null 2>&1; then
-    timeout "$timeout_s" bash -c "$cmd_str" < /dev/null
+    if command -v script >/dev/null 2>&1; then
+      timeout "$timeout_s" script -qc "$cmd_str" /dev/null < /dev/null
+    else
+      timeout "$timeout_s" bash -c "$cmd_str" < /dev/null
+    fi
   elif command -v gtimeout >/dev/null 2>&1; then
-    gtimeout "$timeout_s" bash -c "$cmd_str" < /dev/null
+    if command -v script >/dev/null 2>&1; then
+      gtimeout "$timeout_s" script -qc "$cmd_str" /dev/null < /dev/null
+    else
+      gtimeout "$timeout_s" bash -c "$cmd_str" < /dev/null
+    fi
   else
-    bash -c "$cmd_str" < /dev/null
+    if command -v script >/dev/null 2>&1; then
+      script -qc "$cmd_str" /dev/null < /dev/null
+    else
+      bash -c "$cmd_str" < /dev/null
+    fi
   fi
   exit_code=$?
 
