@@ -811,7 +811,7 @@ CARGO_EOF
       echo_success "caveman installed (claude plugin)"
     else
       echo_warn "claude plugin install failed, trying npx installer..."
-      if curl -fsSL "${GH_PROXY}/https://raw.githubusercontent.com/JuliusBrussee/caveman/main/install.sh" 2>/dev/null | bash -s -- --all 2>&1; then
+      if spin 120 "caveman npx installer" curl -fsSL "${GH_PROXY}/https://raw.githubusercontent.com/JuliusBrussee/caveman/main/install.sh" 2>/dev/null | bash -s -- --all; then
         echo_success "caveman installed (npx installer)"
       else
         echo_warn "Failed to install caveman"
@@ -824,7 +824,7 @@ CARGO_EOF
     echo_success "caveman statusline hooks already installed"
   else
     echo_info "Installing caveman hooks (statusline)..."
-    if curl -fsSL "${GH_PROXY}/https://raw.githubusercontent.com/JuliusBrussee/caveman/main/install.sh" 2>/dev/null | bash -s -- --with-hooks --skip-skills 2>&1; then
+    if spin 120 "caveman hooks install" curl -fsSL "${GH_PROXY}/https://raw.githubusercontent.com/JuliusBrussee/caveman/main/install.sh" 2>/dev/null | bash -s -- --with-hooks --skip-skills; then
       echo_success "caveman statusline hooks installed"
     else
       echo_warn "caveman hook install failed — statusline not configured"
