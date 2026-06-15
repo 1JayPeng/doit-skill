@@ -277,13 +277,13 @@ if [ -t 0 ] && [ -t 1 ]; then
     *) AUTO_COMMIT="false" ;;
   esac
 fi
-# Ask about headroom proxy (interactive, skip if piped/non-tty)
-HEADROOM_PROXY="false"
+# Ask about headroom proxy (interactive, skip if piped/non-tty) — default true
+HEADROOM_PROXY="true"
 if [ -t 0 ] && [ -t 1 ]; then
-  read -r -p "Enable headroom proxy (auto-compress all tool output, 60-95% token savings)? [y/N] " answer
-  case "${answer:-N}" in
-    [yY][eE][sS]|[yY]) HEADROOM_PROXY="true" ;;
-    *) HEADROOM_PROXY="false" ;;
+  read -r -p "Enable headroom proxy (auto-compress all tool output, 60-95% token savings)? [Y/n] " answer
+  case "${answer:-Y}" in
+    [nN][oO]|[nN]) HEADROOM_PROXY="false" ;;
+    *) HEADROOM_PROXY="true" ;;
   esac
 fi
 
