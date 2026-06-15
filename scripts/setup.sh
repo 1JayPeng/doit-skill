@@ -70,13 +70,15 @@ spin() {
   spin_pid=$!
 
   # Run command — output streams directly to terminal in real-time
+  # Redirect stdin from /dev/null so piped installs (curl | bash) don't hang
+  # on interactive CLIs that detect non-tty stdin and wait for confirmation.
   local exit_code=0
   if command -v timeout >/dev/null 2>&1; then
-    timeout "$timeout_s" bash -c "$cmd_str"
+    timeout "$timeout_s" bash -c "$cmd_str" < /dev/null
   elif command -v gtimeout >/dev/null 2>&1; then
-    gtimeout "$timeout_s" bash -c "$cmd_str"
+    gtimeout "$timeout_s" bash -c "$cmd_str" < /dev/null
   else
-    bash -c "$cmd_str"
+    bash -c "$cmd_str" < /dev/null
   fi
   exit_code=$?
 
