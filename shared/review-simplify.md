@@ -41,8 +41,6 @@ Code quality scanning:
 - `tokensave_recursion(limit=5)` — recursive or mutually-recursive call cycles
 - `tokensave_similar(symbol="<new_function_name>")` — find similarly named symbols (naming inconsistency)
 - `tokensave_signature_search(params="&mut self", returns="Result")` — find functions with matching signatures (potential duplicates)
-- `tokensave_diagnostics(scope="workspace")` — run type-checker (cargo check / tsc / pyright) before committing
-
 Discovery (when you need to find specific code):
 - `tokensave_search(query="<symbol name>")` — find specific symbols by name
 - `tokensave_node(node_id="<id>")` — full details + source for a specific symbol
@@ -71,6 +69,19 @@ Check:
 - [ ] No TODO/FIXME placeholders (unless explicitly agreed with user)
 - [ ] No duplicated logic that exists elsewhere in the codebase
 - [ ] Error messages are meaningful (not generic "something went wrong")
+
+### 1b. LSP Diagnostic Check (MANDATORY GATE)
+
+Before any simplification, run the type-checker. No skip. No rationalize.
+
+```
+tokensave_diagnostics(scope="workspace")
+```
+
+Fallback: `cargo check`, `tsc --noEmit`, `pyright` — whatever matches the project.
+
+**Gate:** If errors found -> fix them -> re-run until clean -> then proceed to Simplify.
+**Why:** Simplify rewrites code. Starting simplify on a tree with type errors makes the changes harder to reason about. Fix first, simplify second.
 
 ### 2. Simplify — Cut the Fat
 
@@ -122,6 +133,7 @@ After writing code, check what documentation needs updating:
 
 After simplifying, run:
 1. **Tests still pass** — `ctx_execute` (auto-indexes output) or Bash fallback
+1b. **`tokensave_diagnostics(scope="workspace")` — clean again after simplify (MANDATORY)**
 2. `tokensave_health(path="<changed_dir>")` — verify quality signal didn't degrade
 3. `tokensave_simplify_scan(files=[<changed_files>])` — verify no new duplications introduced
 4. `tokensave_diff_context(files=[<changed_files>])` — verify changes integrate cleanly

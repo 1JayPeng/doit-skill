@@ -18,6 +18,14 @@ Before staging anything, verify the full workflow was followed:
   □ Phase 5 — Review completed? (review.md checklist done)
   □ Phase 6 — Simplify completed? (review-simplify.md steps executed)
   □ Phase 7 — E2E Verification Loop passed? (e2e-verify.md flow completed)
+
+**[CALL] LSP Diagnostic Gate (MANDATORY):**
+```
+tokensave_diagnostics(scope="workspace")
+```
+If errors -> fix -> re-run until clean -> then proceed.
+Fallback: `cargo check`, `tsc --noEmit`, `pyright`.
+**No dirty type-check = no commit.**
 ```
 
 **If ANY box is unchecked:**

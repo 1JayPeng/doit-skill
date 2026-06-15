@@ -194,12 +194,57 @@ TaskUpdate taskId="<phase_task_id>" status="completed"   # at phase end
 
 **[CALL] After creating tasks, verify with TaskList.** The task list should show all phases as `pending`.
 
+## MemPalace Proactive Query — When, What, Why
+
+MemPalace is NOT just a Phase 0 sweep tool. It persists project knowledge across sessions.
+Each phase has a specific trigger -> query -> action mapping. Follow it.
+
+**The difference:** tokensave = current AST (symbols, edges, files). MemPalace = historical knowledge (decisions, bugs, patterns, specs).
+
+| Phase | Trigger (WHEN) | Query (WHAT) | Action (WHY) |
+|-------|---------------|--------------|--------------|
+| **Phase 1** | Before writing spec | `mempalace_search query="<user request>" wing="<project>" room="knowledge_flow" limit=3` | Did we build something similar? Avoid reinventing. |
+| **Phase 2** | Before choosing architecture | `mempalace_kg_query entity="<project>"` | What decisions exist? Don't contradict prior architecture choices. |
+| **Phase 3** | Stuck on implementation, error, or unexpected behavior | `mempalace_search query="<error keyword>" wing="<project>" room="bugs" limit=3` | Have we hit this before? Skip repeated failures. |
+| **Phase 6** | Before simplifying | `mempalace_search query="<simplification keywords>" wing="<project>" room="decisions" limit=3` | Does simplify contradict a prior decision? Update the decision if so. |
+| **Phase 8** | Before committing | `mempalace_search query="<feature>" wing="<project>" room="decisions" limit=3` | Align commit message with project decisions. |
+
+**Rule:** `[MP-READ]` in any phase document = execute that row from the table above. Don't skip because "Phase 0 already ran." Phase 0 is a broad sweep. Phase N is a targeted query for that phase's specific context.
+
+**Result handling:**
+- `similarity >= 0.3` → relevant result, read and apply
+- `similarity < 0.3` → skip, no relevant data for this phase
+- Empty result → proceed without MP context
+
 **At each phase boundary:**
 1. `TaskUpdate taskId="<N>" status="in_progress"` — when entering a phase
 2. `TaskUpdate taskId="<N>" status="completed"` — when completing a phase
 3. Never skip a task. A visible `pending` task at Phase 10 means the workflow is incomplete.
 
 **Before proceeding: check if user's prompt contains reference documentation.** If yes, capture it before any phase runs. See [doc-capture.md](doc-capture.md). Doc capture is independent of classification type (R/S/F/B) — always run first.
+
+## Phase 2 — Plan (MemPalace Proactive Query)
+
+**[LOAD] [plan.md](plan.md) — full Phase 2 execution steps.**
+
+**MemPalace Proactive Query Rule — don't wait for Phase 0 sweep, query when you need it:**
+
+| When you are about to... | Query MP for... | Call |
+|--------------------------|----------------|------|
+| Design architecture | Prior decisions, patterns | `mempalace_kg_query entity="<project>"` |
+| Choose between 2+ approaches | Stored ADRs | `mempalace_search query="<decision topic>" wing="<project>" room="decisions" limit=3` |
+| Start touching unfamiliar module | Prior implementation notes | `mempalace_search query="<module name>" wing="<project>" room="knowledge_code" limit=3` |
+| Add new API endpoint | Existing API patterns | `mempalace_search query="<API type>" wing="<project>" room="knowledge_api" limit=3` |
+
+**tokensave vs MemPalace — when to use which:**
+- **tokensave** = current codebase AST (symbols, callers, callees, impact)
+- **MemPalace** = cross-session knowledge (decisions made, bugs hit, specs written)
+
+**After plan is finalized, store it:**
+```
+[MP-WRITE] mempalace_check_duplicate content="<plan summary + decision>" threshold=0.87
+[MP-WRITE] mempalace_add_drawer wing="<project>" room="decisions" content="<ADR: decision, rationale, tradeoff>"
+```
 
 ## Phase 1 — Spec (完整 grill 协议)
 

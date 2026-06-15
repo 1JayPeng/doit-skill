@@ -55,6 +55,16 @@
 ## TDD Loop per REQ
 
 ### CONTEXT (before RED)
+**MemPalace query trigger — when to call, what to get:**
+
+| REQ involves... | Also query MP for... |
+|----------------|---------------------|
+| Modifying existing functionality | `mempalace_search query="<feature> implementation" wing="<project>" limit=3` — how was it built before? |
+| Similar bug fix pattern | `mempalace_search query="<error keyword> bug" wing="<project>" room="bugs" limit=3` — hit this before? |
+| New DB schema change | `mempalace_search query="<table/collection>" wing="<project>" room="knowledge_db" limit=3` — existing patterns? |
+
+**tokensave gives you the code. MemPalace gives you the WHY.** Use both.
+
 Before writing tests, understand the code you'll modify:
 
 **CodeGraph + TokenSave 互补并行**：
@@ -129,6 +139,21 @@ If you don't know what test to write, go back to spec. Don't guess.
 ```
 PASS: test_xxx for REQ-00X
 ```
+
+**[MANDATORY] LSP diagnostic gate after GREEN:**
+```
+tokensave_diagnostics(scope="workspace")
+```
+Test pass + type-check clean = GREEN. Test pass + type errors = NOT green, fix first.
+Fallback: `cargo check`, `tsc --noEmit`, `pyright`.
+
+**[MANDATORY] LSP Diagnostic Gate — tests pass is not enough:**
+```
+tokensave_diagnostics(scope="workspace")
+```
+If errors -> fix -> re-run until clean -> THEN proceed to REFACTOR.
+Fallback: `cargo check`, `tsc --noEmit`, `pyright`.
+**No dirty type-check = not green.**
 
 ### REFACTOR
 **[Surgical Edits]** Merge duplicate code with existing code. Minimal change. No architectural restructuring (that's Phase 5). Only touch what's needed to make the test pass.

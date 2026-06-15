@@ -120,10 +120,15 @@ See [shared/commit.md](shared/commit.md) for commit message conventions and push
 **MemPalace 调用与 TokenSave 同级别，不可跳过。可用则必做，不可用则静默跳过。**
 
 - **Phase 0 sweep 必须执行**（Type Q/S 除外）— 10 个并行调用加载项目上下文（4 核心 + 4 知识 room + 2 sessions 反馈）
-- **`[MP-READ]` 标记的步骤** — 读项目相关历史（spec、决策、实现、bug），为当前 phase 提供上下文
+- **各 phase 的 `[MP-READ]` 触发条件** — phases.md "MemPalace Proactive Query" 表格定义了 WHEN->WHAT->WHY。按表格执行，不跳过。
 - **`[MP-WRITE]` 标记的步骤** — 写当前 phase 产出（spec、ADR、实现摘要、KG 事实、diary）
 - **先读后写** — Phase 0 已做全局 sweep，各 phase 的 `[MP-READ]` 做精准搜索，`[MP-WRITE]` 在 phase 完成后写入
 - **MP 不可用** → 任何调用报错 → 静默跳过该 session 所有 MP 步骤，文件系统为主
+
+**tokensave vs MemPalace 分工：**
+- **tokensave** = 当前代码库的 AST（符号、调用关系、impact）— 回答 "代码在哪里？调用关系如何？"
+- **MemPalace** = 历史会话的知识（架构决策、已踩的坑、之前的 spec）— 回答 "我们之前做过类似的吗？有什么决策？"
+- 两者互补，不互相替代。TokenSave 不替代 MP（MP 有跨会话记忆），MP 不替代 TokenSave（MP 没有实时 AST）。
 
 ## 铁律 — 完整工作流不可跳过
 
