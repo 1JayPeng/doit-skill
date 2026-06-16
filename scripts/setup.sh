@@ -769,12 +769,11 @@ else
   # Configure uv default PyPI mirror (Tsinghua)
   if command -v uv >/dev/null 2>&1; then
     mkdir -p "$HOME/.config/uv"
-    if ! grep -q "pypi.tuna.tsinghua.edu.cn" "$HOME/.config/uv/pyproject.toml" 2>/dev/null; then
-      cat >> "$HOME/.config/uv/pyproject.toml" <<'UV_EOF'
-
-[[tool.uv.index]]
-name = "tuna"
-url = "https://pypi.tuna.tsinghua.edu.cn/simple/"
+    if ! grep -q "pypi.tuna.tsinghua.edu.cn" "$HOME/.config/uv/uv.toml" 2>/dev/null; then
+      cat > "$HOME/.config/uv/uv.toml" <<'UV_EOF'
+[[index]]
+url = "https://pypi.tuna.tsinghua.edu.cn/simple"
+default = true
 UV_EOF
       echo_success "uv PyPI mirror configured (Tsinghua)"
     fi
