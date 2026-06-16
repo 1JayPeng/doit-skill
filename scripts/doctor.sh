@@ -208,11 +208,13 @@ for tool in "${EXTERNAL_TOOLS[@]}"; do
                 echo "  ℹ️  lean-ctx not installed (recommended)"
                 echo "  💡 Install: curl -fsSL https://leanctx.com/install.sh | sh"
             fi
-            if [ -f "$HOME/.claude/rules/lean-ctx.md" ]; then
-                echo "  ✅ lean-ctx rules configured"
+            if [ -f ".claude/rules/lean-ctx.md" ]; then
+                echo "  ✅ lean-ctx rules configured (project-local)"
+            elif [ -f "$HOME/.claude/rules/lean-ctx.md" ]; then
+                echo "  ✅ lean-ctx rules configured (global)"
             else
                 echo "  ℹ️  lean-ctx rules not configured"
-                echo "  💡 Configure: lean-ctx init --agent claude"
+                echo "  💡 Configure: ./scripts/setup.sh (includes lean-ctx)"
             fi
             ;;
     esac

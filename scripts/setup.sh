@@ -1128,7 +1128,7 @@ if [ "$SKIP_OPTIONAL" = false ] && [ "${_skip_step_3:-false}" = "false" ]; then
       cp "$_lean_ctx_global_rules" .claude/rules/lean-ctx.md
       echo_success "lean-ctx project rules configured (.claude/rules/lean-ctx.md)"
     else
-      echo_warn "lean-ctx global rules not found at $_lean_ctx_global_rules"
+      echo_warn "lean-ctx global rules not found — run lean-ctx init --agent claude manually first"
     fi
 
     if [ -f "$HOME/.claude/settings.local.json" ]; then
