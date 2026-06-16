@@ -448,7 +448,7 @@ if [ "$DRY_RUN" = true ]; then
     echo "  External tools (installed by default):"
     echo "    • context-mode     (claude plugin marketplace add mksglu/context-mode)"
     echo "    • rtk              (curl install script)"
-    echo "    • uv               (pip install uv)"
+    echo "    • uv               (official install script)"
     echo "    • rust               (rustup, Tsinghua mirror)"
     echo "    • tokensave        (cargo install tokensave)"
     echo "    • tavily           (claude mcp add --transport http tavily ...)"
@@ -717,17 +717,46 @@ else
     echo_success "rtk installed and initialized"
   fi
 
+  # Configure pip mirror (Tsinghua) — needed for uv's pip fallback
+  if command -v pip >/dev/null 2>&1; then
+    pip config get global.index-url >/dev/null 2>&1 || {
+      pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple 2>/dev/null || true
+      pip config set install.trusted-host pypi.tuna.tsinghua.edu.cn 2>/dev/null || true
+    }
+  fi
+
   # UV
   if command -v uv >/dev/null 2>&1; then
     if [ "$SKIP_UPDATES" = true ]; then
       echo_skip "uv already installed (skipping update)"
     else
       echo_info "Updating uv..."
-      spin 60 "uv update (pip)" "pip install --upgrade uv" 2>&1 || spin 60 "uv update (pip3)" "pip3 install --upgrade uv" 2>&1 || echo_warn "Failed to update uv"
+      spin 120 "uv update" uv self update || echo_warn "Failed to update uv"
     fi
   else
-    echo_info "Installing uv..."
-    spin 60 "uv install (pip)" "pip install uv" 2>&1 || spin 60 "uv install (pip3)" "pip3 install uv" 2>&1 || echo_warn "Failed to install uv"
+    echo_info "Installing uv (official install script)..."
+    if spin 120 "uv install (curl | sh)" "curl -LsSf https://astral.sh/uv/install.sh | sh" 2>&1; then
+      # Source uv env for current shell
+      [ -f "$HOME/.local/env.txt" ] && source "$HOME/.local/env.txt" 2>/dev/null || true
+      export PATH="$HOME/.local/bin:$PATH"
+    else
+      echo_warn "Official uv install script failed, falling back to pip"
+      spin 60 "uv install (pip)" "pip install uv --break-system-packages" 2>&1 || spin 60 "uv install (pip3)" "pip3 install uv --break-system-packages" 2>&1 || echo_warn "Failed to install uv"
+    fi
+  fi
+
+  # Configure uv default PyPI mirror (Tsinghua)
+  if command -v uv >/dev/null 2>&1; then
+    mkdir -p "$HOME/.config/uv"
+    if ! grep -q "pypi.tuna.tsinghua.edu.cn" "$HOME/.config/uv/pyproject.toml" 2>/dev/null; then
+      cat >> "$HOME/.config/uv/pyproject.toml" <<'UV_EOF'
+
+[[tool.uv.index]]
+name = "tuna"
+url = "https://pypi.tuna.tsinghua.edu.cn/simple/"
+UV_EOF
+      echo_success "uv PyPI mirror configured (Tsinghua)"
+    fi
   fi
 
   # Rust (required by tokensave) — always check for updates
