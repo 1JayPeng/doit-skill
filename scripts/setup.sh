@@ -618,9 +618,18 @@ else
   echo "=========================================="
   echo ""
 
-# Skill-Creator (from anthropics/skills)
+# Skill-Creator (from anthropics/skills) — detect via npx skills list
   if command -v npx >/dev/null 2>&1; then
-    if [ -d "$HOME/.agents/skills/skill-creator" ] || [ -d ".agents/skills/skill-creator" ]; then
+    _sc_installed=false
+    if npx skills list 2>/dev/null | grep -q 'skill-creator'; then
+      _sc_installed=true
+    fi
+    # Fallback: check common install paths
+    if [ "$_sc_installed" = false ] && ([ -d "$HOME/.agents/skills/skill-creator" ] || [ -d ".agents/skills/skill-creator" ]); then
+      _sc_installed=true
+    fi
+
+    if [ "$_sc_installed" = true ]; then
       if [ "$SKIP_UPDATES" = true ]; then
         echo_skip "skill-creator already installed (skipping update)"
       else
@@ -1000,30 +1009,53 @@ if [ "$SKIP_OPTIONAL" = false ] && [ "${_skip_step_3:-false}" = "false" ]; then
   echo "=========================================="
   echo ""
 
-  # Headroom
-  if command -v uv >/dev/null 2>&1; then
-    if command -v headroom >/dev/null 2>&1; then
-      if [ "$SKIP_UPDATES" = true ]; then
-        echo_skip "headroom already installed (skipping update)"
-      else
-        echo_info "Updating headroom..."
-        spin 180 "headroom tool install" uv tool install "headroom-ai[mcp,proxy]" || echo_warn "headroom update failed"
-        echo_success "headroom updated"
-      fi
-    else
-      echo_info "Installing headroom..."
-      spin 180 "headroom tool install" uv tool install "headroom-ai[mcp,proxy]" || echo_warn "headroom install failed"
+  # Headroom requires CPython >= 3.10
+  _python_ok=false
+  for _py in python3.13 python3.12 python3.11 python3.10; do
+    if command -v "$_py" >/dev/null 2>&1; then
+      _python_ok=true
+      break
     fi
-  else
-    echo_warn "uv not found — install headroom manually: uv tool install 'headroom-ai[mcp,proxy]'"
+  done
+  if [ "$_python_ok" = false ] && command -v python3 >/dev/null 2>&1; then
+    _py_ver=$(python3 -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')" 2>/dev/null)
+    if [ -n "$_py_ver" ]; then
+      _py_major=${_py_ver%%.*}
+      _py_minor=${_py_ver#*.}
+      if [ "$_py_major" -ge 3 ] 2>/dev/null && [ "$_py_minor" -ge 10 ] 2>/dev/null; then
+        _python_ok=true
+      fi
+    fi
   fi
 
-  if command -v headroom >/dev/null 2>&1; then
-    if spin 30 "headroom MCP verify" "claude mcp list" 2>/dev/null | grep -q headroom; then
-      echo_success "headroom MCP already configured"
+  if [ "$_python_ok" = false ]; then
+    echo_warn "Python >= 3.10 not found — skipping headroom (requires CPython >= 3.10)"
+  else
+    # Headroom
+    if command -v uv >/dev/null 2>&1; then
+      if command -v headroom >/dev/null 2>&1; then
+        if [ "$SKIP_UPDATES" = true ]; then
+          echo_skip "headroom already installed (skipping update)"
+        else
+          echo_info "Updating headroom..."
+          spin 180 "headroom tool install" uv tool install "headroom-ai[mcp,proxy]" || echo_warn "headroom update failed"
+          echo_success "headroom updated"
+        fi
+      else
+        echo_info "Installing headroom..."
+        spin 180 "headroom tool install" uv tool install "headroom-ai[mcp,proxy]" || echo_warn "headroom install failed"
+      fi
     else
-      echo_info "Configuring headroom MCP..."
-      spin 120 "headroom MCP install" headroom mcp install || echo_warn "headroom mcp install timed out"
+      echo_warn "uv not found — install headroom manually: uv tool install 'headroom-ai[mcp,proxy]'"
+    fi
+
+    if command -v headroom >/dev/null 2>&1; then
+      if spin 30 "headroom MCP verify" "claude mcp list" 2>/dev/null | grep -q headroom; then
+        echo_success "headroom MCP already configured"
+      else
+        echo_info "Configuring headroom MCP..."
+        spin 120 "headroom MCP install" headroom mcp install || echo_warn "headroom mcp install timed out"
+      fi
     fi
   fi
 fi
