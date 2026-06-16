@@ -40,7 +40,13 @@ file_hash() {
 # Spinner: runs a command with animated progress + real-time output to terminal.
 # Usage: spin <timeout_s> "<label>" <command...>
 # Spinner animates on stderr; command output streams to stdout in real-time.
+# Optional trailing --pty flag: use real PTY (script -qc) instead of bash -c.
+# Default: no PTY — avoids interactive prompts from remote installers (caveload).
+# Only use --pty when the command requires a PTY for non-stdin reasons.
 spin() {
+  local use_pty=false
+  [ "${!#}" = "--pty" ] && use_pty=true && set -- "${@:1:$#-1}"
+
   local timeout_s="${1:-120}"
   local label="$2"
   shift 2
@@ -71,28 +77,22 @@ spin() {
 
   # Run command — output streams directly to terminal in real-time
   #
-  # When setup.sh runs via `curl | bash`, stdin is a pipe and stdout may not be
-  # a TTY either (inside ssh sessions). Interactive CLIs (claude plugin install)
-  # detect non-tty and hang waiting for confirmation.
-  #
-  # Fix: use `script -qc` to provide a real PTY with /dev/null stdin.
-  # Fall back to `bash -c < /dev/null` if script is unavailable.
+  # Default: bash -c < /dev/null — no PTY, no interactive prompts.
+  # With --pty: script -qc /dev/null < /dev/null — real PTY for CLIs that need it.
   local exit_code=0
-  if command -v timeout >/dev/null 2>&1; then
-    if command -v script >/dev/null 2>&1; then
+  if [ "$use_pty" = true ] && command -v script >/dev/null 2>&1; then
+    if command -v timeout >/dev/null 2>&1; then
       timeout "$timeout_s" script -qc "$cmd_str" /dev/null < /dev/null
-    else
-      timeout "$timeout_s" bash -c "$cmd_str" < /dev/null
-    fi
-  elif command -v gtimeout >/dev/null 2>&1; then
-    if command -v script >/dev/null 2>&1; then
+    elif command -v gtimeout >/dev/null 2>&1; then
       gtimeout "$timeout_s" script -qc "$cmd_str" /dev/null < /dev/null
     else
-      gtimeout "$timeout_s" bash -c "$cmd_str" < /dev/null
+      script -qc "$cmd_str" /dev/null < /dev/null
     fi
   else
-    if command -v script >/dev/null 2>&1; then
-      script -qc "$cmd_str" /dev/null < /dev/null
+    if command -v timeout >/dev/null 2>&1; then
+      timeout "$timeout_s" bash -c "$cmd_str" < /dev/null
+    elif command -v gtimeout >/dev/null 2>&1; then
+      gtimeout "$timeout_s" bash -c "$cmd_str" < /dev/null
     else
       bash -c "$cmd_str" < /dev/null
     fi
@@ -675,13 +675,13 @@ else
       echo_skip "context-mode already installed (skipping update)"
     else
       echo_info "Updating context-mode..."
-      spin 60 "context-mode update" claude plugin install context-mode@context-mode || echo_warn "context-mode update failed"
+      spin 60 "context-mode update" claude plugin install context-mode@context-mode --pty || echo_warn "context-mode update failed"
       echo_success "context-mode updated"
     fi
   else
     echo_info "Installing context-mode..."
-    spin 120 "context-mode marketplace add" claude plugin marketplace add mksglu/context-mode || echo_warn "Failed to add context-mode marketplace"
-    spin 180 "context-mode install" claude plugin install context-mode@context-mode || echo_warn "Failed to install context-mode"
+    spin 120 "context-mode marketplace add" claude plugin marketplace add mksglu/context-mode --pty || echo_warn "Failed to add context-mode marketplace"
+    spin 180 "context-mode install" claude plugin install context-mode@context-mode --pty || echo_warn "Failed to install context-mode"
   fi
 
   # RTK
@@ -801,13 +801,13 @@ CARGO_EOF
       echo_skip "caveman already installed (skipping update)"
     else
       echo_info "Updating caveman..."
-      spin 60 "caveman update" claude plugin install caveman@caveman || echo_warn "caveman update failed"
+      spin 60 "caveman update" claude plugin install caveman@caveman --pty || echo_warn "caveman update failed"
       echo_success "caveman updated"
     fi
   else
     echo_info "Installing caveman (marketplace -> plugin -> npx fallback)..."
-    if spin 120 "caveman marketplace add" claude plugin marketplace add JuliusBrussee/caveman && \
-       spin 180 "caveman install" claude plugin install caveman@caveman; then
+    if spin 120 "caveman marketplace add" claude plugin marketplace add JuliusBrussee/caveman --pty && \
+       spin 180 "caveman install" claude plugin install caveman@caveman --pty; then
       echo_success "caveman installed (claude plugin)"
     else
       echo_warn "claude plugin install failed, trying npx installer..."
@@ -871,12 +871,12 @@ with open('$_claude_settings', 'w') as f:
       echo_skip "code-review already installed (skipping update)"
     else
       echo_info "Updating code-review..."
-      spin 60 "code-review update" claude plugin install code-review || echo_warn "code-review update failed"
+      spin 60 "code-review update" claude plugin install code-review --pty || echo_warn "code-review update failed"
       echo_success "code-review updated"
     fi
   else
     echo_info "Installing code-review..."
-    spin 180 "code-review install" claude plugin install code-review || echo_warn "Failed to install code-review (install manually: claude plugin install code-review)"
+    spin 180 "code-review install" claude plugin install code-review --pty || echo_warn "Failed to install code-review (install manually: claude plugin install code-review)"
   fi
 
   # MemPalace — primary memory layer
@@ -885,13 +885,13 @@ with open('$_claude_settings', 'w') as f:
       echo_skip "mempalace already installed (skipping update)"
     else
       echo_info "Updating mempalace..."
-      spin 60 "mempalace update" claude plugin install --scope user mempalace || echo_warn "mempalace update failed"
+      spin 60 "mempalace update" claude plugin install --scope user mempalace --pty || echo_warn "mempalace update failed"
       echo_success "mempalace updated"
     fi
   else
     echo_info "Installing mempalace..."
-    spin 120 "mempalace marketplace add" claude plugin marketplace add MemPalace/mempalace || echo_warn "Failed to add mempalace marketplace"
-    spin 180 "mempalace install" claude plugin install --scope user mempalace || echo_warn "Failed to install mempalace (install manually: claude plugin install --scope user mempalace)"
+    spin 120 "mempalace marketplace add" claude plugin marketplace add MemPalace/mempalace --pty || echo_warn "Failed to add mempalace marketplace"
+    spin 180 "mempalace install" claude plugin install --scope user mempalace --pty || echo_warn "Failed to install mempalace (install manually: claude plugin install --scope user mempalace)"
   fi
 
   # MemPalace CLI (uv tool)
