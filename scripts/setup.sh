@@ -447,7 +447,7 @@ if [ "$DRY_RUN" = true ]; then
   if [ "$SKIP_OPTIONAL" = false ]; then
     echo "  External tools (installed by default):"
     echo "    • context-mode     (claude plugin marketplace add mksglu/context-mode)"
-    echo "    • rtk              (curl install script)"
+    echo "    • rtk              (cargo install rtk)"
     echo "    • uv               (official install script)"
     echo "    • rust               (rustup, Tsinghua mirror)"
     echo "    • tokensave        (cargo install tokensave)"
@@ -714,11 +714,23 @@ else
       echo_skip "rtk already installed (skipping update)"
     else
       echo_info "Updating rtk..."
-      spin 60 "rtk install (curl | sh)" "curl -fsSL ${GH_PROXY}/https://raw.githubusercontent.com/rtk-ai/rtk/refs/heads/master/install.sh 2>/dev/null | sh" || echo_warn "Failed to update rtk"
+      if command -v cargo >/dev/null 2>&1; then
+        spin 120 "rtk update (cargo)" cargo install rtk || echo_warn "Failed to update rtk via cargo"
+      fi
+      if ! command -v rtk >/dev/null 2>&1; then
+        echo_info "Falling back to curl install script..."
+        spin 60 "rtk update (curl | sh)" "curl -fsSL ${GH_PROXY}/https://raw.githubusercontent.com/rtk-ai/rtk/refs/heads/master/install.sh 2>/dev/null | sh" || echo_warn "Failed to update rtk"
+      fi
     fi
   else
     echo_info "Installing rtk..."
-    spin 60 "rtk install (curl | sh)" "curl -fsSL ${GH_PROXY}/https://raw.githubusercontent.com/rtk-ai/rtk/refs/heads/master/install.sh 2>/dev/null | sh" || echo_warn "Failed to install rtk"
+    if command -v cargo >/dev/null 2>&1; then
+      spin 120 "rtk install (cargo)" cargo install rtk || echo_warn "Failed to install rtk via cargo"
+    fi
+    if ! command -v rtk >/dev/null 2>&1; then
+      echo_info "Falling back to curl install script..."
+      spin 60 "rtk install (curl | sh)" "curl -fsSL ${GH_PROXY}/https://raw.githubusercontent.com/rtk-ai/rtk/refs/heads/master/install.sh 2>/dev/null | sh" || echo_warn "Failed to install rtk"
+    fi
   fi
   if command -v rtk >/dev/null 2>&1; then
     echo_info "Initializing rtk for Claude Code..."
