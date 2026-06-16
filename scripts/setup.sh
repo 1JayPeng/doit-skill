@@ -4,6 +4,7 @@
 #
 # Installs doit-skill and all dependencies.
 # Supports:
+#   --agent <type>     Target AI coding CLI: claude|opencode|codex|auto (default: auto)
 #   --skip-optional    Skip optional skills and external tools
 #   --skip-updates     Skip updating already-installed tools
 
@@ -11,9 +12,54 @@
 trap 'echo_error "Installation interrupted by user. Partial install may be in place." && exit 130' INT
 
 # Configuration
-# Claude Code loads skills from project-local .claude/skills/ (not ~/.claude/skills/)
-SKILL_DIR=".claude/skills"
-GLOBAL_SKILL_DIR="$HOME/.claude/skills"
+# Detect target AI coding CLI
+detect_agent() {
+  local agent="$1"
+  if [ "$agent" = "auto" ]; then
+    command -v claude >/dev/null 2>&1 && echo "claude" && return
+    command -v opencode >/dev/null 2>&1 && echo "opencode" && return
+    command -v codex >/dev/null 2>&1 && echo "codex" && return
+    # Default to claude if no specific agent detected
+    echo "claude"
+    return
+  fi
+  echo "$agent"
+}
+
+AGENT_TYPE="${AGENT:-auto}"
+AGENT_TYPE=$(detect_agent "$AGENT_TYPE")
+export AGENT_TYPE
+
+# Set agent-specific paths (applied at top-level; --agent overrides below)
+_set_agent_paths() {
+  case "$1" in
+    claude)
+      SKILL_DIR=".claude/skills"
+      GLOBAL_SKILL_DIR="$HOME/.claude/skills"
+      MAIN_INSTRUCTIONS="CLAUDE.md"
+      MCP_CONFIG_FILE="$HOME/.claude.json"
+      ;;
+    opencode)
+      SKILL_DIR=".opencode/skills"
+      GLOBAL_SKILL_DIR="$HOME/.config/opencode/skills"
+      MAIN_INSTRUCTIONS="AGENTS.md"
+      MCP_CONFIG_FILE="$HOME/.config/opencode/opencode.json"
+      ;;
+    codex)
+      SKILL_DIR=".agents/skills"
+      GLOBAL_SKILL_DIR="$HOME/.codex/skills"
+      MAIN_INSTRUCTIONS="AGENTS.md"
+      MCP_CONFIG_FILE="$HOME/.codex/config.toml"
+      ;;
+    *)
+      SKILL_DIR=".ai/skills"
+      GLOBAL_SKILL_DIR="$HOME/.ai/skills"
+      MAIN_INSTRUCTIONS="AGENTS.md"
+      MCP_CONFIG_FILE="$HOME/.ai/mcp.json"
+      ;;
+  esac
+}
+_set_agent_paths "$AGENT_TYPE"
 GH_PROXY="https://v6.gh-proxy.org"
 REPO_URL="${GH_PROXY}/https://github.com/1JayPeng/doit-skill"
 
@@ -212,15 +258,31 @@ with open(path, 'w') as f: json.dump(d, f, indent=2)
 }
 
 # Parse arguments
-for arg in "$@"; do
+i=1
+while [ $i -le $# ]; do
+  arg="${!i}"
   case $arg in
     --dry-run) DRY_RUN=true ;;
     --skip-optional) SKIP_OPTIONAL=true ;;
     --skip-updates) SKIP_UPDATES=true ;;
     --skip-inits) SKIP_INITS=true ;;
-    --global) INSTALL_GLOBAL=true; SKILL_DIR="$GLOBAL_SKILL_DIR" ;;
+    --global) INSTALL_GLOBAL=true ;;
+    --agent)
+      i=$((i + 1))
+      AGENT_TYPE="${!i:-auto}"
+      AGENT_TYPE=$(detect_agent "$AGENT_TYPE")
+      export AGENT_TYPE
+      _set_agent_paths "$AGENT_TYPE"
+      ;;
+    *) ;;
   esac
+  i=$((i + 1))
 done
+
+# --global applies after --agent resolves paths
+if [ "$INSTALL_GLOBAL" = true ]; then
+  SKILL_DIR="$GLOBAL_SKILL_DIR"
+fi
 
 # Colors
 RED='\033[0;31m'
@@ -239,6 +301,7 @@ echo_error()   { echo -e "${RED}[✗]${NC} $1"; }
 echo "=========================================="
 echo "  doit-skill Installer"
 echo "  $(date)"
+echo "  Agent: $AGENT_TYPE"
 echo "=========================================="
 echo ""
 
@@ -331,12 +394,15 @@ if [ -f .env ] && grep -q 'TAVILY_API_KEY' .env 2>/dev/null; then
 elif spin 30 "tavily MCP check" "claude mcp list" 2>/dev/null | grep -q tavily; then
   TAVILY_CONFIGURED=true
   echo_success "tavily MCP already configured"
-elif grep -q 'tavily' ~/.claude/settings.json 2>/dev/null; then
-  TAVILY_CONFIGURED=true
-  echo_success "tavily configured in settings.json"
 elif grep -q 'tavily' ~/.claude.json 2>/dev/null; then
   TAVILY_CONFIGURED=true
   echo_success "tavily configured in .claude.json"
+elif grep -q 'tavily' ~/.config/opencode/opencode.json 2>/dev/null; then
+  TAVILY_CONFIGURED=true
+  echo_success "tavily configured in opencode.json"
+elif grep -q 'tavily' ~/.codex/config.toml 2>/dev/null; then
+  TAVILY_CONFIGURED=true
+  echo_success "tavily configured in codex config.toml"
 fi
 
 # Ask about Tavily API Key only if not already configured
@@ -365,11 +431,17 @@ fi
 if [ -n "$TAVILY_API_KEY" ]; then
   echo_info "Configuring Tavily MCP with your API key..."
 
-  _claude_json="$HOME/.claude.json"
+  # Determine MCP config file based on agent type
+  case "$AGENT_TYPE" in
+    claude)   _mcp_config_file="$HOME/.claude.json" ;;
+    opencode) _mcp_config_file="$HOME/.config/opencode/opencode.json" ;;
+    codex)    _mcp_config_file="$HOME/.codex/config.toml" ;;
+    *)        _mcp_config_file="$HOME/.ai/mcp.json" ;;
+  esac
 
-  # Remove old tavily entry if exists
-  if [ -f "$_claude_json" ]; then
-    PATH_FILE="$_claude_json" python3 -c "
+  # Remove old tavily entry if exists (JSON config)
+  if [ -f "$_mcp_config_file" ] && [[ "$_mcp_config_file" == *.json ]]; then
+    PATH_FILE="$_mcp_config_file" python3 -c "
 import json, os
 path = os.environ['PATH_FILE']
 try:
@@ -386,29 +458,58 @@ except: pass
 
   # Write tavily config directly via env vars — avoids spin() bash -c quoting
   # AND prevents shell injection from API keys containing quotes/backslashes
-  CONFIG_PATH="$_claude_json" TAVILY_KEY="$TAVILY_API_KEY" python3 -c "
+  CONFIG_PATH="$_mcp_config_file" TAVILY_KEY="$TAVILY_API_KEY" python3 -c "
 import json, os
 path = os.environ['CONFIG_PATH']
 key = os.environ['TAVILY_KEY']
-try:
-    with open(path) as f:
-        d = json.load(f)
-except (FileNotFoundError, json.JSONDecodeError):
-    d = {}
-if 'mcp' not in d:
-    d['mcp'] = {}
-d['mcp']['tavily'] = {
-    'transport': 'http',
-    'url': f'https://mcp.tavily.com/mcp/?tavilyApiKey={key}'
-}
-with open(path, 'w') as f:
-    json.dump(d, f, indent=2)
+if path.endswith('.json'):
+    try:
+        with open(path) as f:
+            d = json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        d = {}
+    if 'mcp' not in d:
+        d['mcp'] = {}
+    d['mcp']['tavily'] = {
+        'transport': 'http',
+        'url': f'https://mcp.tavily.com/mcp/?tavilyApiKey={key}'
+    }
+    with open(path, 'w') as f:
+        json.dump(d, f, indent=2)
+elif path.endswith('.toml'):
+    # For Codex config.toml, append MCP section
+    import tomllib
+    try:
+        with open(path, 'rb') as f:
+            d = tomllib.load(f)
+    except (FileNotFoundError, Exception):
+        d = {}
+    mcp = d.get('mcp', {})
+    mcp['tavily'] = {
+        'transport': 'http',
+        'url': f'https://mcp.tavily.com/mcp/?tavilyApiKey={key}'
+    }
+    d['mcp'] = mcp
+    # Write back as TOML
+    with open(path, 'w') as f:
+        for section, values in d.items():
+            if isinstance(values, dict):
+                f.write(f'[{section}]\\n')
+                for k, v in values.items():
+                    if isinstance(v, dict):
+                        f.write(f'[{section}.{k}]\\n')
+                        for kk, vv in v.items():
+                            f.write(f'{kk} = \"{vv}\"\\n')
+                    else:
+                        f.write(f'{k} = \"{v}\"\\n')
+            else:
+                f.write(f'{section} = {values}\\n')
 " 2>/dev/null
 
-  if [ -f "$_claude_json" ] && grep -q 'tavily' "$_claude_json" 2>/dev/null; then
-    echo_success "tavily MCP configured"
+  if [ -f "$_mcp_config_file" ] && grep -q 'tavily' "$_mcp_config_file" 2>/dev/null; then
+    echo_success "tavily MCP configured ($_mcp_config_file)"
   else
-    echo_warn "Failed to write Tavily MCP config (install manually: claude mcp add --transport http tavily 'https://mcp.tavily.com/mcp/?tavilyApiKey=<your-key>')"
+    echo_warn "Failed to write Tavily MCP config — configure manually for $AGENT_TYPE"
   fi
 fi
 
@@ -435,6 +536,8 @@ if [ "$DRY_RUN" = true ]; then
   echo_info "Dry run — showing what would be installed:"
   echo ""
   echo "  Install location: $SKILL_DIR/"
+  echo "  Target agent:    $AGENT_TYPE"
+  echo "  Main config:     $MAIN_INSTRUCTIONS"
   echo "  Required skills:"
   echo "    • doit-skill (core)"
   echo "    • grill-me (spec grilling)"
@@ -838,52 +941,53 @@ CARGO_EOF
     fi
   fi
   if command -v tokensave >/dev/null 2>&1; then
-    echo_info "Configuring tokensave for Claude Code..."
-    tokensave install --agent claude || true
+    echo_info "Configuring tokensave for $AGENT_TYPE..."
+    tokensave install --agent "$AGENT_TYPE" || true
     record_install tokensave
     echo_success "tokensave ready"
   fi
 
-# Caveman (token-compact mode + statusline)
-  if grep -rl "caveman" "$HOME/.claude/plugins/" > /dev/null 2>&1; then
-    if [ "$SKIP_UPDATES" = true ]; then
-      echo_skip "caveman already installed (skipping update)"
-    else
-      echo_info "Updating caveman..."
-      spin 60 "caveman update" claude plugin install caveman@caveman --pty || echo_warn "caveman update failed"
-      echo_success "caveman updated"
-    fi
-  else
-    echo_info "Installing caveman (marketplace -> plugin -> npx fallback)..."
-    if spin 120 "caveman marketplace add" claude plugin marketplace add JuliusBrussee/caveman --pty && \
-       spin 180 "caveman install" claude plugin install caveman@caveman --pty; then
-      echo_success "caveman installed (claude plugin)"
-    else
-      echo_warn "claude plugin install failed, trying npx installer..."
-      if spin 120 "caveman npx installer" curl -fsSL "${GH_PROXY}/https://raw.githubusercontent.com/JuliusBrussee/caveman/main/install.sh" 2>/dev/null | bash -s -- --all; then
-        echo_success "caveman installed (npx installer)"
+# Caveman (token-compact mode + statusline) — Claude Code only
+  if [ "$AGENT_TYPE" = "claude" ]; then
+    if grep -rl "caveman" "$HOME/.claude/plugins/" > /dev/null 2>&1; then
+      if [ "$SKIP_UPDATES" = true ]; then
+        echo_skip "caveman already installed (skipping update)"
       else
-        echo_warn "Failed to install caveman"
+        echo_info "Updating caveman..."
+        spin 60 "caveman update" claude plugin install caveman@caveman --pty || echo_warn "caveman update failed"
+        echo_success "caveman updated"
+      fi
+    else
+      echo_info "Installing caveman (marketplace -> plugin -> npx fallback)..."
+      if spin 120 "caveman marketplace add" claude plugin marketplace add JuliusBrussee/caveman --pty && \
+         spin 180 "caveman install" claude plugin install caveman@caveman --pty; then
+        echo_success "caveman installed (claude plugin)"
+      else
+        echo_warn "claude plugin install failed, trying npx installer..."
+        if spin 120 "caveman npx installer" curl -fsSL "${GH_PROXY}/https://raw.githubusercontent.com/JuliusBrussee/caveman/main/install.sh" 2>/dev/null | bash -s -- --all; then
+          echo_success "caveman installed (npx installer)"
+        else
+          echo_warn "Failed to install caveman"
+        fi
       fi
     fi
-  fi
 
-  # Caveman statusline hook — install hooks + configure settings.json
-  if grep -rl "caveman-statusline" "$HOME/.claude/hooks/" > /dev/null 2>&1; then
-    echo_success "caveman statusline hooks already installed"
-  else
-    echo_info "Installing caveman hooks (statusline)..."
-    if spin 120 "caveman hooks install" curl -fsSL "${GH_PROXY}/https://raw.githubusercontent.com/JuliusBrussee/caveman/main/install.sh" 2>/dev/null | bash -s -- --with-hooks --skip-skills; then
-      echo_success "caveman statusline hooks installed"
+    # Caveman statusline hook — install hooks + configure settings.json
+    if grep -rl "caveman-statusline" "$HOME/.claude/hooks/" > /dev/null 2>&1; then
+      echo_success "caveman statusline hooks already installed"
     else
-      echo_warn "caveman hook install failed — statusline not configured"
+      echo_info "Installing caveman hooks (statusline)..."
+      if spin 120 "caveman hooks install" curl -fsSL "${GH_PROXY}/https://raw.githubusercontent.com/JuliusBrussee/caveman/main/install.sh" 2>/dev/null | bash -s -- --with-hooks --skip-skills; then
+        echo_success "caveman statusline hooks installed"
+      else
+        echo_warn "caveman hook install failed — statusline not configured"
+      fi
     fi
-  fi
 
-  # Configure caveman statusline in settings.json (replace existing if present)
-  _claude_settings="$HOME/.claude/settings.json"
-  if [ -f "$_claude_settings" ]; then
-    _current_sl=$(python3 -c "
+    # Configure caveman statusline in settings.json (replace existing if present)
+    _claude_settings="$HOME/.claude/settings.json"
+    if [ -f "$_claude_settings" ]; then
+      _current_sl=$(python3 -c "
 import json, sys
 try:
     with open('$_claude_settings') as f:
@@ -893,14 +997,14 @@ try:
     print(cmd)
 except: pass
 " 2>/dev/null)
-    if echo "$_current_sl" | grep -q 'caveman-statusline'; then
-      echo_success "caveman statusline already configured in settings.json"
-    else
-      echo_info "Configuring caveman statusline in settings.json..."
-      _hooks_dir="$HOME/.claude/hooks"
-      _sl_script="$_hooks_dir/caveman-statusline.sh"
-      if [ -f "$_sl_script" ]; then
-        python3 -c "
+      if echo "$_current_sl" | grep -q 'caveman-statusline'; then
+        echo_success "caveman statusline already configured in settings.json"
+      else
+        echo_info "Configuring caveman statusline in settings.json..."
+        _hooks_dir="$HOME/.claude/hooks"
+        _sl_script="$_hooks_dir/caveman-statusline.sh"
+        if [ -f "$_sl_script" ]; then
+          python3 -c "
 import json
 with open('$_claude_settings') as f:
     d = json.load(f)
@@ -908,39 +1012,50 @@ d['statusLine'] = {'type': 'command', 'command': 'bash \"$_sl_script\"'}
 with open('$_claude_settings', 'w') as f:
     json.dump(d, f, indent=2, ensure_ascii=False)
 " 2>/dev/null && echo_success "caveman statusline configured" || echo_warn "Failed to configure caveman statusline"
-      else
-        echo_warn "caveman-statusline.sh not found at $_sl_script — install hooks first"
+        else
+          echo_warn "caveman-statusline.sh not found at $_sl_script — install hooks first"
+        fi
       fi
     fi
+  else
+    echo_info "caveman is a Claude Code plugin — skipping for $AGENT_TYPE"
   fi
 
-  # Code Review
-  if grep -rl "code-review" "$HOME/.claude/plugins/" > /dev/null 2>&1; then
-    if [ "$SKIP_UPDATES" = true ]; then
-      echo_skip "code-review already installed (skipping update)"
+  # Code Review — Claude Code only
+  if [ "$AGENT_TYPE" = "claude" ]; then
+    if grep -rl "code-review" "$HOME/.claude/plugins/" > /dev/null 2>&1; then
+      if [ "$SKIP_UPDATES" = true ]; then
+        echo_skip "code-review already installed (skipping update)"
+      else
+        echo_info "Updating code-review..."
+        spin 60 "code-review update" claude plugin install code-review --pty || echo_warn "code-review update failed"
+        echo_success "code-review updated"
+      fi
     else
-      echo_info "Updating code-review..."
-      spin 60 "code-review update" claude plugin install code-review --pty || echo_warn "code-review update failed"
-      echo_success "code-review updated"
+      echo_info "Installing code-review..."
+      spin 180 "code-review install" claude plugin install code-review --pty || echo_warn "Failed to install code-review (install manually: claude plugin install code-review)"
     fi
   else
-    echo_info "Installing code-review..."
-    spin 180 "code-review install" claude plugin install code-review --pty || echo_warn "Failed to install code-review (install manually: claude plugin install code-review)"
+    echo_info "code-review is a Claude Code plugin — skipping for $AGENT_TYPE"
   fi
 
-  # MemPalace — primary memory layer
-  if grep -rl "mempalace" "$HOME/.claude/plugins/" > /dev/null 2>&1; then
-    if [ "$SKIP_UPDATES" = true ]; then
-      echo_skip "mempalace already installed (skipping update)"
+  # MemPalace — primary memory layer (Claude Code plugin)
+  if [ "$AGENT_TYPE" = "claude" ]; then
+    if grep -rl "mempalace" "$HOME/.claude/plugins/" > /dev/null 2>&1; then
+      if [ "$SKIP_UPDATES" = true ]; then
+        echo_skip "mempalace already installed (skipping update)"
+      else
+        echo_info "Updating mempalace..."
+        spin 60 "mempalace update" claude plugin install --scope user mempalace --pty || echo_warn "mempalace update failed"
+        echo_success "mempalace updated"
+      fi
     else
-      echo_info "Updating mempalace..."
-      spin 60 "mempalace update" claude plugin install --scope user mempalace --pty || echo_warn "mempalace update failed"
-      echo_success "mempalace updated"
+      echo_info "Installing mempalace..."
+      spin 120 "mempalace marketplace add" claude plugin marketplace add MemPalace/mempalace --pty || echo_warn "Failed to add mempalace marketplace"
+      spin 180 "mempalace install" claude plugin install --scope user mempalace --pty || echo_warn "Failed to install mempalace (install manually: claude plugin install --scope user mempalace)"
     fi
   else
-    echo_info "Installing mempalace..."
-    spin 120 "mempalace marketplace add" claude plugin marketplace add MemPalace/mempalace --pty || echo_warn "Failed to add mempalace marketplace"
-    spin 180 "mempalace install" claude plugin install --scope user mempalace --pty || echo_warn "Failed to install mempalace (install manually: claude plugin install --scope user mempalace)"
+    echo_info "mempalace Claude Code plugin — skipping for $AGENT_TYPE (MCP server configured separately)"
   fi
 
   # MemPalace CLI (uv tool)
@@ -1002,14 +1117,14 @@ if [ "$SKIP_OPTIONAL" = false ] && [ "${_skip_step_3:-false}" = "false" ]; then
     echo_info "Connecting lean-ctx to all AI tools..."
     spin 120 "lean-ctx onboard" lean-ctx onboard || echo_warn "lean-ctx onboard failed"
     source "$HOME/.bashrc" 2>/dev/null || true
-    spin 120 "lean-ctx init (Claude agent)" lean-ctx init --agent claude || echo_warn "lean-ctx init --agent claude timed out (may need manual: claude mcp add lean-ctx lean-ctx)"
+    spin 120 "lean-ctx init ($AGENT_TYPE agent)" lean-ctx init --agent "$AGENT_TYPE" || echo_warn "lean-ctx init --agent $AGENT_TYPE timed out"
     echo_success "lean-ctx installed"
   fi
 
   if [ -f "$HOME/.claude/rules/lean-ctx.md" ]; then
     echo_success "lean-ctx rules configured at ~/.claude/rules/lean-ctx.md"
   else
-    echo_warn "lean-ctx rules not found after init — you may need to run: lean-ctx init --agent claude"
+    echo_warn "lean-ctx rules not found after init — you may need to run: lean-ctx init --agent $AGENT_TYPE"
   fi
 fi
 
@@ -1061,11 +1176,15 @@ if [ "$SKIP_OPTIONAL" = false ] && [ "${_skip_step_3:-false}" = "false" ]; then
     fi
 
     if command -v headroom >/dev/null 2>&1; then
-      if spin 30 "headroom MCP verify" "claude mcp list" 2>/dev/null | grep -q headroom; then
-        echo_success "headroom MCP already configured"
+      if [ "$AGENT_TYPE" = "claude" ]; then
+        if spin 30 "headroom MCP verify" "claude mcp list" 2>/dev/null | grep -q headroom; then
+          echo_success "headroom MCP already configured"
+        else
+          echo_info "Configuring headroom MCP..."
+          spin 120 "headroom MCP install" headroom mcp install || echo_warn "headroom mcp install timed out"
+        fi
       else
-        echo_info "Configuring headroom MCP..."
-        spin 120 "headroom MCP install" headroom mcp install || echo_warn "headroom mcp install timed out"
+        echo_info "headroom MCP — configure manually for $AGENT_TYPE"
       fi
     fi
   fi
@@ -1092,16 +1211,20 @@ if [ "$SKIP_OPTIONAL" = false ] && [ "${_skip_step_3:-false}" = "false" ]; then
 
   if command -v codegraph >/dev/null 2>&1; then
     # Install MCP server
-    if spin 30 "codegraph MCP check" "claude mcp list" 2>/dev/null | grep -qi codegraph; then
-      echo_success "codegraph MCP already configured"
-    else
-      echo_info "Configuring codegraph MCP server..."
-      spin 120 "codegraph MCP install" codegraph install --yes || echo_warn "codegraph install timed out (run manually: codegraph install --yes)"
-      if spin 30 "codegraph MCP verify" "claude mcp list" 2>/dev/null | grep -qi codegraph; then
-        echo_success "codegraph MCP configured"
+    if [ "$AGENT_TYPE" = "claude" ]; then
+      if spin 30 "codegraph MCP check" "claude mcp list" 2>/dev/null | grep -qi codegraph; then
+        echo_success "codegraph MCP already configured"
       else
-        echo_warn "codegraph MCP not detected after install — you may need to run: codegraph install --yes"
+        echo_info "Configuring codegraph MCP server..."
+        spin 120 "codegraph MCP install" codegraph install --yes || echo_warn "codegraph install timed out (run manually: codegraph install --yes)"
+        if spin 30 "codegraph MCP verify" "claude mcp list" 2>/dev/null | grep -qi codegraph; then
+          echo_success "codegraph MCP configured"
+        else
+          echo_warn "codegraph MCP not detected after install — you may need to run: codegraph install --yes"
+        fi
       fi
+    else
+      echo_info "codegraph MCP — configure manually for $AGENT_TYPE"
     fi
 
     # Initialize project index (skip if already exists)
