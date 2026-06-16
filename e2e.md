@@ -13,12 +13,46 @@
 3. **观察用户可见输出** — 退出码、标准输出/错误、生成的文件、数据库记录、页面内容 — 用户能看到的
 4. **不导入任何内部模块** — 绝不 `from internal import helper`，绝不 `import services.db`。如果只能通过 import 内部模块才能测试 → 那不是 E2E
 
+> **一句话总结：E2E 测试 = 用户在终端/浏览器做什么，测试就做什么。不跳过程序入口，不调用内部函数。**
+
 ## 铁律
 
 - **E2E 运行在真实环境中**（uv venv、真实数据库、真实文件系统）
 - **每一个入口必须测试。每一个入口参数必须测试。**
 - **如果自动化困难 → HITL（交给用户手动验证）**
 - **禁止 mock 外部依赖。** 数据库、网络、文件系统 — 全部真实的
+
+## E2E 测试快速参考
+
+**不同程序类型，E2E 测试从哪启动、如何模拟用户行为：**
+
+```python
+# CLI 程序 — 用户从终端敲命令，E2E 从入口模拟
+import subprocess
+result = subprocess.run(
+    ["python", "-m", "main", "login", "--user", "test", "--pass", "abc123"],
+    capture_output=True, text=True, cwd="."
+)
+assert result.returncode == 0          # 用户看到成功
+assert "Welcome back" in result.stdout  # 用户看到欢迎语
+
+# API 服务 — 用户通过 HTTP 请求，E2E 通过 HTTP 验证
+import requests
+resp = requests.post("http://localhost:3000/api/login", json={"user": "test"})
+assert resp.status_code == 200
+assert resp.json()["token"]            # 用户拿到 token
+
+# Web 应用 — 用户通过浏览器操作，E2E 模拟点击
+from playwright.sync_api import sync_playwright
+with sync_playwright() as p:
+    page = p.chromium.launch().new_page()
+    page.goto("http://localhost:3000")
+    page.fill("#username", "test")
+    page.click("#login-btn")            # 用户点击登录
+    page.wait_for_selector("#dashboard")  # 用户看到仪表盘
+```
+
+**关键：每个测试都是 `subprocess.run` 或等效方式从入口启动。不 import 项目内部代码。**
 
 ## E2E vs 单元测试 — 对比示例
 
@@ -39,7 +73,7 @@ assert result.stdout  # 太模糊，没验证用户实际看到的
 
 ### ✅ 这是 E2E（从入口模拟用户）
 ```python
-# CLI 程序 — 用户从终端敲命令
+# CLI 程序 — 用户从终端敲命令，E2E 从入口模拟
 result = subprocess.run(
     ["python", "-m", "main", "login", "--user", "test", "--pass", "abc123"],
     capture_output=True, text=True, cwd="."
@@ -48,14 +82,14 @@ assert result.returncode == 0          # 用户看到成功
 assert "Welcome back" in result.stdout  # 用户看到欢迎语
 assert "token=" in result.stderr        # 用户拿到 token
 
-# API 服务 — 用户通过 HTTP 请求
+# API 服务 — 用户通过 HTTP 请求，E2E 通过 HTTP 验证
 import requests
 resp = requests.post("http://localhost:3000/api/login", json={"user": "test", "pass": "abc123"})
 assert resp.status_code == 200
-assert resp.json()["token"]
+assert resp.json()["token"]            # 用户拿到 token
 assert "Welcome" in open("/tmp/dashboard.html").read()
 
-# Web 应用 — 用户通过浏览器操作（Playwright）
+# Web 应用 — 用户通过浏览器操作，E2E 模拟点击（Playwright）
 from playwright.sync_api import sync_playwright
 with sync_playwright() as p:
     browser = p.chromium.launch()
@@ -63,7 +97,7 @@ with sync_playwright() as p:
     page.goto("http://localhost:3000")
     page.fill("#username", "test")
     page.fill("#password", "abc123")
-    page.click("#login-btn")
+    page.click("#login-btn")            # 用户点击登录
     page.wait_for_selector("#dashboard")  # 用户看到仪表盘
     assert "Welcome" in page.text_content("h1")
 ```
@@ -170,11 +204,13 @@ assert "too long" in r.stderr.lower() or "invalid" in r.stderr.lower()
 
 **每写一个 E2E 测试，确认：**
 
-- [ ] **从哪个入口启动？**（CLI 命令 / API 地址 / GUI URL）
-- [ ] **用户做了什么操作？**（输入什么参数、点什么按钮、发什么请求）
-- [ ] **用户看到了什么结果？**（退出码、输出文字、文件变化、数据库记录）
-- [ ] **测试 import 了项目内部代码吗？** → 是 = 不是 E2E = 重写
+- [ ] **从哪个入口启动？**（CLI 命令 / API 地址 / GUI URL）— 必须是程序总入口，不是内部函数
+- [ ] **用户做了什么操作？**（输入什么参数、点什么按钮、发什么请求）— 模拟真实用户行为
+- [ ] **用户看到了什么结果？**（退出码、输出文字、文件变化、数据库记录）— 验证用户可见输出
+- [ ] **测试 import 了项目内部代码吗？** → 是 = 不是 E2E = 重写为从入口启动
 - [ ] **测试 mock 了数据库/文件系统/网络？** → 是 = 不是 E2E = 用真实环境
+
+> **自检：如果你的测试需要知道项目内部函数名或模块结构，那不是 E2E。**
 
 ## L2/L3 HITL
 
