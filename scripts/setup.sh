@@ -1117,14 +1117,42 @@ if [ "$SKIP_OPTIONAL" = false ] && [ "${_skip_step_3:-false}" = "false" ]; then
     echo_info "Connecting lean-ctx to all AI tools..."
     spin 120 "lean-ctx onboard" lean-ctx onboard || echo_warn "lean-ctx onboard failed"
     source "$HOME/.bashrc" 2>/dev/null || true
-    spin 120 "lean-ctx init ($AGENT_TYPE agent)" lean-ctx init --agent "$AGENT_TYPE" || echo_warn "lean-ctx init --agent $AGENT_TYPE timed out"
-    echo_success "lean-ctx installed"
-  fi
 
-  if [ -f "$HOME/.claude/rules/lean-ctx.md" ]; then
-    echo_success "lean-ctx rules configured at ~/.claude/rules/lean-ctx.md"
-  else
-    echo_warn "lean-ctx rules not found after init — you may need to run: lean-ctx init --agent $AGENT_TYPE"
+    # lean-ctx init --agent X is interactive (prompts for confirmation).
+    # Do the project-level config non-interactively:
+    #   1. Copy global rules → project-local .claude/rules/lean-ctx.md
+    #   2. Create .claude/settings.local.json with lean-ctx hooks
+    _lean_ctx_global_rules="$HOME/.claude/rules/lean-ctx.md"
+    if [ -f "$_lean_ctx_global_rules" ]; then
+      mkdir -p .claude/rules
+      cp "$_lean_ctx_global_rules" .claude/rules/lean-ctx.md
+      echo_success "lean-ctx project rules configured (.claude/rules/lean-ctx.md)"
+    else
+      echo_warn "lean-ctx global rules not found at $_lean_ctx_global_rules"
+    fi
+
+    if [ -f "$HOME/.claude/settings.local.json" ]; then
+      echo_success "lean-ctx project hooks already configured (.claude/settings.local.json)"
+    else
+      mkdir -p .claude
+      cat > .claude/settings.local.json <<'LEANCTX_EOF'
+{
+  "hooks": {
+    "PostToolUse": [{"hooks": [{"command": "lean-ctx hook observe", "type": "command"}], "matcher": ".*"}],
+    "PreCompact": [{"hooks": [{"command": "lean-ctx hook observe", "type": "command"}], "matcher": ".*"}],
+    "PreToolUse": [
+      {"hooks": [{"command": "lean-ctx hook rewrite", "type": "command"}], "matcher": "Bash|bash"},
+      {"hooks": [{"command": "lean-ctx hook redirect", "type": "command"}], "matcher": "Read|read|ReadFile|read_file|View|view|Grep|grep|Search|search|ListFiles|list_files|ListDirectory|list_directory"}
+    ],
+    "Stop": [{"hooks": [{"command": "lean-ctx hook observe", "type": "command"}], "matcher": ".*"}],
+    "UserPromptSubmit": [{"hooks": [{"command": "lean-ctx hook observe", "type": "command"}], "matcher": ".*"}]
+  }
+}
+LEANCTX_EOF
+      echo_success "lean-ctx project hooks configured (.claude/settings.local.json)"
+    fi
+
+    echo_success "lean-ctx installed"
   fi
 fi
 
