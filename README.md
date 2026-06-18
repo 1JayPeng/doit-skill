@@ -2,7 +2,9 @@
 
 **One command. Everything done.**
 
-Type `/doit <what you want>` in Claude Code. doit handles the rest: spec, plan, TDD, E2E tests, review, simplify, commit, push.
+Type `/doit <what you want>` in any supported AI coding CLI. doit handles the rest: spec, plan, TDD, E2E tests, review, simplify, commit, push.
+
+**Multi-CLI Support:** Claude Code, OpenCode, OpenAI Codex CLI, oh-my-pi, MiMo Code, and any MCP-supporting agent. Tool adapter auto-selected at install time via `--agent` flag.
 
 ```
 > /doit I need a user authentication system
@@ -419,6 +421,14 @@ A single `/doit` invocation may not complete the entire workflow. To continue fr
 
 ## Recent Changes
 
+**2026-06-18** — Multi-CLI support with tool adapters:
+- Decoupled doit-skill from Claude Code — works with Claude Code, OpenCode, Codex CLI, oh-my-pi, MiMo Code
+- New `adapters/` directory: one adapter per CLI maps abstract operations to native tools
+- Abstract `[[OPERATION]]` syntax in core files (`[[TASK:create]]`, `[[USER:ask]]`, `[[SKILL:route]]`, etc.)
+- `core/` directory: tool-agnostic workflow definitions
+- `setup.sh --agent` flag: auto-detects or targets specific CLI
+- Enforced `[[USER:ask]]` as mandatory tool call, not text output
+
 **2026-06-07** — Knowledge distillation module (Phase 9.5.5):
 - New `learn/` module: structured knowledge extraction at Phase 9.5.5
 - Knowledge injection at Phase 1/2 — injects relevant past sessions before grill
@@ -449,35 +459,39 @@ A single `/doit` invocation may not complete the entire workflow. To continue fr
 
 ```
 doit-skill/
-├── SKILL.md          # Main entry point
-├── env-check.md      # Phase -1: environment detection
-├── classifier.md     # Request type detection
-├── doc-capture.md    # Doc capture (pre-phase)
-├── doit-config.md    # Config reference
-├── spec.md           # Phase 1: grill + REQ generation
-├── plan.md           # Phase 2: code graph scan
-├── debug.md          # Debug workflow D0-D6 (Type B)
-├── execute.md        # Phase 3: TDD loop + Review+Simplify
-├── e2e.md            # Phase 4: end-to-end testing
-├── review.md         # Phase 5: code review
-├── review-simplify.md -> shared/review-simplify.md
-├── commit.md -> shared/commit.md
-├── errors.md         # Failure handling
-├── shared/           # Shared phases (Feature + Debug)
-│   ├── review-simplify.md
-│   ├── e2e-verify.md
-│   └── commit.md
-├── skills/           # Bundled skill dependencies
-│   ├── grill-me/     # Idea grilling
-│   ├── tdd/          # TDD loop
-│   ├── diagnose/     # Bug diagnosis
-│   ├── prototype/    # Throwaway prototypes
-│   ├── handoff/      # Session handoff
+├── SKILL.md              # Main entry point (multi-CLI aware)
+├── core/                 # Tool-agnostic workflow definitions
+│   ├── workflow.md       # Phase 0-10 workflow
+│   ├── iron-rules.md     # Iron rules
+│   ├── phase-0.md        # Phase 0: classify
+│   ├── phase-1.md        # Phase 1: spec + grill
+│   ├── execute.md        # Phase 3: TDD execution
+│   ├── env-check.md      # Phase -1: environment detection
+│   ├── subagent.md       # Subagent configuration
+│   └── shared/           # Shared phases
+│       ├── review-simplify.md
+│       ├── e2e-verify.md
+│       ├── commit.md
+│       └── phase-gate.md
+├── adapters/             # Tool adapters (one per CLI)
+│   ├── claude-code.md    # Claude Code native tools
+│   ├── opencode.md       # OpenCode native tools
+│   ├── codex.md          # OpenAI Codex CLI
+│   ├── oh-my-pi.md       # oh-my-pi (omp)
+│   ├── mimo-code.md      # MiMo Code
+│   └── default.md        # Generic fallback
+├── skills/               # Bundled skill dependencies
+│   ├── grill-me/         # Idea grilling
+│   ├── tdd/              # TDD loop
+│   ├── diagnose/         # Bug diagnosis
+│   ├── prototype/        # Throwaway prototypes
+│   ├── handoff/          # Session handoff
 │   └── improve-codebase-architecture/
-└── scripts/          # Install and utility scripts
-    ├── setup.sh      # Full install
-    ├── doctor.sh     # Dependency health check
-    └── add-dependency.sh
+├── scripts/              # Install and utility scripts
+│   ├── setup.sh          # Full install (--agent flag)
+│   ├── doctor.sh         # Dependency health check
+│   └── add-dependency.sh
+└── [legacy files...]     # phases.md, rules.md, env-check.md, etc.
 ```
 
 ## Adding Dependencies
