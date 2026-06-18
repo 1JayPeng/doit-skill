@@ -54,10 +54,12 @@ Every question must include:
 
 ## Execution Rules
 
+- **ALWAYS call `[[USER:ask]]` first** — output the question with options. Do NOT skip to defaults without asking.
 - Ask questions via `[[USER:ask]]` with `multiSelect: false`
 - Questions are **dynamically generated** from uncertainty scan + research, not fixed templates
 - After all questions, summarize user's answers before proceeding to spec
 - If user skips or gives incomplete answer → **use the recommended default and continue**. Do not block the workflow.
+- **Critical: `[[USER:ask]]` is MANDATORY for every grill question.** The user must see the options. Skipping the call = user never sees the question = the grill is useless.
 - If user's requirements contain contradictions or are unrealistic → **immediately point out**, use `[[USER:ask]]` (non-interruptive) to clarify
 - Use user's language (if user writes in Chinese, ask in Chinese; technical terms stay in English)
 - Save progress to `.doit/grill-state.json` after grill for cross-session resume
