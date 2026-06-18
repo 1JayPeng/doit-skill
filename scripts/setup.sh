@@ -4,7 +4,7 @@
 #
 # Installs doit-skill and all dependencies.
 # Supports:
-#   --agent <type>     Target AI coding CLI: claude|opencode|codex|auto (default: auto)
+#   --agent <type>     Target AI coding CLI: claude|opencode|codex|oh-my-pi|mimo|auto (default: auto)
 #   --skip-optional    Skip optional skills and external tools
 #   --skip-updates     Skip updating already-installed tools
 
@@ -50,6 +50,18 @@ _set_agent_paths() {
       GLOBAL_SKILL_DIR="$HOME/.codex/skills"
       MAIN_INSTRUCTIONS="AGENTS.md"
       MCP_CONFIG_FILE="$HOME/.codex/config.toml"
+      ;;
+    oh-my-pi)
+      SKILL_DIR=".omp/skills"
+      GLOBAL_SKILL_DIR="$HOME/.config/omp/skills"
+      MAIN_INSTRUCTIONS="AGENTS.md"
+      MCP_CONFIG_FILE="$HOME/.config/omp/mcp.json"
+      ;;
+    mimo)
+      SKILL_DIR=".mimo/skills"
+      GLOBAL_SKILL_DIR="$HOME/.config/mimo/skills"
+      MAIN_INSTRUCTIONS="AGENTS.md"
+      MCP_CONFIG_FILE="$HOME/.config/mimo/settings.json"
       ;;
     *)
       SKILL_DIR=".ai/skills"
