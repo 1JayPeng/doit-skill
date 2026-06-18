@@ -2,19 +2,19 @@
 
 **本文件包含 Phase 的详细执行步骤。SKILL.md 仅保留索引 + [LOAD] 指令。执行对应 phase 前，模型必须读取本节。**
 
-**指令集:** **[LOAD]** = 必须读取的文件。**[LOAD:phase-N]** = phase 专用 skill 加载（如 [LOAD:phase-1] grill-me）。**[RELEASE:phase-N]** = skill 释放 + headroom_compress 压缩上下文。**[CALL]** = 必须执行的 MCP 工具调用。
+**指令集:** **[LOAD]** = 必须读取的文件。**[LOAD:phase-N]** = phase 专用 skill 加载（如 [LOAD:phase-1] grill-me）。**[RELEASE:phase-N]** = skill 释放 + `[[MEMORY:compress]]` 压缩上下文。**[CALL]** = 必须执行的 MCP 工具调用。
 
 ## 指令集 — Progressive Disclosure
 
 **[LOAD]** = 必须读取的文件（与原有语义不变）。
-**[LOAD:phase-N] skill-name** = 在 phase N 开始时加载指定 skill（`Skill skill="skill-name"`）。
-**[RELEASE:phase-N] skill-name** = 在 phase N 结束时释放指定 skill + 调用 `headroom_compress` 压缩上下文。
+**[LOAD:phase-N] skill-name** = 在 phase N 开始时加载指定 skill（`[[SKILL:route target="skill-name"]]`）。
+**[RELEASE:phase-N] skill-name** = 在 phase N 结束时释放指定 skill + 调用 `[[MEMORY:compress]]` 压缩上下文。
 **[LOAD:session] skill-name** = 加载后全程驻留，不参与 [RELEASE]（仅 behavior 型 skill 使用）。
 
 | 指令 | 语义 | 示例 |
 |------|------|------|
-| `[LOAD:phase-1] grill-me` | Phase 1 开始时加载 grill-me skill | `Skill skill="grill-me"` |
-| `[RELEASE:phase-1] grill-me` | Phase 1 结束后释放 + headroom_compress | 上下文释放 |
+| `[LOAD:phase-1] grill-me` | Phase 1 开始时加载 grill-me skill | `[[SKILL:route target="grill-me"]]` |
+| `[RELEASE:phase-1] grill-me` | Phase 1 结束后释放 + `[[MEMORY:compress]]` | 上下文释放 |
 | `[LOAD:session] caveman` | Phase 0 加载，全程驻留 | 不释放 |
 
 **Skill 加载策略:** grill-me 不在 Phase 0 加载。它在 Phase 1 开始时 [LOAD:phase-1] 加载，Phase 1 结束时 [RELEASE:phase-1] 释放。caveman 全程驻留。
@@ -29,11 +29,11 @@ fi
 ```
 **Why:** avoids working on stale code, prevents conflicts. `|| true` so network errors don't block.
 
-**Step 1 — Load doit + caveman skills. [LOAD:session] caveman.** Call the Skill tool for doit + caveman only. **Do NOT load grill-me here.** grill-me loads at Phase 1 start via [LOAD:phase-1].
+**Step 1 — Load doit + caveman skills. [LOAD:session] caveman.** Load doit + caveman via `[[SKILL:route]]`. **Do NOT load grill-me here.** grill-me loads at Phase 1 start via [LOAD:phase-1].
 
 ```
-Skill skill="doit"
-Skill skill="caveman"
+[[SKILL:route target="doit"]]
+[[SKILL:route target="caveman"]]
 ```
 
 If caveman skill is not found, announce `[WARN] caveman not installed -> verbose mode` and continue.
@@ -129,48 +129,48 @@ mempalace_search wing="sessions" room="problems" limit=3 max_distance=0.7
 
 If MemPalace unavailable (any call errors) → skip all MP steps silently for this session. Filesystem remains primary.
 
-**Step 3 — Create Phase Task List (MANDATORY).** After classification, create TaskCreate tasks for each phase in the workflow. This is the model's visible checklist — context can grow, but the task list persists.
+**Step 3 — Create Phase Task List (MANDATORY).** After classification, create `[[TASK:create]]` tasks for each phase in the workflow. This is the model's visible checklist — context can grow, but the task list persists.
 
-**[CALL] Create tasks based on type. Execute ALL TaskCreate calls in parallel:**
+**[CALL] Create tasks based on type. Execute ALL `[[TASK:create]]` calls in parallel:**
 
 ```
 # Type F (full feature workflow):
-TaskCreate subject="Phase 0 - Classify" description="Classify request, announce type, create task list"
-TaskCreate subject="Phase 1 - Spec" description="Grill 5+ questions, write spec, create branch"
-TaskCreate subject="Phase 2 - Plan" description="Impact analysis, codegraph + tokensave context, order REQs"
-TaskCreate subject="Phase 3 - Execute" description="TDD per REQ, per-REQ review+simplify"
-TaskCreate subject="Phase 4 - E2E" description="End-to-end tests in real environment"
-TaskCreate subject="Phase 5 - Review" description="Feature review, merge duplicates"
-TaskCreate subject="Phase 6 - Simplify" description="Remove dead code, flatten abstractions"
-TaskCreate subject="Phase 7 - E2E Verify" description="Re-run E2E vs spec REQs"
-TaskCreate subject="Phase 8 - Commit+Push" description="Pre-commit gate, commit, push to remote"
-TaskCreate subject="Phase 9 - Cleanup" description="Remove intermediate files, keep archive"
-TaskCreate subject="Phase 9.5 - Summary" description="Completion summary, knowledge extraction"
-TaskCreate subject="Phase 10 - Session End" description="Stats, MP diary, headroom_compress"
+[[TASK:create subject="Phase 0 - Classify" description="Classify request, announce type, create task list"]]
+[[TASK:create subject="Phase 1 - Spec" description="Grill 5+ questions, write spec, create branch"]]
+[[TASK:create subject="Phase 2 - Plan" description="Impact analysis, codegraph + tokensave context, order REQs"]]
+[[TASK:create subject="Phase 3 - Execute" description="TDD per REQ, per-REQ review+simplify"]]
+[[TASK:create subject="Phase 4 - E2E" description="End-to-end tests in real environment"]]
+[[TASK:create subject="Phase 5 - Review" description="Feature review, merge duplicates"]]
+[[TASK:create subject="Phase 6 - Simplify" description="Remove dead code, flatten abstractions"]]
+[[TASK:create subject="Phase 7 - E2E Verify" description="Re-run E2E vs spec REQs"]]
+[[TASK:create subject="Phase 8 - Commit+Push" description="Pre-commit gate, commit, push to remote"]]
+[[TASK:create subject="Phase 9 - Cleanup" description="Remove intermediate files, keep archive"]]
+[[TASK:create subject="Phase 9.5 - Summary" description="Completion summary, knowledge extraction"]]
+[[TASK:create subject="Phase 10 - Session End" description="Stats, MP diary, [[MEMORY:compress]]"]]
 ```
 
 ```
 # Type Q (query workflow):
-TaskCreate subject="Phase 0 - Classify" description="Classify request, announce Type Q"
-TaskCreate subject="Query" description="Use tools to research and answer directly"
-TaskCreate subject="Phase 10 - Compact" description="headroom_compress"
+[[TASK:create subject="Phase 0 - Classify" description="Classify request, announce Type Q"]]
+[[TASK:create subject="Query" description="Use tools to research and answer directly"]]
+[[TASK:create subject="Phase 10 - Compact" description="[[MEMORY:compress]]"]]
 ```
 
 ```
 # Type S (simple workflow):
-TaskCreate subject="Phase 0 - Classify" description="Classify request, announce type"
-TaskCreate subject="Execute" description="Execute the simple change directly"
-TaskCreate subject="Phase 9.5 - Summary" description="Completion summary"
-TaskCreate subject="Phase 10 - Session End" description="Stats, headroom_compress"
+[[TASK:create subject="Phase 0 - Classify" description="Classify request, announce type"]]
+[[TASK:create subject="Execute" description="Execute the simple change directly"]]
+[[TASK:create subject="Phase 9.5 - Summary" description="Completion summary"]]
+[[TASK:create subject="Phase 10 - Session End" description="Stats, [[MEMORY:compress]]"]]
 ```
 
 ```
 # Type B (bug workflow):
-TaskCreate subject="Phase 0 - Classify" description="Classify request, announce type"
-TaskCreate subject="D0-D6 Debug" description="Debug workflow per debug.md"
-TaskCreate subject="Phase 8 - Commit+Push" description="Commit fix, push to remote"
-TaskCreate subject="Phase 9.5 - Summary" description="Completion summary"
-TaskCreate subject="Phase 10 - Session End" description="Stats, headroom_compress"
+[[TASK:create subject="Phase 0 - Classify" description="Classify request, announce type"]]
+[[TASK:create subject="D0-D6 Debug" description="Debug workflow per debug.md"]]
+[[TASK:create subject="Phase 8 - Commit+Push" description="Commit fix, push to remote"]]
+[[TASK:create subject="Phase 9.5 - Summary" description="Completion summary"]]
+[[TASK:create subject="Phase 10 - Session End" description="Stats, [[MEMORY:compress]]"]]
 ```
 
 ```
@@ -179,20 +179,20 @@ TaskCreate subject="Phase 10 - Session End" description="Stats, headroom_compres
 
 **After creating tasks, mark Phase 0 as done:**
 ```
-TaskUpdate taskId="<phase0_task_id>" status="completed"
+[[TASK:update taskId="<phase0_task_id>" status="completed"]]
 ```
 
 **At each phase boundary, update the task status:**
 ```
-TaskUpdate taskId="<phase_task_id>" status="in_progress"  # at phase start
-TaskUpdate taskId="<phase_task_id>" status="completed"   # at phase end
+[[TASK:update taskId="<phase_task_id>" status="in_progress"]]  # at phase start
+[[TASK:update taskId="<phase_task_id>" status="completed"]]   # at phase end
 ```
 
 **Why:** The task list is visible in the UI. Even when context grows and the model forgets which phase it's in, the task list shows what's pending/in-progress/completed. This prevents phase skipping.
 
 **铁律: 不创建 task list = Phase 0 未完成 = 工作流未开始。**
 
-**[CALL] After creating tasks, verify with TaskList.** The task list should show all phases as `pending`.
+**[CALL] After creating tasks, verify with `[[TASK:list]]`.** The task list should show all phases as `pending`.
 
 ## MemPalace Proactive Query — When, What, Why
 
@@ -217,8 +217,8 @@ Each phase has a specific trigger -> query -> action mapping. Follow it.
 - Empty result → proceed without MP context
 
 **At each phase boundary:**
-1. `TaskUpdate taskId="<N>" status="in_progress"` — when entering a phase
-2. `TaskUpdate taskId="<N>" status="completed"` — when completing a phase
+1. `[[TASK:update taskId="<N>" status="in_progress"]]` — when entering a phase
+2. `[[TASK:update taskId="<N>" status="completed"]]` — when completing a phase
 3. Never skip a task. A visible `pending` task at Phase 10 means the workflow is incomplete.
 
 **Before proceeding: check if user's prompt contains reference documentation.** If yes, capture it before any phase runs. See [doc-capture.md](doc-capture.md). Doc capture is independent of classification type (R/S/F/B) — always run first.
@@ -273,9 +273,9 @@ Before asking grill questions, inject relevant past knowledge to inform decision
 If no knowledge found → proceed with standard grill. If knowledge tools unavailable → skip injection.
 
 **Step 1: [LOAD:phase-1] grill-me → Grill FIRST (before writing any REQs):**
-- `Skill skill="grill-me"` — 加载 grill 协议指令
+- `[[SKILL:route target="grill-me"]]` — 加载 grill 协议指令
 - **Uncertainty scan:** List 3-5 things you're uncertain about in the user's request. Rate 1-5. Focus questions on items >= 3.
-- Ask 5+ questions via AskUserQuestion (Type F) or 3+ (Type B). Each question must:
+- Ask 5+ questions via `[[USER:ask]]` (Type F) or 3+ (Type B). Each question must:
   - Reference a specific detail from the user's request
   - Explain WHY the answer matters (consequence of getting it wrong)
   - Provide 2-4 concrete options, each with: **named approach** + **`->` consequence** + **`Trade-off:`** + **`适合:` project fit**
@@ -288,16 +288,16 @@ If no knowledge found → proceed with standard grill. If knowledge tools unavai
 
 **Step 2: Write spec** — Split grill output into REQ-N items, save to `.spec/current.md`. See [spec.md](spec.md).
 
-**铁律：Grill 最低 5 个问题(Type F) / 3 个(Type B)。** Phase 1 必须至少 5 个 grill 问题（通过 AskUserQuestion）。少于 5 个 = 未完成的 Phase 1 = 不能进入 Phase 2。
+**铁律：Grill 最低 5 个问题(Type F) / 3 个(Type B)。** Phase 1 必须至少 5 个 grill 问题（通过 `[[USER:ask]]`）。少于 5 个 = 未完成的 Phase 1 = 不能进入 Phase 2。
 
 **Phase 1 完成后：** 记录工作日志（grill 问题数、用户回答、REQ 数量）。See [worklog.md](worklog.md)。
 
-**[RELEASE:phase-1] grill-me** — grill 协议完成，释放 grill-me skill 上下文。执行 `headroom_compress` 压缩上下文窗口。
+**[RELEASE:phase-1] grill-me** — grill 协议完成，释放 grill-me skill 上下文。执行 `[[MEMORY:compress]]` 压缩上下文窗口。
 
 ### Phase 1 → Phase 2 Gate
 
 进入 Phase 2 前，自检：
-1. 统计本会话 AskUserQuestion 调用次数 — 必须 >= 5 (Type F) 或 >= 3 (Type B) 个 grill 问题
+1. 统计本会话 `[[USER:ask]]` 调用次数 — 必须 >= 5 (Type F) 或 >= 3 (Type B) 个 grill 问题
 2. 确认 GRILL CHECKLIST 全部完成（challenge, search, MP, alternatives, scope）
 3. 确认 `.doit/grill-summary.json` 已写入
 4. 如果任一检查失败，返回 Phase 1 补全缺失步骤
@@ -442,14 +442,14 @@ RTK unavailable → `[WARN] RTK not installed` and continue.
 
 **This phase always runs last.** It gathers session statistics and preserves knowledge for future sessions.
 
-**Phase 10 硬门控 — `headroom_compress` 是最后一步，不可跳过：**
+**Phase 10 硬门控 — `[[MEMORY:compress]]` 是最后一步，不可跳过：**
 ```
-headroom_compress(content="[full conversation context]")
+[[MEMORY:compress]]
 ```
-**Why:** Without compression, context grows unbounded. Next session starts with stale, bloated context. This is a hard gate — Phase 10 is NOT complete until `headroom_compress` is called.
-**铁律: Phase 10 不调用 `headroom_compress` = Phase 10 未完成 = 工作流未结束。**
+**Why:** Without compression, context grows unbounded. Next session starts with stale, bloated context. This is a hard gate — Phase 10 is NOT complete until `[[MEMORY:compress]]` is called.
+**铁律: Phase 10 不调用 `[[MEMORY:compress]]` = Phase 10 未完成 = 工作流未结束。**
 
-**⚠️ Compact 副作用：** `headroom_compress` 压缩上下文后，TaskUpdate 的 `taskId` 会丢失。如果 compact 后遇到 `InputValidationError: taskId is missing`，参见 [errors.md](errors.md)#compact-后-task-丢失。
+**⚠️ Compact 副作用：** `[[MEMORY:compress]]` 压缩上下文后，`[[TASK:update]]` 的 `taskId` 会丢失。如果 compact 后遇到 `InputValidationError: taskId is missing`，参见 [errors.md](errors.md)#compact-后-task-丢失。
 
 ## Resume — Cross-Session Recovery
 

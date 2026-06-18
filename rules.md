@@ -4,25 +4,25 @@
 
 ## 铁律 — Non-Interruptive Questions
 
-**永远不要停止对话来问用户问题。始终使用 AskUserQuestion 工具。**
+**永远不要停止对话来问用户问题。始终使用 `[[USER:ask]]` 工具。**
 
 旧模式：打印问题 -> 停止 -> 等用户输入。这阻塞工作流、浪费 token、让用户烦躁。
-新模式：调用 `AskUserQuestion`，用户无需中断即可回答。Agent 继续执行。
+新模式：调用 `[[USER:ask]]`，用户无需中断即可回答。Agent 继续执行。
 
 - 绝不写"你选哪个？"然后停下来等
 - 绝不写"Wait for user input"然后暂停
-- 始终用 `AskUserQuestion` + 2-4 个选项
+- 始终用 `[[USER:ask]]` + 2-4 个选项
 - 始终提供合理默认值作为第一个选项
 - 用户不回答 -> 用推荐默认值继续，不阻塞工作流
-- **grill 问题同样适用。** 5+(Type F)/3+(Type B) 个 grill 问题必须通过 AskUserQuestion 发出，用户不回答则用推荐默认值继续。跳过 grill 问题 ≠ 用户不回答。
+- **grill 问题同样适用。** 5+(Type F)/3+(Type B) 个 grill 问题必须通过 `[[USER:ask]]` 发出，用户不回答则用推荐默认值继续。跳过 grill 问题 ≠ 用户不回答。
 
 ### Applied Everywhere
 
-- **Phase -1 (Env Detection)** — env conflict -> AskUserQuestion with detected envs as options
-- **Phase 1 (Spec)** — grill -> AskUserQuestion for each clarification
-- **Phase 3 (Execute)** — spec alignment -> AskUserQuestion "Proceed to next REQ?"
-- **Phase 4 (E2E)** — L2/L3 HITL -> AskUserQuestion "Which combo needs testing?"
-- **Debug (D0)** — reproduction steps unclear -> AskUserQuestion
+- **Phase -1 (Env Detection)** — env conflict -> `[[USER:ask]]` with detected envs as options
+- **Phase 1 (Spec)** — grill -> `[[USER:ask]]` for each clarification
+- **Phase 3 (Execute)** — spec alignment -> `[[USER:ask]]` "Proceed to next REQ?"
+- **Phase 4 (E2E)** — L2/L3 HITL -> `[[USER:ask]]` "Which combo needs testing?"
+- **Debug (D0)** — reproduction steps unclear -> `[[USER:ask]]`
 
 ## 铁律 — Background Execution
 
@@ -63,7 +63,7 @@
 1. **启动 tmux session** — 命名 `doit-<phase>`，写入 `.scratch/logs/<name>.log`
 2. **日志必须包含 `[START]` 和 `[END]` 标记** — `[END]` 包含 exit_code
 3. **设置 `/loop` 轮询** — 检查 `[END]` 标记，完成后读取结果并报告
-4. **压缩上下文** — 调用 `headroom_compress` 压缩当前上下文，避免轮询期间上下文膨胀
+4. **压缩上下文** — 调用 `[[MEMORY:compress]]` 压缩当前上下文，避免轮询期间上下文膨胀
 5. **轮询期间做其他工作** — 不空等
 
 ### 禁止行为
@@ -79,7 +79,7 @@
 
 - **始终 tmux + 实时日志** — 所有 >10s 任务
 - **始终 `/loop` 轮询** — 不空等，不手动 `tail -f`
-- **始终压缩上下文** — 设置轮询后立即调用 `headroom_compress`，避免长轮询期间上下文无限膨胀
+- **始终压缩上下文** — 设置轮询后立即调用 `[[MEMORY:compress]]`，避免长轮询期间上下文无限膨胀
 - **绝不说"waiting for X..."然后沉默** — 要么轮询，要么做其他工作
 - **估计运行时，设置 2x 超时** — 如果预计 3min，timeout = 6min
 
@@ -151,9 +151,9 @@ Phase -1 → Phase 0 → Phase 1 → Phase 2 → Phase 3 → Phase 4 → Phase 5
 - **禁止**跳过 Phase 7（E2E 验证）直接提交 — 简化后必须重新验证
 - **禁止**跳过 Phase 8（Commit + Push）说"完成" — 未提交等于丢失
 - **禁止**跳过 Phase 10（Session Summary）结束对话 — 不记录统计信息
-- **禁止**在 Phase 10 不调用 `headroom_compress` — Phase 10 不完整 = 工作流未结束
-- **禁止**在 Phase 0 不创建 TaskCreate task 列表 — 不创建 task = 模型无法跟踪进度 = 跳过
-- **禁止**在 Phase 10 完成时 TaskList 还有 `pending` 任务 — 有 pending = 工作流未完整执行
+- **禁止**在 Phase 10 不调用 `[[MEMORY:compress]]` — Phase 10 不完整 = 工作流未结束
+- **禁止**在 Phase 0 不创建 `[[TASK:create]]` task 列表 — 不创建 task = 模型无法跟踪进度 = 跳过
+- **禁止**在 Phase 10 完成时 `[[TASK:list]]` 还有 `pending` 任务 — 有 pending = 工作流未完整执行
 
 **Phase 完成后必须继续，不能停在中间：**
 - Phase 3 完成 → 立即 Phase 4，不要停
@@ -167,7 +167,7 @@ Phase -1 → Phase 0 → Phase 1 → Phase 2 → Phase 3 → Phase 4 → Phase 5
 
 **唯一合法结束状态是 Phase 10 完成。** 如果要说"完成"而 Phase 10 还没执行，说明你没做完。
 
-**Type Q（查询）极简流程：** Phase 0 → 直接用工具回答 → Phase 10 (仅 headroom_compress)。不创建分支、不写 spec、不 commit。
+**Type Q（查询）极简流程：** Phase 0 → 直接用工具回答 → Phase 10 (仅 `[[MEMORY:compress]]`)。不创建分支、不写 spec、不 commit。
 **Type S（简单）简化流程：** Phase 0 → 直接执行 → Phase 9.5 → Phase 10。简单变更也需 commit + session summary。
 **Type B（Bug）调试流程：** Phase 0 → D0-D6 → Phase 8 → Phase 9.5 → Phase 10.
 
@@ -196,7 +196,7 @@ Phase -1 → Phase 0 → Phase 1 → Phase 2 → Phase 3 → Phase 4 → Phase 5
 - [ ] Alternative approaches — 至少 1 个问题
 - [ ] Scope clarification — 至少 1 个问题
 
-**所有 grill 问题必须使用 AskUserQuestion。** 永不停止等待。
+**所有 grill 问题必须使用 `[[USER:ask]]`。** 永不停止等待。
 
 ### Applied Everywhere
 
@@ -206,7 +206,7 @@ Phase -1 → Phase 0 → Phase 1 → Phase 2 → Phase 3 → Phase 4 → Phase 5
 
 ## 铁律 — 危险操作保护
 
-**涉及数据或代码删除的操作，必须先通过 AskUserQuestion 确认，然后执行。**
+**涉及数据或代码删除的操作，必须先通过 `[[USER:ask]]` 确认，然后执行。**
 
 - **数据库**：DROP TABLE, TRUNCATE, DELETE/UPDATE 无 WHERE → 先确认
 - **文件系统**：rm -rf / rm -r / rm -f → 先确认
@@ -222,11 +222,11 @@ See [dangerous-ops.md](dangerous-ops.md) for full patterns and hook configuratio
 **能一次对话完成的，不拆成多次。减少中断、减少等待、减少用户反复确认。**
 
 旧模式：每个阶段结束都停下来等用户确认 -> 一个功能需要 10 轮对话 -> 用户疲劳、上下文丢失。
-新模式：按工作流连续执行 -> 关键决策点用 AskUserQuestion -> 一次对话完成 Phase -1 到 Phase 10。
+新模式：按工作流连续执行 -> 关键决策点用 `[[USER:ask]]` -> 一次对话完成 Phase -1 到 Phase 10。
 
 **核心原则：**
 - **连续执行，不停顿** — Phase 完成后立即进入下一 Phase，不等待用户确认
-- **关键决策才问用户** — 只有影响架构、安全、数据的决策才用 AskUserQuestion
+- **关键决策才问用户** — 只有影响架构、安全、数据的决策才用 `[[USER:ask]]`
 - **默认值合理就继续** — 用户不回答 -> 用默认值继续，不阻塞
 - **后台任务不阻塞** — 长时间任务后台化，轮询期间继续做其他工作
 - **一次对话完成整个工作流** — 目标是一次 /doit 调用完成 Phase -1 到 Phase 10
@@ -406,7 +406,7 @@ Reason: <为什么要运行这个命令，一句话>
 | `taskId` 参数缺失 | Compact 后 task 状态丢失 | [errors.md](errors.md)#compact-后-task-丢失 |
 | 其他参数缺失 | 工具调用参数不完整 | **[LOAD] [tool-params.md](tool-params.md)** |
 
-**Compact 后遇到 `TaskUpdate` 报错 → 立即查看 [errors.md](errors.md) "Compact 后 Task 丢失"章节。不要重试 TaskUpdate。**
+**Compact 后遇到 `[[TASK:update]]` 报错 → 立即查看 [errors.md](errors.md) "Compact 后 Task 丢失"章节。不要重试。**
 **其他 InputValidationError → [LOAD] [tool-params.md](tool-params.md) 查看工具签名。永远不要用相同参数重试。**
 
 ## 铁律 — 不重复相同操作

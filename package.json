@@ -6,10 +6,14 @@
   "keywords": [
     "skill",
     "claude-code",
+    "opencode",
+    "codex-cli",
     "tdd",
     "workflow",
     "spec-driven",
-    "agentic"
+    "agentic",
+    "multi-cli",
+    "mcp"
   ],
   "author": "alice",
   "license": "MIT",
