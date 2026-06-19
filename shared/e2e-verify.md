@@ -17,22 +17,22 @@ Review+Simplify done
   │                                         │
   │  All tests pass? ── No ──→ Spec check:  │
   │  │                                      │
-  │  │  Was assertion changed to match       │
-  │  │  wrong output? → revert assertion    │
-  │  │  Fix code to match spec, re-run ──┐  │
-  │  │                                   │  │
-  │  │                                   ↓  │
-  │  Yes                                  │  │
-  │  │                              (loop) │  │
-  │  ↓                                     │  │
-  │  Spec alignment check ←────────────────┘  │
-  │  (compare actual output vs spec REQs)    │
-  │  ↓                                        │
-  │  Match? ── No ──→ Fix output to match    │
-  │  │          spec, re-run                 │
-  │  Yes                                      │
-  │  ↓                                        │
-  │  Commit                                    │
+  │  │  Was assertion changed to match      │
+  │  │  wrong output? → revert assertion   │
+  │  │  Fix code to match spec, re-run ──┐ │
+  │  │                                   │ │
+  │  │                                   ↓ │
+  │  Yes                                │ │
+  │  │                            (loop) │ │
+  │  ↓                                    │ │
+  │  Spec alignment check ←───────────────┘ │
+  │  (compare actual output vs spec REQs)  │
+  │  ↓                                       │
+  │  Match? ── No ──→ Fix output to match  │
+  │  │          spec, re-run                │
+  │  Yes                                     │
+  │  ↓                                       │
+  │  Commit                                   │
   └──────────────────────────────────────────┘
 ```
 
@@ -49,14 +49,7 @@ After e2e tests pass, **before proceeding to commit**:
 
 ### Run E2E Tests (each loop iteration)
 
-**Primary (fast path — only affected tests):**
-```
-tokensave_affected_tests(files=[<files changed by simplify>])
-tokensave_run_affected_tests(changed_paths=[<files changed by simplify>])
-```
-If `affected_tests` returns all tests (no narrowing), fall back to full suite.
-
-**Fallback (full suite):**
+**Primary:**
 ```
 ctx_execute(language="shell", code="uv run pytest tests/e2e/ -v --tb=short")
 ```
@@ -67,10 +60,8 @@ ctx_execute(language="shell", code="uv run pytest tests/e2e/ -v --tb=short")
 Compare actual output against spec:
 1. `ctx_search(queries=[<REQ descriptions from spec>])` — look up REQ expectations from indexed content
    - **Fallback:** Read `.spec/current.md` directly.
-2. `tokensave_diff_context(files=[<files changed by simplify>])` — which symbols simplify actually changed
-   - **Fallback:** `git diff --name-only` + `git diff <file>`.
-3. `tokensave_changelog(from_ref="<base_branch>", to_ref="HEAD")` — structured diff of all changes on branch
-   - **Fallback:** `git diff <base>...HEAD`.
+2. `git diff --name-only` + `git diff <file>` — which files simplify actually changed
+3. `git diff <base>...HEAD` — structured diff of all changes on branch
 
 ## Rules
 

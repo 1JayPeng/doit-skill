@@ -125,7 +125,7 @@ See [shared/commit.md](shared/commit.md) for commit message conventions and push
 
 ## 铁律 — MemPalace 读写对称
 
-**MemPalace 调用与 TokenSave 同级别，不可跳过。可用则必做，不可用则静默跳过。**
+**MemPalace 调用与 CodeGraph 同级别，不可跳过。可用则必做，不可用则静默跳过。**
 
 - **Phase 0 sweep 必须执行**（Type Q/S 除外）— 10 个并行调用加载项目上下文（4 核心 + 4 知识 room + 2 sessions 反馈）
 - **各 phase 的 `[MP-READ]` 触发条件** — phases.md "MemPalace Proactive Query" 表格定义了 WHEN->WHAT->WHY。按表格执行，不跳过。
@@ -133,10 +133,10 @@ See [shared/commit.md](shared/commit.md) for commit message conventions and push
 - **先读后写** — Phase 0 已做全局 sweep，各 phase 的 `[MP-READ]` 做精准搜索，`[MP-WRITE]` 在 phase 完成后写入
 - **MP 不可用** → 任何调用报错 → 静默跳过该 session 所有 MP 步骤，文件系统为主
 
-**tokensave vs MemPalace 分工：**
-- **tokensave** = 当前代码库的 AST（符号、调用关系、impact）— 回答 "代码在哪里？调用关系如何？"
+**CodeGraph vs MemPalace 分工：**
+- **CodeGraph** = 当前代码库的 AST（符号、调用关系、impact）— 回答 "代码在哪里？调用关系如何？"
 - **MemPalace** = 历史会话的知识（架构决策、已踩的坑、之前的 spec）— 回答 "我们之前做过类似的吗？有什么决策？"
-- 两者互补，不互相替代。TokenSave 不替代 MP（MP 有跨会话记忆），MP 不替代 TokenSave（MP 没有实时 AST）。
+- 两者互补，不互相替代。CodeGraph 不替代 MP（MP 有跨会话记忆），MP 不替代 CodeGraph（MP 没有实时 AST）。
 
 ## 铁律 — 完整工作流不可跳过
 
@@ -427,16 +427,16 @@ Reason: <为什么要运行这个命令，一句话>
 **强制检查（每次 Edit 前）：**
 - **最近 3 次操作里，对同一文件的同类编辑出现了几次？**
   - 0-1 次 → 正常执行
-  - 2 次 → 最后一次了。用 `tokensave_field_sites` 或 `ctx_search` 一次性找出所有位置，然后用 `tokensave_multi_str_replace` 批量完成
+  - 2 次 → 最后一次了。用 `ctx_search` 一次性找出所有位置，然后用单次 Edit 的 `replace_all` 批量完成
   - 3+ 次 → **停止**。问题不是一次编辑能解决的。重新评估：是否需要全局搜索替换？是否已清理完毕但没验证？
 
 **一次编辑原则：**
 - 一次 Edit = 一个完整意图的全部变更，不是分批多次
 - 清理类操作（删变量、改引用、去 import）→ 先搜全量 → 一次批量编辑
-- 如果 Edit 完成后还需要同类编辑 → 说明第一次没搜全 → 用 `ctx_search` 或 `tokensave_field_sites` 找全 → 再一次性改完
+- 如果 Edit 完成后还需要同类编辑 → 说明第一次没搜全 → 用 `ctx_search` 找全 → 再一次性改完
 
 **验证替代重复：**
-- 编辑完成后 → `ctx_search` 或 `tokensave_field_sites` 验证是否还有残留
+- 编辑完成后 → `ctx_search` 验证是否还有残留
 - 有残留 → 批量处理
 - 无残留 → 进入下一步，不重复"检查"动作
 

@@ -42,7 +42,7 @@ Agent({
 
 Agent({
   description: "Research existing code patterns",
-  prompt: "使用 tokensave_context 分析当前项目中与 '<feature>' 相关的现有代码...",
+  prompt: "使用 codegraph_context 分析当前项目中与 '<feature>' 相关的现有代码...",
   subagent_type: "general-purpose",
   run_in_background: true
 })
@@ -82,7 +82,7 @@ Each `AskUserQuestion` option MUST contain:
 **Good option:** `label: "Redis cache (Recommended)", description: "In-memory -> sub-ms read, needs Redis infra. Trade-off: cache invalidation. 适合: 高读低写配置查找。"`
 
 **Step 2a: Research + Uncertainty Scan (internal, before generating questions):**
-1. **Research first** — Tavily MCP + MP search + TokenSave for project context
+1. **Research first** — Tavily MCP + MP search + codegraph for project context
 2. **Uncertainty scan** — List 3-5 things uncertain, rate 1-5. Generate questions for items >= 3.
 3. **Build options from research** — Each option backed by data, not guesswork
 

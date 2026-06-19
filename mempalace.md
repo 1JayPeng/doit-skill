@@ -1,6 +1,6 @@
 # MemPalace Integration
 
-Persistent, cross-session memory layer for the doit workflow. Complements tokensave (code graph) and context-mode (session analytics).
+Persistent, cross-session memory layer for the doit workflow. Complements codegraph (code graph) and context-mode (session analytics).
 
 ## When Active
 
@@ -196,4 +196,4 @@ mempalace_memories_filed_away -> { filed: true, message_count: N, timestamp: "..
 If MemPalace is unavailable:
 - All MemPalace steps are silently skipped
 - Filesystem (`.doit/docs/`, `.spec/archive/`) remains the primary persistence layer
-- tokensave code graph still covers code-level context
+- codegraph still covers code-level context

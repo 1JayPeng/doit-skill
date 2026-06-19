@@ -101,7 +101,7 @@ Phase 6 (Review + Simplify) is MANDATORY. Cannot skip. Even if Phase 5 (Review) 
 ## 通用编码原则
 
 ### Think Before Coding
-Understand the problem before writing code. Use tokensave_context/codegraph_context to explore.
+Understand the problem before writing code. Use codegraph_context to explore.
 
 ### Brevity First
 Short, focused code. No unnecessary abstractions. Three identical lines > premature abstraction.

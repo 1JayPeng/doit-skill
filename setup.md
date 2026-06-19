@@ -26,49 +26,9 @@ rtk gain            # should work
 
 **Note:** The install script only downloads the binary to `$HOME/.local/bin/rtk`. It does NOT add this directory to PATH or run `rtk init -g`. Both steps are required for Claude Code integration. `setup.sh` handles this automatically.
 
-### Rust (required by TokenSave)
-Systems programming language. Required for building TokenSave from source. [Rust](https://www.rust-lang.org)
-
-```bash
-# Install via rustup (Tsinghua mirror for China)
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs \
-  | RUSTUP_DIST_SERVER=https://mirrors.tuna.tsinghua.edu.cn/rustup \
-    RUSTUP_UPDATE_ROOT=https://mirrors.tuna.tsinghua.edu.cn/rustup/rustup \
-    sh -s -- -y
-
-# Configure cargo mirror (USTC)
-mkdir -p ~/.cargo
-cat > ~/.cargo/config.toml <<'EOF'
-[source.crates-io]
-replace-with = 'ustc'
-[source.ustc]
-registry = "sparse+https://mirrors.ustc.edu.cn/crates.io-index/"
-EOF
-
-# Verify
-rustc --version
-cargo --version
-```
-
-### TokenSave
-MCP server for code intelligence. 40+ tools, 30+ languages. Pre-indexed semantic knowledge graphs for instant code understanding. [GitHub](https://github.com/aovestdipaperino/tokensave)
-
-```bash
-# Install (requires Rust)
-cargo install tokensave
-
-# Configure for Claude Code
-tokensave install --agent claude
-
-# Initialize in project
-tokensave init
-
-# Verify
-tokensave status
-```
-
 ### CodeGraph
-Cross-language code graph — AST-based symbol lookup, call graphs, impact analysis. Fallback when TokenSave is unavailable. [GitHub](https://github.com/colbymchenry/codegraph)
+
+Cross-language code graph — AST-based symbol lookup, call graphs, impact analysis. [GitHub](https://github.com/colbymchenry/codegraph)
 
 ```bash
 # Install via npm
@@ -187,8 +147,6 @@ doit uses a **bundled dependency model**. Core skills ship inside `skills/` and 
 | Context-Mode | `claude plugin marketplace add mksglu/context-mode` | Phase 1-6 |
 | RTK | `curl ... \| sh` + `rtk init -g` (see above) | All phases (auto-wrap) |
 | uv | `pip install uv` | Phase 3 |
-| Rust | `curl ... \| rustup ...` (see above) | Prerequisite for TokenSave |
-| TokenSave | `cargo install tokensave && tokensave install --agent claude` | Phase 2, 3, 5, 6 |
 | Headroom | `uv tool install "headroom-ai[mcp,proxy]"` + `headroom mcp install` | Phase 10 |
 | lean-ctx | `curl ... \| sh` + `lean-ctx onboard` + `lean-ctx init --agent claude` | All phases |
 | MemPalace | `claude plugin marketplace add MemPalace/mempalace` | Phase 0, 1, 3, 5, 8, 9.5, 10 |
@@ -241,4 +199,4 @@ doit uses a **bundled dependency model**. Core skills ship inside `skills/` and 
 
 ### Project (~/.claude/settings.json in repo)
 
-TokenSave auto-indexes after edits — no PostToolUse hook needed.
+CodeGraph file watcher auto-syncs (~500ms debounce) — no PostToolUse hook needed.

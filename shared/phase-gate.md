@@ -14,7 +14,7 @@
 ## Type Q flow (query):
 ```
 [x] Phase 0   Classify -> Type Q
-[x] Answer directly using tools — codegraph, tokensave, ctx_search, ctx_read
+[x] Answer directly using tools — codegraph, ctx_search, ctx_read
 [x] Phase 10    headroom_compress
 ```
 

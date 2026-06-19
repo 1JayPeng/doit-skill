@@ -5,9 +5,8 @@
 ## Rules
 
 - Per-REQ TDD loop: CONTEXT → IMPLEMENT → RED → GREEN → REFACTOR → REVIEW+SIMPLIFY
-- Use tokensave edit primitives for file changes — they trigger in-place re-index
-- MCP tools (tokensave, context-mode, mempalace) remain unchanged — they are tool-agnostic
-- Fallback: If tokensave unavailable → `grep` + `find` + `[[FILE:read]]`
+- MCP tools (codegraph, context-mode, mempalace) remain unchanged — they are tool-agnostic
+- Fallback: If codegraph unavailable → `grep` + `find` + `[[FILE:read]]`
 
 **LSP-powered refactoring (lean-ctx):**
 - `ctx_refactor(action="rename", path="<file>", line=<N>, new_name="<name>")` — rename symbol
@@ -20,33 +19,28 @@
 
 **[CALL]** Before writing any code:
 ```
-[CALL] tokensave_context(task="<REQ description>") — or codegraph_context
-[CALL] tokensave_impact(node_id="...") — blast radius check
+[CALL] codegraph_context(task="<REQ description>")
+[CALL] codegraph_impact(symbol="...") — blast radius check
 ```
 
-If tokensave/codegraph unavailable → `grep` + `find` + `[[FILE:read]]` fallback.
+If codegraph unavailable → `grep` + `find` + `[[FILE:read]]` fallback.
 
 ### IMPLEMENT — Reuse Gate (MANDATORY before writing any code)
 
 Before writing code, check:
-1. Is there existing code that does this? → `tokensave_search` / `codegraph_search`
-2. Can I reuse it? → Read existing code via `tokensave_node` / `[[FILE:read]]`
+1. Is there existing code that does this? → `codegraph_search`
+2. Can I reuse it? → Read existing code via `codegraph_node` / `[[FILE:read]]`
 3. Only write new code if reuse is not possible.
 
 ### IMPLEMENT (edit primitives for code changes)
 
-Use tokensave edit primitives:
-- `tokensave_str_replace` — replace unique string (safe single-edit)
-- `tokensave_multi_str_replace` — apply N replacements atomically
-- `tokensave_insert_at` — insert before/after anchor
+Use `[[FILE:edit]]` for file changes:
+- `[[FILE:edit]]` — search-and-replace (native tool, safe single-edit)
 
 **Fallback chain:**
 ```
-1. tokensave_str_replace (preferred)
-2. tokensave_multi_str_replace (batch)
-3. tokensave_insert_at (insertions)
-4. [[FILE:edit]] (native search-and-replace)
-5. [[FILE:write]] (complete file rewrite, last resort)
+1. [[FILE:edit]] (native search-and-replace)
+2. [[FILE:write]] (complete file rewrite, last resort)
 ```
 
 ### RED
@@ -70,9 +64,9 @@ Refactor while keeping tests green.
 
 After each REQ implementation:
 ```
-[CALL] tokensave_simplify_scan(files=["changed_file.rs"])
+[[SHELL:run command="git diff --stat"]]
 ```
-Remove dead code, flatten abstractions, eliminate duplicates. If tokensave unavailable → `[[SHELL:run]]` git diff + manual review.
+Remove dead code, flatten abstractions, eliminate duplicates. Manual review via `[[SHELL:run]]` git diff + `[[FILE:read]]`.
 
 ### Worklog Write (MANDATORY after each REQ)
 

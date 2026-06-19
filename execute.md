@@ -63,62 +63,40 @@
 | Similar bug fix pattern | `mempalace_search query="<error keyword> bug" wing="<project>" room="bugs" limit=3` — hit this before? |
 | New DB schema change | `mempalace_search query="<table/collection>" wing="<project>" room="knowledge_db" limit=3` — existing patterns? |
 
-**tokensave gives you the code. MemPalace gives you the WHY.** Use both.
+**CodeGraph gives you the code. MemPalace gives you the WHY.** Use both.
 
 Before writing tests, understand the code you'll modify:
 
-**CodeGraph + TokenSave 互补并行**：
 1. `codegraph_context(task="<REQ description>")` — 获取 REQ 的聚焦上下文（精准，不混入无关代码）
-2. `tokensave_context(task="<REQ description>")` — 即时检测文件改动，交叉验证 CodeGraph 结果
-3. `codegraph_search("symbolName")` — 查找特定符号（精准）
-4. `tokensave_search("symbolName")` — 改动后立即生效的符号查找
-5. `codegraph_callers(symbol)` / `codegraph_callees(symbol)` — 调用图边（更准确）
-6. `codegraph_impact(symbol)` — 符号变更的影响范围
-7. `codegraph_node(symbol)` — 函数签名、完整源码
-8. `codegraph_files` — 理解项目文件结构
-9. `tokensave_diagnostics(scope="workspace")` — 运行类型检查器（cargo check / tsc / pyright）
-10. `tokensave_test_map(node_id="<id>")` — 查找符号的测试覆盖率
-11. `tokensave_affected_tests(files=[<changed_files>])` — 查找受影响的测试文件
-12. `tokensave_similar(symbol="<name>")` — 查找相似名称的符号（避免命名不一致）
-13. `tokensave_body(symbol="<name>")` — 返回符号的完整源码体（比 node 查找更快）
-14. `tokensave_signature(qualified_name="<name>")` — 获取函数签名（不含源码体）
-15. `tokensave_signature_search(params="&mut self", returns="Result")` — 按签名形状查找函数
-16. `ctx_search` — 查找之前索引的信息
+2. `codegraph_search("symbolName")` — 查找特定符号（精准）
+3. `codegraph_callers(symbol)` / `codegraph_callees(symbol)` — 调用图边（更准确）
+4. `codegraph_impact(symbol)` — 符号变更的影响范围
+5. `codegraph_node(symbol)` — 函数签名、完整源码
+6. `codegraph_explore(query)` — 多个相关符号源码一次性查看
+7. `codegraph_files` — 理解项目文件结构
+8. `ctx_search` — 查找之前索引的信息
     - **Fallback:** If Context-Mode unavailable -> `grep` command output
-17. `[MP-READ]` `mempalace_search query="<REQ description>" wing="<project>" limit=2` — 恢复跨会话上下文
-18. `[MP-READ]` `mempalace_get_drawer drawer_id="<id from search>"` — 获取特定 drawer 的完整内容
-19. `[MP-READ]` `mempalace_list_drawers wing="<project>" room="implementation" limit=5` — 浏览最近的实现笔记
-    - **Fallback:** If MemPalace unavailable -> skip (codegraph + tokensave cover session-level context)
+9. `[MP-READ]` `mempalace_search query="<REQ description>" wing="<project>" limit=2` — 恢复跨会话上下文
+10. `[MP-READ]` `mempalace_get_drawer drawer_id="<id from search>"` — 获取特定 drawer 的完整内容
+11. `[MP-READ]` `mempalace_list_drawers wing="<project>" room="implementation" limit=5` — 浏览最近的实现笔记
+    - **Fallback:** If MemPalace unavailable -> skip (codegraph covers session-level context)
 
-**使用策略：**
-- **规划阶段**：`codegraph_context` + `tokensave_context` 并行调用
-- **符号查找**：`codegraph_search`（精准），`tokensave_search`（改动后即时检测）
-- **调用图**：`codegraph_callers/callees`（更准确）
-- **质量分析**：`tokensave_diagnostics/test_map/affected_tests`
-- **代码编辑**：`tokensave_str_replace` / `tokensave_multi_str_replace` / `tokensave_insert_at`
 ### IMPLEMENT — Reuse Gate (MANDATORY before writing any code)
 
 **Before writing ANY code, check for existing reusable code.** This is the primary gate — don't defer to review/simplify.
 
-1. **CodeGraph + TokenSave 并行搜索** — 查找现有可复用代码：
+1. **CodeGraph 搜索** — 查找现有可复用代码：
    - `codegraph_search(query="<functionality needed>")` — 精准查找现有实现（不混入无关代码）
-   - `tokensave_search(query="<functionality needed>")` — 即时检测改动后的代码
-   - `tokensave_signature_search(params="<key param>", returns="<return type>")` — 按签名形状查找函数
-2. **tokensave_similar** — 检查是否存在相似函数：
-   - `tokensave_similar(symbol="<new_function_name>")` — 查找命名冲突或近似重复
-3. **[MP-READ] mempalace_search** — 检查跨会话记忆中的先前解决方案：
+   - `codegraph_explore(query="<functionality>")` — 多个相关符号
+2. **[MP-READ] mempalace_search** — 检查跨会话记忆中的先前解决方案：
    - `mempalace_search query="<feature>" wing="<project>" limit=3` — 查找相关实现
-4. **Decision:** If existing code can be reused or extended → **reuse it**. Only write new code if nothing fits.
+3. **Decision:** If existing code can be reused or extended → **reuse it**. Only write new code if nothing fits.
 
 **Rule: Write code ONCE. If it already exists, use it. If it's close, adapt it. Review/Simplify catches what this misses — but this gate should catch 90%.**
 
-### IMPLEMENT (edit primitives for code changes)
+### IMPLEMENT (code changes)
 
-Use tokensave edit primitives instead of Read+Edit when modifying source files — they trigger in-place re-index so the graph never goes stale:
-- `tokensave_str_replace` — replace a unique string; fails if 0 or >1 matches (safe single-edit)
-- `tokensave_multi_str_replace` — apply N replacements atomically (all-or-nothing transaction)
-- `tokensave_insert_at` — insert content before/after an anchor string or line number
-- **Fallback:** If TokenSave unavailable -> native Read + Edit tools
+Use `[[FILE:edit]]` for file modifications — the adapter resolves to the appropriate edit primitive.
 
 **LSP-powered refactoring (lean-ctx):**
 - `ctx_refactor(action="rename", path="<file>", line=<N>, new_name="<name>")` — rename symbol across codebase
@@ -141,17 +119,6 @@ PASS: test_xxx for REQ-00X
 ```
 
 **[MANDATORY] LSP diagnostic gate after GREEN:**
-```
-tokensave_diagnostics(scope="workspace")
-```
-Test pass + type-check clean = GREEN. Test pass + type errors = NOT green, fix first.
-Fallback: `cargo check`, `tsc --noEmit`, `pyright`.
-
-**[MANDATORY] LSP Diagnostic Gate — tests pass is not enough:**
-```
-tokensave_diagnostics(scope="workspace")
-```
-If errors -> fix -> re-run until clean -> THEN proceed to REFACTOR.
 Fallback: `cargo check`, `tsc --noEmit`, `pyright`.
 **No dirty type-check = not green.**
 
@@ -161,9 +128,8 @@ Fallback: `cargo check`, `tsc --noEmit`, `pyright`.
 ### REVIEW + SIMPLIFY (MANDATORY after each REQ)
 After RED->GREEN->REFACTOR completes, **before moving to next REQ**:
 1. **ctx_delta** — `ctx_delta(path)` — incremental diff of changed files, only changed lines (~98% savings vs full read)
-2. **tokensave scan** — `tokensave_simplify_scan(files=[<changed_files>])` — auto-detect duplications, dead code, complexity
-3. **tokensave_similar** — `tokensave_similar(symbol="<new_function_name>")` — check if a similarly named symbol already exists (naming inconsistency)
-4. **Read what you wrote** — read the full context of changes, not just the diff
+2. **git diff** — `[[SHELL:run]] git diff --stat` — verify changes are scoped
+3. **Read what you wrote** — read the full context of changes, not just the diff
 4. **Simplify** — remove dead imports, flatten unnecessary abstractions, combine redundant loops
 5. **Check documentation** — does README/CLAUDE.md need updating?
 6. **Verify** — tests still pass after simplifying
@@ -193,17 +159,14 @@ Phase 10 will batch-extract worklog to MemPalace at session end.
 
 ### Test Execution
 
-Run only affected tests when possible — skip full suite for small changes:
+Run tests via context-mode or native Bash:
 
 **Primary (fast path):**
-- `tokensave_affected_tests(files=[<changed_files>])` — find test files affected by changed source files
-- `tokensave_run_affected_tests(changed_paths=[<changed_files>])` — run only affected tests (cargo test)
-- For non-Rust projects: use `ctx_execute` with affected test files
+- `ctx_execute` — run test commands, output auto-indexed
+- `ctx_batch_execute` — run multiple test commands in parallel
 
-**Fallback (full suite):**
-- `ctx_execute` — run all test commands, search results with `ctx_search`
-- `ctx_batch_execute` — run multiple test commands, search all output together
-- **Context-Mode unavailable:** run tests via native Bash. Output printed to context (more tokens used).
+**Fallback:**
+- native Bash (output not indexed)
 
 ### Spec Alignment Check (Non-Interruptive)
 
@@ -253,7 +216,6 @@ After each REQ completes, if MemPalace is active:
 1. Read `.doit/config.yaml` `subagent.enabled` — **default is `false`**
 2. If `true`:
    - **[CALL] `codegraph_context(task="<spec summary>")`** — 精准代码图查询
-   - **[CALL] `tokensave_context(task="<spec summary>")`** — 即时检测改动，交叉验证
    - **[CALL] `codegraph_impact(symbol="<symbol>")`** — check blast radius for each REQ's target symbols
    - Group REQs by dependency (files modified, symbols touched)
    - **If >= 2 independent REQs exist → LAUNCH parallel agents NOW.** Do not defer. Do not say "I'll do it later."
@@ -269,7 +231,7 @@ After each REQ completes, if MemPalace is active:
 ### Subagent Parallel TDD (When Decision Gate Says Parallel)
 
 **Config gate:** Read `.doit/config.yaml` `subagent.enabled`. If `true`, launch parallel subagents for independent REQs. If `false` (default), execute sequentially.
-**Subagent permissions:** Any subagent has the same tool permissions as the main agent — including tokensave, codegraph, and all MCP servers.
+**Subagent permissions:** Any subagent has the same tool permissions as the main agent — including codegraph and all MCP servers.
 
 **When:** 2+ REQs have no code dependencies (verified via codegraph code graph). Parallel execution can save 50-70% time.
 

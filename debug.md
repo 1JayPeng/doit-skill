@@ -11,17 +11,14 @@
 3. **Narrow to the exact location** — see Tool Calling below, trace the call path
 
 **Tool Calling for diagnosis:**
-1. `tokensave_context(task="<bug description>")` — get focused context for the affected area
-2. `tokensave_search(query="<symbol_from_error>")` — find the specific symbol in the error
-3. `tokensave_node(node_id="<id>")` — get function signature/body
-4. `tokensave_callers(node_id="<id>", max_depth=3)` — who calls this function (upstream call chain)
-5. `tokensave_callees(node_id="<id>", max_depth=2)` — what does this call (downstream call chain)
-6. `tokensave_diagnostics(scope="workspace")` — run cargo check / tsc / pyright for type errors
-7. `tokensave_diagnose(cargo_output="<stderr>")` — parse compiler/linter diagnostics mapped to graph nodes
-8. `tokensave_test_map(file="<bug_file>")` — find existing tests covering this code
-9. `tokensave_affected_tests(files=[<bug_file>], depth=2)` — find affected tests via dependency graph
-10. `ctx_execute(language="shell", code="<reproduce command>")` — reproduce the bug, auto-index output
-- **Fallback for all TokenSave tools:** `grep -rn "<keyword>" src/` + `find` + `Read`.
+1. `codegraph_context(task="<bug description>")` — get focused context for the affected area
+2. `codegraph_search("symbol_from_error")` — find the specific symbol in the error
+3. `codegraph_node(symbol)` — get function signature/body
+4. `codegraph_callers(symbol)` — who calls this function (upstream call chain)
+5. `codegraph_callees(symbol)` — what does this call (downstream call chain)
+6. `codegraph_impact(symbol)` — blast radius
+7. `ctx_execute(language="shell", code="<reproduce command>")` — reproduce the bug, auto-index output
+- **Fallback:** `grep -rn "<keyword>" src/` + `find` + `Read`.
 - **Fallback for ctx_execute:** native Bash tool.
 
 Use `diagnose` skill for root cause analysis if needed.
@@ -82,8 +79,7 @@ PASS: test_xxx_regression
 **Tool Calling:**
 - `ctx_execute(language="shell", code="<original bug trigger command>")` — reproduce original failure, now should pass
 - `ctx_execute(language="shell", code="<run all e2e tests>")` — full regression suite
-- `tokensave_affected_tests(files=[<changed_files>], depth=3)` — find affected tests by dependency graph
-  - **Fallback:** `grep -rn "<changed_symbol>" tests/` to find tests referencing changed code.
+- `grep -rn "<changed_symbol>" tests/` to find tests referencing changed code.
 - **Fallback for ctx_execute:** native Bash tool.
 
 1. **Run the original bug trigger in real env** — same command/input that caused the crash

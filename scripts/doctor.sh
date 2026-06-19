@@ -16,7 +16,7 @@ fi
 GH_PROXY="https://v6.gh-proxy.org"
 BUNDLED_SKILLS=("grill-me" "tdd" "diagnose" "prototype" "handoff" "improve-codebase-architecture")
 BUILTIN_SKILLS=()
-EXTERNAL_TOOLS=("context-mode" "rtk" "uv" "rust" "tokensave" "tavily" "caveman" "code-review" "mempalace" "headroom" "lean-ctx")
+EXTERNAL_TOOLS=("context-mode" "rtk" "uv" "tavily" "caveman" "code-review" "mempalace" "headroom" "lean-ctx")
 SHARED_FILES=("shared/review-simplify.md" "shared/e2e-verify.md" "shared/commit.md")
 SYMLINK_TARGETS=("review-simplify.md:shared/review-simplify.md" "commit.md:shared/commit.md")
 
@@ -122,16 +122,8 @@ for tool in "${EXTERNAL_TOOLS[@]}"; do
             if command -v cargo >/dev/null 2>&1; then
                 echo "  ✅ rust/cargo installed"
             else
-                echo "  ℹ️  rust not installed (required for tokensave)"
+                echo "  ℹ️  rust not installed (required for rtk)"
                 echo "  💡 Install: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh"
-            fi
-            ;;
-        "tokensave")
-            if command -v tokensave >/dev/null 2>&1; then
-                echo "  ✅ tokensave installed"
-            else
-                echo "  ℹ️  tokensave not installed (recommended)"
-                echo "  💡 Install: cargo install tokensave && tokensave install --agent claude"
             fi
             ;;
         "tavily")

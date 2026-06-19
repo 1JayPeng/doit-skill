@@ -20,7 +20,7 @@ for spec-driven TDD workflows. When making changes to doit-skill:
 3. **Follow the workflow**:
    - Phase 0: Classify request
    - Phase 1: Generate spec (grill with Tavily MCP)
-   - Phase 2: Plan with code graph (tokensave)
+   - Phase 2: Plan with code graph (codegraph)
    - Phase 3: Execute TDD with context-mode
    - Phase 4: E2E tests
    - Phase 5: Review

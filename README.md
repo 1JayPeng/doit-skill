@@ -30,7 +30,6 @@ doit is a **workflow orchestrator** — it relies on specialized tools for each 
 | Layer | Tool | Role |
 |-------|------|------|
 | **Code graph** | [codegraph](https://github.com/colbymchenry/codegraph) | 精准代码图查询 — 跨语言 AST 符号查找，调用图，影响分析 |
-| **Code analysis** | [tokensave](https://github.com/aovestdipaperino/tokensave) | 即时改动检测 + 高级分析 — 类型检查，死代码，复杂度，测试覆盖，代码编辑 |
 | **Session context** | [context-mode](https://github.com/mksglu/context-mode) | Command output indexing, semantic search, token savings |
 
 | **Cross-session memory** | [MemPalace](https://github.com/MemPalace/mempalace) | Specs, decisions, knowledge graph — survives restarts |
@@ -150,12 +149,12 @@ How each principle enforces itself:
 | -1 | Detect project environment | Built-in |
 | 0 | Classify request (R/S/F/B) | Built-in, caveman, mempalace |
 | 1 | Spec generation + grill | Tavily MCP, grill-me, mempalace |
-| 2 | Plan with code graph | codegraph + tokensave, mempalace |
-| 3 | Execute TDD + Review+Simplify | RTK, uv, tokensave, context-mode |
-| 4 | E2E tests (mandatory) | tokensave, context-mode |
-| 5 | Code review | code-review, tokensave |
-| 6 | Review + Simplify (mandatory) | tokensave |
-| 7 | E2E Verification Loop | tokensave, context-mode |
+| 2 | Plan with code graph | codegraph, mempalace |
+| 3 | Execute TDD + Review+Simplify | RTK, uv, context-mode |
+| 4 | E2E tests (mandatory) | context-mode |
+| 5 | Code review | code-review |
+| 6 | Review + Simplify (mandatory) | codegraph |
+| 7 | E2E Verification Loop | context-mode |
 | 8 | Git commit + Push | git |
 | 9.5 | Completion Summary + Knowledge Extraction | mempalace |
 | 9.5.5 | Knowledge Distillation (structured learning) | learn/, mempalace, context-mode |
@@ -197,12 +196,10 @@ doit integrates five memory layers so context survives across sessions:
 | Layer | Tool | What It Stores |
 |-------|------|----------------|
 | **Code graph** | CodeGraph | Precise AST-based symbols, call edges, cross-language — survives code changes |
-| **Code analysis** | TokenSave | Immediate change detection, diagnostics, complexity, test coverage — survives code changes |
 | **Session context** | Context-Mode | Command output, semantic search index — survives tool calls |
 | **Cross-session** | MemPalace | Specs, decisions, knowledge graph, agent diary — survives restarts |
 | **Token optimization** | Headroom | CCR (Compress-Cache-Retrieve) proxy compression — token savings |
 
-**CodeGraph + TokenSave complementary:** CodeGraph provides precise code graph queries (callers/callees accurate, cross-language support), TokenSave provides immediate change detection (15ms indexing) and advanced static analysis (diagnostics, dead code, complexity, test coverage). Both run in parallel for cross-validation.
 
 **MemPalace** (30 MCP tools, KG + semantic search, diary). Follows **read-write symmetry**: every phase that writes also reads back in subsequent runs. Phase 0 sweeps 10 parallel calls to reconstruct project context.
 
@@ -243,41 +240,6 @@ grep -q 'export PATH=.*\$HOME/.local/bin' ~/.bashrc 2>/dev/null || \
 
 # 3. Initialize for Claude Code (installs hooks + RTK.md globally)
 rtk init -g
-```
-
-#### Rust (required by TokenSave)
-
-```bash
-# Install via rustup (Tsinghua mirror for China)
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs \
-  | RUSTUP_DIST_SERVER=https://mirrors.tuna.tsinghua.edu.cn/rustup \
-    RUSTUP_UPDATE_ROOT=https://mirrors.tuna.tsinghua.edu.cn/rustup/rustup \
-    sh -s -- -y
-source "$HOME/.cargo/env"
-
-# Configure cargo mirror (USTC) — optional, speeds up downloads in China
-mkdir -p ~/.cargo
-cat > ~/.cargo/config.toml <<'EOF'
-[source.crates-io]
-replace-with = 'ustc'
-[source.ustc]
-registry = "sparse+https://mirrors.ustc.edu.cn/crates.io-index/"
-EOF
-```
-
-#### TokenSave
-
-Code graph MCP server — symbol lookup, impact analysis, call graphs. [GitHub](https://github.com/aovestdipaperino/tokensave)
-
-```bash
-# 1. Install (requires Rust)
-cargo install tokensave
-
-# 2. Configure for Claude Code
-tokensave install --agent claude
-
-# 3. Initialize in project
-tokensave init
 ```
 
 #### Context-Mode
@@ -386,7 +348,7 @@ claude mcp add --transport http tavily https://mcp.tavily.com/mcp/?tavilyApiKey=
 
 #### CodeGraph
 
-Cross-language code graph — AST-based symbol lookup, call graphs, impact analysis. Fallback when TokenSave is unavailable. [GitHub](https://github.com/colbymchenry/codegraph)
+Cross-language code graph — AST-based symbol lookup, call graphs, impact analysis. [GitHub](https://github.com/colbymchenry/codegraph)
 
 ```bash
 # Install via npm
@@ -448,7 +410,7 @@ A single `/doit` invocation may not complete the entire workflow. To continue fr
 - New iron rule: "Review + Simplify 不可跳过" — unreviewed code cannot be committed
 
 **2026-06-04** — MemPalace read-write symmetry integration:
-- Iron rule: "MemPalace read-write symmetry" — MP calls same level as tokensave, mandatory when available
+- Iron rule: "MemPalace read-write symmetry" — MP calls same level as codegraph, mandatory when available
 - Phase 0: embedded 10 parallel MP sweep calls (4 core + 4 knowledge rooms + 2 sessions feedback)
 
 **2026-06-04** — Comprehensive code review fixes:

@@ -8,19 +8,9 @@ Review all changes since Phase 3:
 [[SHELL:run command="git diff"]]
 ```
 
-If tokensave available:
-```
-[CALL] tokensave_simplify_scan(files=["changed_files"])
-[CALL] tokensave_dead_code
-[CALL] tokensave_complexity(limit=10)
-```
-
 ## Phase 6 — Simplify (MANDATORY — cannot skip)
 
 1. **Remove dead code:**
-   ```
-   [CALL] tokensave_dead_code
-   ```
    Fallback: `[[SHELL:run]]` grep for unused imports + `[[FILE:edit]]`
 
 2. **Flatten abstractions:**

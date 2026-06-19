@@ -8,7 +8,7 @@ Commit runs only after E2E Verification Loop passes (e2e tests all green AND spe
 
 ## Pre-Commit Gate (MANDATORY — Execute Before Step 1)
 
-**[CALL] This gate runs once before any commit. No skip. No rationalizing.**
+**[CALL] This gate runs once before any commit. No skip. No rationalize.**
 
 Before staging anything, verify the full workflow was followed:
 
@@ -20,10 +20,6 @@ Before staging anything, verify the full workflow was followed:
   □ Phase 7 — E2E Verification Loop passed? (e2e-verify.md flow completed)
 
 **[CALL] LSP Diagnostic Gate (MANDATORY):**
-```
-tokensave_diagnostics(scope="workspace")
-```
-If errors -> fix -> re-run until clean -> then proceed.
 Fallback: `cargo check`, `tsc --noEmit`, `pyright`.
 **No dirty type-check = no commit.**
 ```
@@ -62,14 +58,13 @@ git diff --staged
 git log --oneline -5 origin/master  # check remote head
 ```
 
-### 1.5. Generate Commit Context (optional, recommended)
+### 1.5. Generate Commit Context
 
-Use TokenSave to get structured change summary:
-1. `tokensave_commit_context()` — semantic summary of uncommitted changes (changed symbols, file roles, recent commit style)
-2. `tokensave_changelog(from_ref="<base_branch>", to_ref="HEAD")` — if on a feature branch, structured diff between refs
-3. `tokensave_pr_context(head_ref="HEAD", base_ref="<base_branch>")` — semantic diff between refs for PR description drafting
-4. `tokensave_test_map(node_id="<id>")` — verify test coverage for changed symbols before committing
-- **Fallback:** If TokenSave unavailable -> `git diff --name-only` + `git log --oneline` manually.
+Use `git diff` for structured change summary:
+```bash
+git diff --name-only
+git log --oneline -10
+```
 
 ### 2. Learn Commit Message Style
 

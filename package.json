@@ -41,7 +41,6 @@
       "context-mode": "claude plugin marketplace add mksglu/context-mode && claude plugin install context-mode@context-mode",
       "caveman": "curl -fsSL https://v6.gh-proxy.org/https://raw.githubusercontent.com/JuliusBrussee/caveman/main/install.sh | bash",
       "code-review": "claude plugin install code-review",
-      "tokensave": "cargo install tokensave && tokensave install --agent claude",
       "mempalace": "claude plugin marketplace add MemPalace/mempalace && claude plugin install --scope user mempalace",
       "headroom": "uv tool install 'headroom-ai[mcp,proxy]' && headroom mcp install",
       "lean-ctx": "curl -fsSL https://leanctx.com/install.sh | sh && lean-ctx onboard && lean-ctx init --agent claude",

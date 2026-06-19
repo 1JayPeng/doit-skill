@@ -82,7 +82,7 @@ No spec, no branch -> start fresh from Phase 0.
 
 ## MemPalace Unavailable
 
-If MemPalace tool calls error during any phase, skip silently. Filesystem (`.doit/docs/`, `.spec/archive/`) and tokensave code graph remain as the primary persistence layers. The workflow never blocks on a missing memory layer.
+If MemPalace tool calls error during any phase, skip silently. Filesystem (`.doit/docs/`, `.spec/archive/`) and codegraph remain as the primary persistence layers. The workflow never blocks on a missing memory layer.
 
 ## Compact 后 Task 丢失
 

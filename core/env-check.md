@@ -71,7 +71,7 @@ for skill in doit grill-me tdd diagnose prototype handoff; do
 done
 
 # External tools
-for tool in rtk uv tokensave; do
+for tool in rtk uv codegraph; do
   if command -v "$tool" >/dev/null 2>&1; then
     echo "  [OK]   $tool ($(command -v $tool))"
   else
@@ -86,7 +86,7 @@ done
 **Per-tool fallback:**
 | Tool | Unavailable → Fallback | Affected Phases |
 |------|----------------------|-----------------|
-| tokensave | `grep` + `find` | 2, 3, 5, 6, 7, 8 |
+| codegraph | `grep` + `find` | 2, 3, 5, 6, 7, 8 |
 | context-mode | native shell (no auto-index) | 2, 3, 4, 7, 8 |
 | tavily MCP | `[[WEB:search]]` | 1 |
 | rtk | shell (no token opt) | all |

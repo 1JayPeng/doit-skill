@@ -1,6 +1,6 @@
 # Doc Capture
 
-Captures user-provided reference documents. **MemPalace is primary** for knowledge storage, `.doit/docs/` is filesystem fallback. Indexes with tokensave, injects CLAUDE.md references.
+Captures user-provided reference documents. **MemPalace is primary** for knowledge storage, `.doit/docs/` is filesystem fallback. Indexes with codegraph, injects CLAUDE.md references.
 
 ## When to Trigger
 
@@ -55,13 +55,13 @@ description: Brief one-line description of doc content
 - Same content → skip
 - Different content → ask user: append / overwrite / new name
 
-### 3. Verify Tokensave Index
+### 3. Verify Index
 
 ```
-tokensave_search(query="<doc keyword>")
+codegraph_search(query="<doc keyword>")
 ```
 
-The `.doit/` directory is inside the project root so tokensave indexes it automatically. No extra config needed.
+The `.doit/` directory is inside the project root so codegraph indexes it automatically. No extra config needed.
 
 ### 4. Inject CLAUDE.md Reference
 
@@ -112,7 +112,7 @@ If MemPalace is unavailable, skip silently. Filesystem (`.doit/docs/`) remains t
 
 ```
 [DOC-CAPTURE] Saved to .doit/docs/api-endpoints.md
-[DOC-CAPTURE] Indexed by tokensave
+[DOC-CAPTURE] Indexed by codegraph
 [DOC-CAPTURE] Updated CLAUDE.md Reference Docs section
 [DOC-CAPTURE] Filed to MemPalace knowledge_docs (primary) + reference-docs
 ```

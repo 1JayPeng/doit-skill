@@ -318,7 +318,7 @@ echo "=========================================="
 echo ""
 
 # Show hint if re-installing (tools already present)
-if command -v tokensave >/dev/null 2>&1 || command -v rtk >/dev/null 2>&1; then
+if command -v rtk >/dev/null 2>&1; then
   echo "  [HINT] Some tools already installed. Use --skip-updates to speed up re-install."
   echo ""
 fi
@@ -565,7 +565,6 @@ if [ "$DRY_RUN" = true ]; then
     echo "    • rtk              (cargo install rtk)"
     echo "    • uv               (official install script)"
     echo "    • rust               (rustup, Tsinghua mirror)"
-    echo "    • tokensave        (cargo install tokensave)"
     echo "    • tavily           (claude mcp add --transport http tavily ...)"
     echo "    • caveman          (claude plugin + hooks + statusline config)"
 echo "    • code-review      (claude plugin install code-review)"
@@ -894,7 +893,7 @@ UV_EOF
     fi
   fi
 
-  # Rust (required by tokensave) — always check for updates
+  # Rust (required by rtk) — always check for updates
   if command -v cargo >/dev/null 2>&1; then
     echo_info "Updating Rust via rustup..."
     spin 120 "rustup update stable" "RUSTUP_DIST_SERVER=https://mirrors.tuna.tsinghua.edu.cn/rustup RUSTUP_UPDATE_ROOT=https://mirrors.tuna.tsinghua.edu.cn/rustup/rustup rustup update stable" 2>&1 || echo_warn "Rust update failed"
@@ -928,35 +927,6 @@ CARGO_EOF
       echo 'export RUSTUP_DIST_SERVER=https://mirrors.tuna.tsinghua.edu.cn/rustup' >> "$HOME/.bashrc"
       echo 'export RUSTUP_UPDATE_ROOT=https://mirrors.tuna.tsinghua.edu.cn/rustup/rustup' >> "$HOME/.bashrc"
     }
-  fi
-
-  # TokenSave
-  if command -v tokensave >/dev/null 2>&1; then
-    if [ "$SKIP_UPDATES" = true ] || should_skip_update tokensave; then
-      echo_skip "tokensave already installed (skipping update)"
-    else
-      _ts_installed=$(tokensave --version 2>/dev/null | head -1)
-      _ts_latest=$(cargo search tokensave 2>/dev/null | head -1 | grep -oP 'tokensave = "\K[^"]+')
-      if [ -n "$_ts_latest" ] && [ "$_ts_installed" != "$_ts_latest" ]; then
-        echo_info "Updating tokensave (${_ts_installed} → ${_ts_latest})..."
-        spin 600 "tokensave update (cargo install)" cargo install tokensave || echo_warn "Failed to update tokensave"
-      else
-        echo_success "tokensave up to date"
-      fi
-    fi
-  else
-    echo_info "Installing tokensave (compiling Rust — may take several minutes)..."
-    if command -v cargo >/dev/null 2>&1; then
-      spin 600 "tokensave install (cargo install)" cargo install tokensave || echo_warn "Failed to install tokensave via cargo"
-    else
-      echo_warn "cargo not found — tokensave requires Rust. Install via: cargo install tokensave"
-    fi
-  fi
-  if command -v tokensave >/dev/null 2>&1; then
-    echo_info "Configuring tokensave for $AGENT_TYPE..."
-    tokensave install --agent "$AGENT_TYPE" || true
-    record_install tokensave
-    echo_success "tokensave ready"
   fi
 
 # Caveman (token-compact mode + statusline) — Claude Code only

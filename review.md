@@ -23,19 +23,13 @@ Run `code-review` skill. Focus:
 - Dead code -> remove
 - Over-abstraction -> flatten
 
-**tokensave tools for code review (use flexibly, pick what fits):**
-- `tokensave_health(details=true)` — baseline quality signal before review
-- `tokensave_diff_context(files=[<changed_files>])` — semantic diff of changed symbols, dependents, affected tests
-- `tokensave_simplify_scan(files=[<changed_files>])` — auto-detect duplications, dead code, coupling, complexity
-- `tokensave_dead_code()` — find symbols with no incoming edges (potentially unreachable)
-- `tokensave_unused_imports()` — find unreferenced import/use nodes
-- `tokensave_complexity(path="<changed_dir>", limit=5)` — rank functions by complexity, find hotspots
-- `tokensave_circular()` — detect circular file dependencies
-- `tokensave_recursion()` — detect recursive/mutually-recursive call cycles
-- `tokensave_similar(symbol="<new_function_name>")` — find similarly named symbols (naming inconsistency = potential confusion)
-- `tokensave_signature_search(params="&mut self", returns="Result")` — find functions with matching signatures (potential duplicates)
-- `tokensave_diagnostics(scope="workspace")` — run type-checker (cargo check / tsc / pyright) before committing
-- **Fallback:** If TokenSave unavailable -> `git diff` + `git diff --stat` manually review.
+**codegraph tools for code review (use flexibly, pick what fits):**
+- `codegraph_context(task="<feature>")` — understand the changes in context
+- `codegraph_search("symbolName")` — find specific symbols
+- `codegraph_callers(symbol)` / `codegraph_callees(symbol)` — call chains
+- `codegraph_impact(symbol)` — blast radius of changes
+- `codegraph_explore(query)` — inspect multiple related symbols
+- **Fallback:** `git diff` + `git diff --stat` + manual review.
 
 #### Subagent Parallel Review (Optional, when multiple review dimensions)
 
@@ -45,68 +39,44 @@ Security, Architecture, and Complexity reviews are independent → run concurren
 // Parallel review agents
 Agent({
   description: "Security review",
-  prompt: "Run security review: tokensave_unsafe_patterns(kinds=['unwrap','expect','panic','unsafe_block']), tokensave_todos(kinds=['HACK','TODO']), tokensave_module_api. Report all security vulnerabilities.",
+  prompt: "Run security review: grep for unsafe patterns, TODO/FIXME markers, check public API surface. Report all security vulnerabilities.",
   subagent_type: "general-purpose",
   run_in_background: true
 })
 
 Agent({
   description: "Architecture review",
-  prompt: "Run architecture review: tokensave_dsm, tokensave_coupling(direction='fan_in'), tokensave_coupling(direction='fan_out'), tokensave_hotspots, tokensave_dependency_depth. Report structural issues.",
+  prompt: "Run architecture review: check coupling, hotspots, dependency depth using codegraph. Report structural issues.",
   subagent_type: "Plan",
   run_in_background: true
 })
 
-Agent({
-  description: "Complexity review",
-  prompt: "Run complexity review: tokensave_complexity(limit=10), tokensave_god_class(limit=5), tokensave_gini(metric='complexity'). Report complexity hotspots.",
-  subagent_type: "general-purpose",
-  run_in_background: true
-})
-
 // 主流程继续：准备 Spec Final Check
-// 当后台 agent 完成后，汇总 3 个审查报告
+// 当后台 agent 完成后，汇总 2 个审查报告
 ```
 
-**Merge results:** Combine findings into a single review report. Prioritize: Security > Architecture > Complexity.
+**Merge results:** Combine findings into a single review report. Prioritize: Security > Architecture.
 
 ### 2. Architecture Check
 
 Run `improve-codebase-architecture` skill for insight only. **Do not execute architectural refactors.** Suggest, don't break.
 
-**tokensave tools for architecture analysis (use flexibly, pick what fits):**
-- `tokensave_dsm(path="<src_dir>", format="clusters")` — design structure matrix, reveals clusters and layering violations
-- `tokensave_coupling(direction="fan_in")` — which files are depended on most (high coupling risk)
-- `tokensave_coupling(direction="fan_out")` — which files depend on most others (fragile modules)
-- `tokensave_hotspots()` — highest connectivity symbols (change blast radius)
-- `tokensave_dependency_depth()` — longest dependency chains, fragile files
-- `tokensave_gini(metric="complexity")` — find god files with uneven complexity distribution
-- `tokensave_inheritance_depth()` — deepest class/interface hierarchies
-- `tokensave_type_hierarchy(node_id="<id>")` — full type hierarchy tree for traits/interfaces/classes
-- `tokensave_rank(edge_kind="implements", direction="incoming")` — most implemented interface (high coupling risk)
-- `tokensave_distribution(path="<dir>")` — node kind breakdown per file/directory
-- `tokensave_largest(node_kind="class", limit=5)` — largest classes (potential god classes)
-- **Fallback:** If TokenSave unavailable -> `grep -rn` + `find` for architectural overview.
+**codegraph tools for architecture analysis:**
+- `codegraph_context(task="<architecture concern>")` — understand architectural patterns
+- `codegraph_files` — project file structure
+- **Fallback:** `grep -rn` + `find` for architectural overview.
 
-### 3. Security Review (tokensave-based)
+### 3. Security Review
 
-Use tokensave tools for security scanning instead of `security-review` skill:
-
-**tokensave tools for security scanning:**
-- `tokensave_unsafe_patterns(kinds=["unwrap", "expect", "panic", "todo", "unimplemented", "unsafe_block"])` — surface panic/unsafe sites
-- `tokensave_todos(kinds=["HACK", "TODO"])` — find security-related TODOs
-- `tokensave_doc_coverage(path="<src_dir>")` — public symbols missing documentation (API surface gaps)
-- `tokensave_test_risk(path="<src_dir>")` — risk-weighted test-gap analysis (high risk = high fan-in + low coverage)
-- `tokensave_module_api(path="<src_dir>")` — public API surface (attack surface inventory)
-- **Fallback:** If TokenSave unavailable -> `grep -rn "TODO\|FIXME\|HACK\|unsafe" src/`.
+**Fallback:** `grep -rn "TODO\|FIXME\|HACK\|unsafe" src/`.
 
 ### 4. Spec Final Check
 
 Re-read `.spec/current.md`. Every REQ must be DONE. Gaps -> flag, don't auto-fix.
 
-**tokensave tools for cross-referencing spec vs implementation:**
-- `tokensave_search(query="<REQ keyword>")` — verify the REQ functionality exists in code
-- `tokensave_context(task="<REQ description>")` — get relevant code context for the REQ
+**codegraph tools for cross-referencing spec vs implementation:**
+- `codegraph_search(query="<REQ keyword>")` — verify the REQ functionality exists in code
+- `codegraph_context(task="<REQ description>")` — get relevant code context for the REQ
 - `ctx_search(queries=[<REQ descriptions>])` — look up previously indexed spec content
 - **Fallback:** Read `.spec/current.md` directly + `grep -rn` for keywords.
 

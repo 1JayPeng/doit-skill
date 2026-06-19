@@ -137,7 +137,7 @@ If MemPalace unavailable (any call errors) → skip all MP steps silently for th
 # Type F (full feature workflow):
 [[TASK:create subject="Phase 0 - Classify" description="Classify request, announce type, create task list"]]
 [[TASK:create subject="Phase 1 - Spec" description="Grill 5+ questions, write spec, create branch"]]
-[[TASK:create subject="Phase 2 - Plan" description="Impact analysis, codegraph + tokensave context, order REQs"]]
+[[TASK:create subject="Phase 2 - Plan" description="Impact analysis, codegraph context, order REQs"]]
 [[TASK:create subject="Phase 3 - Execute" description="TDD per REQ, per-REQ review+simplify"]]
 [[TASK:create subject="Phase 4 - E2E" description="End-to-end tests in real environment"]]
 [[TASK:create subject="Phase 5 - Review" description="Feature review, merge duplicates"]]
@@ -199,7 +199,7 @@ If MemPalace unavailable (any call errors) → skip all MP steps silently for th
 MemPalace is NOT just a Phase 0 sweep tool. It persists project knowledge across sessions.
 Each phase has a specific trigger -> query -> action mapping. Follow it.
 
-**The difference:** tokensave = current AST (symbols, edges, files). MemPalace = historical knowledge (decisions, bugs, patterns, specs).
+**The difference:** codegraph = current AST (symbols, edges, files). MemPalace = historical knowledge (decisions, bugs, patterns, specs).
 
 | Phase | Trigger (WHEN) | Query (WHAT) | Action (WHY) |
 |-------|---------------|--------------|--------------|
@@ -236,8 +236,8 @@ Each phase has a specific trigger -> query -> action mapping. Follow it.
 | Start touching unfamiliar module | Prior implementation notes | `mempalace_search query="<module name>" wing="<project>" room="knowledge_code" limit=3` |
 | Add new API endpoint | Existing API patterns | `mempalace_search query="<API type>" wing="<project>" room="knowledge_api" limit=3` |
 
-**tokensave vs MemPalace — when to use which:**
-- **tokensave** = current codebase AST (symbols, callers, callees, impact)
+**codegraph vs MemPalace — when to use which:**
+- **codegraph** = current codebase AST (symbols, callers, callees, impact)
 - **MemPalace** = cross-session knowledge (decisions made, bugs hit, specs written)
 
 **After plan is finalized, store it:**

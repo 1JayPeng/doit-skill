@@ -7,7 +7,7 @@ Fallback adapter for any MCP-supporting agent that doesn't have a dedicated adap
 This adapter assumes the target agent supports:
 - **Shell execution** (via MCP `shell_execute` or built-in `bash`)
 - **File read/write** (via MCP `read_file`, `write_file` or built-in)
-- **MCP tool access** (tokensave, context-mode, mempalace, etc.)
+- **MCP tool access** (codegraph, context-mode, mempalace, etc.)
 
 ## Variable Mapping
 

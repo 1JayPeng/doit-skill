@@ -48,7 +48,7 @@ Key steps:
 **[LOAD] [../plan.md](../plan.md) — full Phase 2 execution.**
 
 Key steps:
-1. tokensave_context / codegraph_context for impact analysis
+1. codegraph_context for impact analysis
 2. MemPalace proactive query
 3. Build execution order
 
@@ -129,7 +129,7 @@ Execute ALL `[[TASK:create]]` calls in parallel:
 # Type F (full feature workflow):
 [[TASK:create subject="Phase 0 - Classify" description="Classify request, announce type, create task list"]]
 [[TASK:create subject="Phase 1 - Spec" description="Grill 5+ questions, write spec, create branch"]]
-[[TASK:create subject="Phase 2 - Plan" description="Impact analysis, codegraph + tokensave context, order REQs"]]
+[[TASK:create subject="Phase 2 - Plan" description="Impact analysis, codegraph context, order REQs"]]
 [[TASK:create subject="Phase 3 - Execute" description="TDD per REQ, per-REQ review+simplify"]]
 [[TASK:create subject="Phase 4 - E2E" description="End-to-end tests in real environment"]]
 [[TASK:create subject="Phase 5 - Review" description="Feature review, merge duplicates"]]

@@ -62,7 +62,7 @@ If no in-progress work found → tell user "No in-progress workflow found. Type 
 **Action:** **不执行完整工作流。** 仅使用工具直接回答：
 
 1. **Phase 0 分类** → announce Type Q
-2. **直接使用工具** — codegraph、tokensave、ctx_search、ctx_read 等查找信息
+2. **直接使用工具** — codegraph、ctx_search、ctx_read 等查找信息
 3. **用中文直接回答** — 给出清晰、准确的答案
 4. **跳过 Phase 1-9.5** — 无 spec、无 branch、无 commit、无知识提取
 5. **Phase 10** — 仅运行 headroom_compress，跳过其他统计

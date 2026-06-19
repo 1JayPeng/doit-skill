@@ -4,13 +4,13 @@
 
 **Config gate:** Read `.doit/config.yaml` `subagent.enabled`. Default `false` (disabled). Set to `true` to enable subagent orchestration.
 
-**Subagent tool access:** Subagents get full tool permissions through `general-purpose` agent type. MCP tools (tokensave, context-mode, mempalace) are available to subagents.
+**Subagent tool access:** Subagents get full tool permissions through `general-purpose` agent type. MCP tools (codegraph, context-mode, mempalace) are available to subagents.
 
 ## Subagent Tool Access
 
 | Tool | Purpose | Token Savings |
 |------|---------|--------------|
-| tokensave | Code graph analysis | Replaces grep+Read, 60-80% context reduction |
+| codegraph | Code graph analysis | Replaces grep+Read, 60-80% context reduction |
 | context-mode | Session context management | Auto-index commands, semantic search |
 | MemPalace | Cross-session semantic memory | Avoid重复 research, context recovery |
 | FILE:read/edit/write | File operations | Precise edits, reduced reads |
@@ -105,7 +105,7 @@
 ```
 
 **Execution flow (main flow responsibility):**
-1. Phase 2: list target_files per REQ via `tokensave_impact` or `tokensave_context`
+1. Phase 2: list target_files per REQ via `codegraph_impact` or `codegraph_context`
 2. Build file allocation map — REQ-001 → [file_a, file_b], REQ-002 → [file_c]
 3. Check file intersection — REQ-001 and REQ-003 share file_a → no parallel
 4. No intersection → parallel | Intersection → sequential (more files first)
@@ -124,8 +124,8 @@
 ### Phase 2: Plan with Code Graph
 
 ```
-[[AGENT:spawn description="Analyze impact module A" prompt="Use tokensave_context to analyze module A impact..." background=true]]
-[[AGENT:spawn description="Analyze impact module B" prompt="Use tokensave_context to analyze module B impact..." background=true]]
+[[AGENT:spawn description="Analyze impact module A" prompt="Use codegraph_context to analyze module A impact..." background=true]]
+[[AGENT:spawn description="Analyze impact module B" prompt="Use codegraph_context to analyze module B impact..." background=true]]
 ```
 
 ### Phase 3: Execute
@@ -146,7 +146,7 @@
 ```
 [[AGENT:spawn description="Security review" prompt="Review for security vulnerabilities..." type="general" background=true]]
 [[AGENT:spawn description="Architecture review" prompt="Review architecture consistency..." type="plan" background=true]]
-[[AGENT:spawn description="Complexity analysis" prompt="Use tokensave_complexity to analyze..." background=true]]
+[[AGENT:spawn description="Complexity analysis" prompt="Use codegraph to analyze..." background=true]]
 ```
 
 ## Conductor Orchestration Mode
@@ -216,7 +216,7 @@ for wave in waves:
 REQ-XXX: <description>
 
 工具使用:
-  [ ] Used tokensave_context/tokensave_search
+  [ ] Used codegraph_context/codegraph_search
   [ ] Used context-mode tools (ctx_search, ctx_execute)
   [ ] No forbidden tools (Bash for large output)
 
@@ -246,7 +246,7 @@ Status: PASS | FAIL | PARTIAL
 Files Modified: [file1, file2]
 Tests: PASS (3/3) | FAIL (1/3)
 Commit: abc1234 (pushed)
-Tools Used: [tokensave_context, Edit, Bash]
+Tools Used: [codegraph_context, Edit, Bash]
 Iron Rules Violated: [] | [detail]
 Notes: <optional>
 ```
@@ -300,12 +300,12 @@ build_conductor_prompt(req, spec, context):
   ## 依赖：{req.dependencies}（已完成）
 
   ## 上下文：
-  {context}  # tokensave_context result
+  {context}  # codegraph_context result
 
   ## ===== 铁律（必须遵守） =====
 
   ### 铁律 1：工具使用规范
-  - MUST use tokensave_context to understand code
+  - MUST use codegraph_context to understand code
   - MUST use context-mode tools (ctx_search, ctx_execute)
   - MUST NOT use Explore agent (use general-purpose)
   - MUST NOT use Bash for output >20 lines

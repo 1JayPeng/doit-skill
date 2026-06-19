@@ -115,12 +115,10 @@ with sync_playwright() as p:
 
 ### Run E2E Tests
 
-**Primary (fast path — only affected tests):**
+**Primary (fast path — full suite via context-mode):**
 ```
-tokensave_affected_tests(files=[<changed_files>])
-tokensave_run_affected_tests(changed_paths=[<changed_files>])
+ctx_execute(language="shell", code="cargo test --no-fail-fast")
 ```
-If `affected_tests` returns all tests (no narrowing), fall back to full suite.
 
 **Fallback (full suite):**
 ```
@@ -144,22 +142,18 @@ ctx_batch_execute(
 ```
 - **Fallback:** If Context-Mode unavailable -> parallel Bash calls to `cat` + `find`.
 
-**tokensave** tools for understanding entry points:
-1. `tokensave_search(query="<entry_point_name>")` — find the entry point function
-2. `tokensave_node(node_id="<id>")` — get function signature for test generation
-3. `tokensave_signature(qualified_name="<entry_point>")` — get function signature without body
-4. `tokensave_test_map(file="<source_file>")` — check existing test coverage
-5. `tokensave_config(key="dependencies", path="Cargo.toml")` — read project config without file reads (TOML/JSON)
-6. `tokensave_outline(file="<entry_point_file>")` — flat list of top-level symbols (quick file overview)
-- **Fallback:** If TokenSave unavailable -> `grep -rn "def " src/` + `Read` the file.
+**codegraph** tools for understanding entry points:
+1. `codegraph_search("entry_point_name")` — find the entry point function
+2. `codegraph_node(symbol)` — get function signature for test generation
+3. `codegraph_explore(query)` — explore related symbols
+- **Fallback:** `grep -rn "def " src/` + `Read` the file.
 
 ### Spec Alignment Check Tools
 
 After tests pass, compare output against spec:
 1. `ctx_search(queries=[<REQ descriptions>])` — look up spec REQs from indexed content
    - **Fallback:** Read `.spec/current.md` directly.
-2. `tokensave_diff_context(files=[<changed_files>])` — which symbols changed, semantic impact
-   - **Fallback:** `git diff --name-only` + `git diff <file>`.
+2. `git diff --name-only` + `git diff <file>` — which files/symbols changed
 
 ## L0/L1 自动生成
 

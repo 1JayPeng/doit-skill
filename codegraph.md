@@ -1,14 +1,12 @@
 # CodeGraph Integration
 
-**跨语言代码图 fallback** — 当 TokenSave 不可用时提供代码图查询能力。
+**主代码图工具** — AST 解析、符号查找、调用关系、影响分析。
 
 ---
 
 ## 定位
 
-**TokenSave 是主代码图工具**，CodeGraph 是其 fallback。仅在以下场景使用：
-- TokenSave 未安装或不支持当前项目语言
-- 需要跨语言代码图查询（TokenSave 主要支持 Rust）
+CodeGraph 是主要的代码图查询工具。基于 tree-sitter AST 解析，提供跨语言的精准代码图查询。
 
 ---
 
@@ -37,20 +35,20 @@ claude mcp list | grep codegraph
 
 | 工具 | 用途 |
 |------|------|
-| `codegraph_context` | **主要** — "X 如何工作"，获取综合上下文 |
+| `codegraph_context` | **主要入口** — "X 如何工作"，获取综合上下文 |
 | `codegraph_search` | 按名称定位符号 |
 | `codegraph_callers` | 谁调用了此符号 |
 | `codegraph_callees` | 此符号调用了谁 |
 | `codegraph_impact` | 编辑影响面 |
 | `codegraph_node` | 符号完整源码 |
+| `codegraph_explore` | 多个相关符号源码一次性查看 |
+| `codegraph_files` | 列出索引文件 |
 
 ---
 
 ## 工作流中的使用
 
 ### Phase 2 — 计划（代码图扫描）
-
-当 TokenSave 不可用时使用 CodeGraph：
 
 1. `codegraph_context` — 理解功能如何工作，获取相关代码
 2. `codegraph_search` — 定位特定符号
@@ -60,9 +58,10 @@ claude mcp list | grep codegraph
 
 ### 关键原则
 
-- **信任结果** — 不要使用 grep 重新验证。索引是预构建的。
+- **Trust the results** — 不要使用 grep 重新验证。索引是预构建的。
 - **将返回的源码视为已读取** — 无需重新读取文件。
-- **编辑后检查 staleness banner** — 需要时重新索引。
+- **Auto-sync** — 文件监听器 ~500ms 延迟；编辑后不要立即重新查询。
+- **直接回答** — `codegraph_context` 优先，然后 ONE `codegraph_explore` 查看源码。不要 grep+read 循环。
 - **如果 `.codegraph/` 不存在**，提供运行 `codegraph init -i`。
 
 ---
@@ -83,4 +82,3 @@ claude mcp list | grep codegraph
 
 - **不是编辑器** — 只读代码图查询。使用原生 Edit/Write 修改文件。
 - **不是记忆系统** — 仅代码结构，无语义记忆。使用 MemPalace。
-- **TokenSave 关系**：TokenSave 是主工具；CodeGraph 是跨语言 fallback。

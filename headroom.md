@@ -90,5 +90,5 @@ claude mcp list | grep headroom
 ## Headroom 不是
 - NOT 跨会话记忆层（用 MemPalace）
 - NOT 知识图谱（用 MemPalace KG）
-- NOT 代码图工具（用 TokenSave）
+- NOT 代码图工具（用 codegraph）
 - IS token 优化层，通过 Proxy 自动压缩所有工具输出
