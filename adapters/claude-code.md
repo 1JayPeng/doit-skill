@@ -38,6 +38,8 @@ Maps abstract `[[OPERATION]]` syntax to Claude Code native tool calls.
 
 **Agent types:** `general-purpose`, `claude`, `Explore`, `Plan`, `claude-code-guide`
 
+**Task Usage Frequency:** Claude Code has native `TaskCreate`/`TaskUpdate`/`TaskList` tools. **Call `TaskUpdate` after every sub-step**, not just at phase boundaries. A sub-step = any discrete operation (reading a file for context, running a search, implementing a REQ, running tests). If 3+ sub-steps pass without a `TaskUpdate` call, the system will warn about stale tasks — that's a violation. Keep the task list alive as a progress tracker, not a decoration.
+
 ### User Interaction
 
 | Abstract | Claude Code |

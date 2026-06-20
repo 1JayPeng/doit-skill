@@ -29,6 +29,8 @@ Maps abstract `[[OPERATION]]` syntax to OpenCode native tool calls.
 
 **Note:** OpenCode `todowrite` manages todos by content matching, not by ID. To "update" a task, re-write the full todo list with updated status. `todowrite` is **disabled for subagents** by default.
 
+**Task Usage Frequency:** OpenCode's `todowrite` is the primary progress tracking mechanism. **Call `todowrite` after every sub-step** to update status. Even though OpenCode doesn't emit stale task warnings like Claude Code, maintaining an accurate todo list is essential for the user to see progress. The todo list IS the progress bar.
+
 ### Agent (Subagent)
 
 | Abstract | OpenCode |
@@ -46,6 +48,8 @@ Maps abstract `[[OPERATION]]` syntax to OpenCode native tool calls.
 - `build` — primary agent, all tools enabled
 
 **Custom subagents** via `opencode.json` → `agent` key with `mode: "subagent"`. Controlled by `permission.task` with glob patterns.
+
+**Task Usage Frequency:** OpenCode uses `todowrite` for task management. Unlike Claude Code, `todowrite` doesn't have system-level stale warnings, but **still call it after every sub-step** to maintain progress visibility. Keep the todo list current — it's the only progress tracking mechanism visible to the user.
 
 ### User Interaction
 

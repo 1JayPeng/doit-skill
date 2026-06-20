@@ -74,6 +74,14 @@ npx skills add 1JayPeng/doit-skill
 
 See [setup.md](setup.md) for details.
 
+### Distribution Model
+
+- **Remote repository** (`1JayPeng/doit-skill` on GitHub) = **distribution source** — all changes originate here
+- **`~/.claude/skills/doit/`** (or `.opencode/skills/doit/` etc.) = **local installation** — cloned from remote
+- **Local dev repo** (cloned `doit-skill`) = **development environment** — push to remote to distribute
+
+Changes flow: `Local Dev → git push → Remote (GitHub) → setup.sh → ~/.claude/skills/doit/`
+
 ---
 
 ## Usage

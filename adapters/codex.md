@@ -26,11 +26,13 @@ Maps abstract `[[OPERATION]]` syntax to OpenAI Codex CLI.
 | `[[TASK:list]]` | `cat .doit/tasks.md` |
 | `[[TASK:get taskId="..."]]` | `grep -A5 "taskId" .doit/tasks.md` |
 
-**Note:** Codex has no native task management. Tasks tracked in `.doit/tasks.md`:
+**Note:** Codex has no native task management. Tasks tracked in `.doit/tasks.md` via file edits:
 ```markdown
 - [ ] Phase 0 - Classify: Classify request
 - [x] Phase 1 - Spec: Done
 ```
+
+**Task Usage Frequency:** Codex lacks native task management, relying on `.doit/tasks.md`. **Edit this file after every sub-step** using `sed` or `patch` — change `[ ]` to `[x]` as tasks complete. This file is the ONLY progress indicator. Without regular updates, the task file becomes stale and misleads resume operations.
 
 ### Agent (Subagent)
 
@@ -43,6 +45,8 @@ Maps abstract `[[OPERATION]]` syntax to OpenAI Codex CLI.
 | `[[AGENT:stop task_id="..."]]` | `shell("kill <pid>")` |
 
 **Subagent details:** v0.117.0+ uses path-based addresses (`/root/agent_a`). Configurable via `config.toml` `[agents]` section. Custom agents support read-only mode, sandbox overrides.
+
+**Task Usage Frequency:** Codex has no native task API. Tasks are tracked in `.doit/tasks.md`. **Update this file after every sub-step** using `sed` or `patch` to change `[ ]` to `[x]`. The file is the single source of truth for progress. Keep it current — stale task files mislead resume operations.
 
 ### User Interaction
 
