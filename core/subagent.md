@@ -4,7 +4,7 @@
 
 **Config gate:** Read `.doit/config.yaml` `subagent.enabled`. Default `false` (disabled). Set to `true` to enable. **本仓库（doit-skill）默认 `true`。**
 
-**Subagent tool access:** Subagents get full tool permissions through `general-purpose` agent type. MCP tools (codegraph, context-mode, mempalace) are available to subagents. Subagent via `[[AGENT:spawn]]` gets same tool permissions as main agent.
+**Subagent tool access:** Subagents get full tool permissions. MCP tools (codegraph, context-mode, mempalace) are available to subagents. Subagent via `[[AGENT:spawn]]` gets same tool permissions as main agent. Agent type varies by CLI adapter — see [adapters/](../adapters/).
 
 ## 三级团队模型 — Three-Tier Team
 
@@ -152,8 +152,8 @@ Type B (bug): Conductor + diagnose skill
 **Never specify `model` parameter. Subagent inherits main conversation's model.**
 
 ```
-[[AGENT:spawn description="Architecture review" prompt="Review the architecture..." type="plan"]]
-[[AGENT:spawn description="Quick file search" prompt="Find all usages of..." type="general"]]
+[[AGENT:spawn description="Architecture review" prompt="Review the architecture..."]]
+[[AGENT:spawn description="Quick file search" prompt="Find all usages of..."]]
 ```
 
 ### Message (Continue Agent)
@@ -168,18 +168,18 @@ Type B (bug): Conductor + diagnose skill
 [[AGENT:stop task_id="<agent_id>"]]
 ```
 
-## Available Agent Types
+## Available Agent Types (by Capability)
 
-| Type | Use | Tools |
-|------|-----|-------|
-| **general-purpose** | General research, search, multi-step | All |
-| **claude** | Default, any task | All |
-| **Explore** | Fast read-only code search | Except Agent, Edit, Write |
-| **Plan** | Architecture design, implementation plans | Except Agent, Edit, Write |
+Agent types are defined by **capability**, not by CLI-specific naming. Each CLI adapter maps capabilities to its native types.
 
-**铁律: Use `general-purpose` or `Plan` types. Avoid `Explore` if it hardcodes specific models.**
+| Capability | Description | Claude Code | OpenCode | oh-my-pi | MiMo | Codex |
+|---|---|---|---|---|---|---|
+| **Full tools** | General research, search, multi-step, file editing | `general-purpose` | `general`, `build` | `task()` | `general` | `shell()` |
+| **Read-only + planning** | Architecture design, analysis, no file mutation | `Plan` | `explore`, `scout` | read-only task | `explore` | read-only |
 
-**Agent types vary by CLI adapter. See [adapters/](../adapters/) for specifics.**
+**铁律: Pick capability, not type name. The adapter resolves to the correct agent type.**
+
+**See [adapters/](../adapters/) for per-CLI agent type details.**
 
 ### 铁律 — No Same-File Parallel Writes
 
@@ -392,7 +392,7 @@ REQ-XXX: <description>
 工具使用:
   [ ] Used codegraph_context/codegraph_search
   [ ] Used context-mode tools (ctx_search, ctx_execute)
-  [ ] No forbidden tools (Bash for large output)
+  [ ] No forbidden tools (large shell output without compression)
 
 TDD 循环:
   [ ] Wrote tests first (RED)
@@ -420,7 +420,7 @@ Status: PASS | FAIL | PARTIAL
 Files Modified: [file1, file2]
 Tests: PASS (3/3) | FAIL (1/3)
 Commit: abc1234 (pushed)
-Tools Used: [codegraph_context, Edit, Bash]
+Tools Used: [codegraph_context, [[FILE:edit]], [[SHELL:run]]]
 Iron Rules Violated: [] | [detail]
 Notes: <optional>
 ```
@@ -483,7 +483,7 @@ build_conductor_prompt(req, spec, context, role):
   ### 铁律 1：工具使用规范
   - MUST use codegraph_context to understand code
   - MUST use context-mode tools (ctx_search, ctx_execute)
-  - MUST NOT use Explore agent (use general-purpose)
+  - MUST NOT use read-only agent types for write tasks (use Full tools)
   - MUST NOT use Bash for output >20 lines
 
   ### 铁律 2：TDD 循环不可跳过
