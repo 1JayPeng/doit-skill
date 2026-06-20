@@ -2,7 +2,7 @@
 
 **Subagent orchestration is a native capability of most AI coding CLIs.**
 
-**Config gate:** Read `.doit/config.yaml` `subagent.enabled`. Default `false` (disabled). Set to `true` to enable. **本仓库（doit-skill）默认 `true`。**
+**Config gate:** Read `.doit/config.yaml` `subagent.enabled`. Default `true` (enabled). Set to `false` to disable.
 
 **Subagent tool access:** Subagents get full tool permissions. MCP tools (codegraph, context-mode, mempalace) are available to subagents. Subagent via `[[AGENT:spawn]]` gets same tool permissions as main agent. Agent type varies by CLI adapter — see [adapters/](../adapters/).
 

@@ -576,7 +576,7 @@ echo "    • code-review      (claude plugin install code-review)"
 
   echo "  Options (configurable at install):"
   echo "    • doc-capture    (persist reference docs, default: enabled)"
-  echo "    • subagent       (parallel orchestration, default: disabled)"
+  echo "    • subagent       (parallel orchestration, default: enabled)"
   echo "    • auto_commit    (skip commit/push confirmation, default: disabled)"
   echo "    • --global       install to ~/.claude/skills/ instead of .claude/skills/"
 

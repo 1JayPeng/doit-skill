@@ -40,10 +40,12 @@ If no in-progress work found → tell user "No in-progress workflow found. Type 
 ## Type S — Simple
 
 **Signs:**
-- Single file change
+- **Single file change (maximum 1 file)** — **changing 2+ files = Type F**
 - Rename, typo fix, reformat
 - Run a command, install a package
 - Change config value
+
+**铁律：Type S = 最多修改 1 个文件。任何涉及 2+ 文件的变更（包括文档批量修改、多文件重命名）强制升级为 Type F。**
 
 **Action:** Execute directly. Skip Phase -1 (use `.doit/env-cache.json` if exists, skip if not). Skip phases 1-5. Log to `.scratch/doit-log.jsonl`.
 
@@ -73,9 +75,11 @@ If no in-progress work found → tell user "No in-progress workflow found. Type 
 
 **Signs:**
 - New user-facing functionality
-- Cross-module changes (2+ files likely)
+- **Cross-module changes (2+ files)** — **any change affecting 2+ files**
 - Behavioral change (not just cosmetic)
 - Requires tests
+
+**铁律：涉及 2+ 文件的变更 = 强制 Type F。不判断"是否复杂"，只看文件数量。**
 
 **Action:** Full phases 1-8.
 
