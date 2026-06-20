@@ -34,7 +34,7 @@ caveman: Phase 0 [LOAD:session] 不释放 | grill-me: Phase 1 [LOAD:phase-1] 结
 Non-Interruptive Q | Background >10s | Commit+Push | MP 读写对称 | 工作流不可跳过 | 减少暂停 | Grill 5+/3+ | 危险操作确认 | Review+Simplify
 **[CALL]** = MCP。**[LOAD]** = 读文件。**[LOAD:phase-N]** = 加载 skill。**[RELEASE:phase-N]** = 释放 + `[[MEMORY:compress]]`。
 5 层: codegraph, lean-ctx, context-mode, headroom (Proxy 60-95% 节省), mempalace。MCP 工具链在所有支持的 CLI 中保持一致。
-**Subagent: 默认启用** (`subagent.enabled: true`)。三级团队 [core/subagent.md](core/subagent.md)。[core/team-roles.md](core/team-roles.md)
+**Subagent: 默认启用** (`subagent.enabled: true`)。三级团队 [core/subagent.md](core/subagent.md)。[core/team-roles.md](core/team-roles.md)。**自主并行模式** — 主代理主动判断并行机会，不需用户指令。[core/subagent.md](core/subagent.md)
 
 ## Phase Index
 

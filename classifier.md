@@ -83,6 +83,16 @@ If no in-progress work found → tell user "No in-progress workflow found. Type 
 
 **Action:** Full phases 1-8.
 
+**子代理策略选择：**
+
+| 条件 | 策略 | 说明 |
+|------|------|------|
+| 完整Feature，有Phase 1-7需求 | 团队Wave模式 | Architect→Developer→Reviewer |
+| 多文件但无依赖关系 | 并行子代理 | 2-N个background子代理 |
+| 单文件或简单修改 | 主代理直接执行 | 子代理开销不值得 |
+
+详见 [core/subagent.md](core/subagent.md)「自主并行模式」。
+
 ## Type B — Bug
 
 **Signs:**
