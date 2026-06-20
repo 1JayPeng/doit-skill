@@ -27,6 +27,7 @@
 - tdd: Phase 3 [LOAD:phase-3] 开始 → [RELEASE:phase-3] 结束后释放
 - diagnose: Phase 0 Type B [LOAD:phase-0] → [RELEASE:phase-0] D6 完成后释放
 - handoff/prototype/improve-codebase-architecture: 按需加载，完成后立即释放
+- **Subagent team mode:** See [core/team-roles.md](core/team-roles.md) for Architect/Developer/Reviewer/Tester roles.
 
 ## Phase 0 — Classify Request
 
@@ -68,6 +69,8 @@ Key steps:
 1. [LOAD:phase-3] tdd
 2. TDD loop per REQ
 3. Per-REQ review + simplify
+
+When `subagent.enabled: true`: dispatch Developers per REQ via wave schedule. See [core/subagent.md](core/subagent.md).
 
 ## Phase 4 — E2E
 

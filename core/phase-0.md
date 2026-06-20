@@ -72,6 +72,23 @@ mempalace_search wing="sessions" room="problems" limit=3 max_distance=0.7
 
 If MemPalace unavailable → skip silently. Filesystem remains primary.
 
+**Step 2.75 — Subagent Team Bootstrap (if `subagent.enabled: true`).**
+
+Read `.doit/config.yaml`. If `subagent.enabled: true`:
+
+1. **[LOAD] [core/team-roles.md](core/team-roles.md)** — load role definitions
+2. **Determine team size** based on classification:
+   - Type S → no subagents, main flow directly
+   - Type F, small (<3 REQs) → Conductor + Developer × N
+   - Type F, large (3+ REQs) → Conductor + Architect + Developer × N + Reviewer + Tester
+   - Type B → Conductor + diagnose skill
+3. **Prepare wave schedule** — after Phase 2, Architect produces the dependency graph and wave schedule
+4. **Announce** `[TEAM] subagent mode active (<team_size> roles)`
+
+If `subagent.enabled: false` or not set → continue with single-agent flow.
+
+See [core/subagent.md](core/subagent.md) for full team orchestration details.
+
 **Step 3 — Create Phase Task List (MANDATORY).**
 
 Execute ALL `[[TASK:create]]` calls in parallel:
