@@ -333,7 +333,7 @@ Notes:
 - Build REQ dependency graph -> derive waves
 - Dispatch subagents by role (Architect, Developer, Reviewer, Tester, Simplifier)
 - Poll subagent progress
-- Supervise tool usage and iron rule compliance ([core/iron-rules.md](iron-rules.md))
+- Supervise tool usage and iron rule compliance ([core/iron-rules.md](core/iron-rules.md))
 - Trigger whip mechanism
 - Collect all subagent results
 - Verify spec alignment

@@ -632,7 +632,7 @@ if [ -d "$DOIT_DST" ]; then
 
   # Fix broken symlinks: if symlink target was copied as regular file, replace it
   for lnk in review-simplify.md commit.md; do
-    target="shared/$lnk"
+    target="core/shared/$lnk"
     if [ -f "$DOIT_DST/$lnk" ] && [ ! -L "$DOIT_DST/$lnk" ]; then
       rm "$DOIT_DST/$lnk"
       ln -s "$target" "$DOIT_DST/$lnk"
@@ -641,13 +641,13 @@ if [ -d "$DOIT_DST" ]; then
     fi
   done
 
-  # Ensure shared/ directory exists with all files
-  if [ ! -d "$DOIT_DST/shared" ] && [ -d "$DOIT_DIR/shared" ]; then
-    cp -a "$DOIT_DIR/shared" "$DOIT_DST/shared"
+  # Ensure core/shared/ directory exists with all files
+  if [ ! -d "$DOIT_DST/core/shared" ] && [ -d "$DOIT_DIR/core/shared" ]; then
+    cp -a "$DOIT_DIR/core/shared" "$DOIT_DST/core/shared"
     while IFS= read -r f; do
       UPDATED_FILES+=("$f")
-    done < <(find "$DOIT_DST/shared" -type f | sed "s|$DOIT_DST/||")
-    echo_success "shared/ directory restored"
+    done < <(find "$DOIT_DST/core/shared" -type f | sed "s|$DOIT_DST/||")
+    echo_success "core/shared/ directory restored"
   fi
 
   # Clean excluded dirs

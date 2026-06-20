@@ -1,1 +1,0 @@
-shared/review-simplify.md

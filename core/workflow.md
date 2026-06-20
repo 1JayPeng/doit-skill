@@ -63,7 +63,7 @@ Key steps:
 
 ## Phase 3 — Execute
 
-**[LOAD] [execute.md](execute.md) — full Phase 3 TDD execution.**
+**[LOAD] [execute.md](core/execute.md) — full Phase 3 TDD execution.**
 
 Key steps:
 1. [LOAD:phase-3] tdd
@@ -82,15 +82,15 @@ When `subagent.enabled: true`: dispatch Developers per REQ via wave schedule. Se
 
 ## Phase 6 — Simplify
 
-**[LOAD] [../shared/review-simplify.md](../shared/review-simplify.md) — review + simplify.**
+**[LOAD] [shared/review-simplify.md](shared/review-simplify.md) — review + simplify.**
 
 ## Phase 7 — E2E Verify
 
-**[LOAD] [../shared/e2e-verify.md](../shared/e2e-verify.md) — E2E verification loop.**
+**[LOAD] [shared/e2e-verify.md](shared/e2e-verify.md) — E2E verification loop.**
 
 ## Phase 8 — Commit + Push
 
-**[LOAD] [../shared/commit.md](../shared/commit.md) — commit + push.**
+**[LOAD] [shared/commit.md](shared/commit.md) — commit + push.**
 
 ## Phase 9 — Cleanup
 

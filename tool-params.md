@@ -57,7 +57,7 @@ Edit({ file_path: "/abs/path/file.rs", old_string: "fn old()", new_string: "fn n
 - `InputValidationError: command is missing` — Most common! Empty `command` parameter.
 - **Root cause:** Model generates tool call before constructing the command in thinking.
 
-**Mandatory Preflight (from rules.md):**
+**Mandatory Preflight (from core/iron-rules.md):**
 ```
 [BASH PREFLIGHT]
 cmd: <complete, executable command text>

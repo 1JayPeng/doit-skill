@@ -91,11 +91,11 @@ Each phase document embeds its own `[MP-READ]` and `[MP-WRITE]` steps. See the p
 | Phase 0 | [SKILL.md](SKILL.md) | Extended sweep: diary, KG query, KG timeline, semantic search + knowledge rooms |
 | Phase 1 | [spec.md](spec.md) | `[MP-READ]` prior specs + knowledge, `[MP-WRITE]` new spec |
 | Phase 2 | [plan.md](plan.md) | `[MP-READ]` implementation context, `[MP-WRITE]` ADRs |
-| Phase 3 | [execute.md](execute.md) | `[MP-READ]` prior implementations, `[MP-WRITE]` REQ summaries |
+| Phase 3 | [core/execute.md](core/execute.md) | `[MP-READ]` prior implementations, `[MP-WRITE]` REQ summaries |
 | Phase 4 | [e2e.md](e2e.md) | `[MP-WRITE]` E2E results |
 | Phase 5 | [review.md](review.md) | `[MP-READ]` prior review findings, `[MP-WRITE]` review results |
-| Phase 6 | [shared/review-simplify.md](shared/review-simplify.md) | `[MP-READ]` prior decisions, `[MP-WRITE]` updated decisions |
-| Phase 8 | [shared/commit.md](shared/commit.md) | `[MP-READ]` project decisions, `[MP-WRITE]` KG facts + diary |
+| Phase 6 | [core/shared/review-simplify.md](core/shared/review-simplify.md) | `[MP-READ]` prior decisions, `[MP-WRITE]` updated decisions |
+| Phase 8 | [core/shared/commit.md](core/shared/commit.md) | `[MP-READ]` project decisions, `[MP-WRITE]` KG facts + diary |
 | Phase 9.5 | [SKILL.md](SKILL.md) | `[MP-WRITE]` knowledge extraction (code, api, db, flow) |
 | Doc Capture | [doc-capture.md](doc-capture.md) | `[MP-WRITE]` knowledge_docs + reference-docs |
 | Debug D0 | [debug.md](debug.md) | `[MP-READ]` prior bugs, `[MP-WRITE]` bug diagnosis |

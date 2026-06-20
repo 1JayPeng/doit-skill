@@ -1,6 +1,6 @@
 # Background Process Management
 
-**铁律: 所有 >10s 任务必须用 tmux + 实时日志 + `/loop` 自动轮询。不允许空等。** See [rules.md](rules.md).
+**铁律: 所有 >10s 任务必须用 tmux + 实时日志 + `/loop` 自动轮询。不允许空等。** See [core/iron-rules.md](core/iron-rules.md).
 
 ## 强制决策门控（运行前必须检查）
 

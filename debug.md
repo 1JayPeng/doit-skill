@@ -88,27 +88,27 @@ PASS: test_xxx_regression
 
 **Spec alignment check**: compare actual output against the expected behavior described in the bug report. Fix works = output matches what it should have been.
 
-<!-- D4: Shared phase. Single source of truth: shared/review-simplify.md -->
+<!-- D4: Shared phase. Single source of truth: core/shared/review-simplify.md -->
 ## D4 — Review + Simplify
 
-**Shared phase. See [review-simplify.md](shared/review-simplify.md).** (This is the same file as feature flow's Phase 6.)
+**Shared phase. See [review-simplify.md](core/shared/review-simplify.md).** (This is the same file as feature flow's Phase 6.)
 
 Check specifically for bugs:
 - Is the fix the simplest possible solution?
 - Does it duplicate error handling that exists elsewhere?
 - Did you fix the symptom instead of the root cause?
 
-<!-- D5: Shared phase. Single source of truth: shared/e2e-verify.md -->
+<!-- D5: Shared phase. Single source of truth: core/shared/e2e-verify.md -->
 ## D5 — E2E Verification Loop
 
-**Shared phase. See [shared/e2e-verify.md](shared/e2e-verify.md).** (This is the same file as feature flow's Phase 7.)
+**Shared phase. See [e2e-verify.md](core/shared/e2e-verify.md).** (This is the same file as feature flow's Phase 7.)
 
 Spec alignment check compares actual output against the bug report — what the user reported should happen.
 
-<!-- D6: Shared phase. Single source of truth: shared/commit.md -->
+<!-- D6: Shared phase. Single source of truth: core/shared/commit.md -->
 ## D6 — Commit
 
-**Shared phase. See [commit.md](shared/commit.md).** (This is the same file as feature flow's Phase 8.)
+**Shared phase. See [commit.md](core/shared/commit.md).** (This is the same file as feature flow's Phase 8.)
 
 Commit message format: `fix: <what was broken>`
 

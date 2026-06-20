@@ -301,7 +301,7 @@ MP unavailable -> skip silently. The e2e test results are already in the git com
 
 ## E2E Verification Loop (Phase 7 / D5)
 
-**Canonical source: [shared/e2e-verify.md](shared/e2e-verify.md)**
+**Canonical source: [core/shared/e2e-verify.md](core/shared/e2e-verify.md)**
 
 Both feature flow (Phase 7) and debug flow (D5) use the same E2E Verification Loop.
 The shared file is the single source of truth — update rules there, not here.
