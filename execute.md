@@ -177,10 +177,10 @@ REQ-00X DONE. Spec says: "user can do X". Current coverage:
   [ ] user can do X with edge case Y
 ```
 
-**铁律: Use AskUserQuestion, never stop and wait.**
+**铁律: Use [[USER:ask]], never stop and wait.**
 
 ```
-AskUserQuestion:
+[[USER:ask]]:
   question: "REQ-00X complete. Proceed to next REQ?"
   header: "REQ-00X"
   options:

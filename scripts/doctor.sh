@@ -4,13 +4,20 @@
 
 set -e
 
-# Detect skill directory: project-local .claude/skills/ takes precedence over global ~/.claude/skills/
+# Detect skill directory: multi-CLI support
 # SKILL_DIR env var can override (used by setup.sh when running from temp clone)
+# Detect order: project-local takes precedence, then global
 if [ -z "$SKILL_DIR" ]; then
-  if [ -d ".claude/skills" ]; then
+  for _dir in ".claude/skills" ".opencode/skills" ".omp/skills" ".mimo/skills" \
+              "$HOME/.claude/skills" "$HOME/.opencode/skills" "$HOME/.config/omp/skills" "$HOME/.config/mimo/skills"; do
+    if [ -d "$_dir" ]; then
+      SKILL_DIR="$_dir"
+      break
+    fi
+  done
+  # Fallback
+  if [ -z "$SKILL_DIR" ]; then
     SKILL_DIR=".claude/skills"
-  else
-    SKILL_DIR="$HOME/.claude/skills"
   fi
 fi
 GH_PROXY="https://v6.gh-proxy.org"

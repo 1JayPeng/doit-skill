@@ -144,14 +144,7 @@ Read `.doit/config.yaml` — check `auto_commit.enabled`:
 
 **`auto_commit.enabled: false` (default)** — Ask user for confirmation before commit + push:
 ```
-AskUserQuestion:
-  question: "Ready to commit and push?"
-  header: "Commit"
-  options:
-    - label: "Yes, commit and push"
-      description: "Commit changes and push to remote"
-    - label: "Not yet"
-      description: "Skip commit, continue working"
+[[USER:ask question="Ready to commit and push?" header="Commit" options=[...]]]
 ```
 If user says "Not yet" → skip commit and push, continue to Phase 9 cleanup.
 

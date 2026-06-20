@@ -72,7 +72,7 @@ Show the extracted record to the user and ask for confirmation/edits:
   Errors: Command injection in add-dependency.sh (fixed)
   Patterns: Auth middleware, Role-based access control
 
-[AskUserQuestion] Confirm knowledge extraction?
+[[USER:ask]] Confirm knowledge extraction?
   Options:
   - Confirm and save (Recommended)
   - Edit before save

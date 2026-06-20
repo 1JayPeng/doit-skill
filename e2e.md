@@ -208,11 +208,11 @@ assert "too long" in r.stderr.lower() or "invalid" in r.stderr.lower()
 
 ## L2/L3 HITL
 
-**铁律: Use AskUserQuestion, never stop and wait.**
+**铁律: Use [[USER:ask]], never stop and wait.**
 
 向用户呈现未测试的参数组合：
 ```
-AskUserQuestion:
+[[USER:ask]]:
   question: "Which param combos need manual e2e testing?"
   header: "E2E L2"
   options:

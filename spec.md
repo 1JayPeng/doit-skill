@@ -66,12 +66,12 @@ Agent({
 
 Use `grill-me` skill to pressure-test the idea. Find holes, contradictions, scope creep. Resolve each before proceeding.
 
-**铁律: Grill questions via AskUserQuestion, never stop and wait.**
+**铁律: Grill questions via `[[USER:ask]]`, never stop and wait.**
 **铁律: Minimum 5 grill questions per feature (Type F), 3 per bug (Type B). < minimum = incomplete Phase 1 = cannot proceed to Phase 2.**
 **铁律: Every grill question MUST provide concrete, actionable options — not open-ended questions.**
 
 **Option Quality (MANDATORY per question):**
-Each `AskUserQuestion` option MUST contain:
+Each `[[USER:ask]]` option MUST contain:
 1. **Named approach** — "JWT Stateless" not "option A"
 2. **Consequence** — what happens: `-> 无服务端状态，移动端天然兼容`
 3. **Trade-off** — what you lose: `Trade-off: 撤销token需黑名单`
@@ -106,16 +106,9 @@ Write `.doit/grill-summary.json`:
 }
 ```
 
-When the grill reveals ambiguity, present it as AskUserQuestion:
+When the grill reveals ambiguity, present it as `[[USER:ask]]`:
 ```
-AskUserQuestion:
-  question: "Grill found ambiguity: Should X handle Y case — 选择影响范围定义和后续扩展？"
-  header: "Scope"
-  options:
-    - label: "Yes, include Y (Recommended)"
-      description: "Handle Y as part of this feature -> 一次性解决，~2天额外。适合: Y和X共享80%代码路径。"
-    - label: "No, out of scope"
-      description: "Defer Y to future work -> 当前范围缩小~30%。Trade-off: 下次需要兼容层。适合: Y和X代码路径独立。"
+[[USER:ask question="Grill found ambiguity: Should X handle Y case — 选择影响范围定义和后续扩展？" header="Scope" options=[...]]]
 ```
 
 After asking all grill questions: if user doesn't answer within the same response cycle -> use the recommended default and continue. Grill questions MUST be asked before defaults are applied. Skipping grill questions entirely is NOT equivalent to user not answering.

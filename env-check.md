@@ -254,10 +254,10 @@ Based on all detection results, determine primary environment:
 2. If virtual env exists for that language -> use it
 3. If lock file exists -> determine package manager from lock file name
 
-**Conflict detection:** If multiple environments detected that could be primary, use `AskUserQuestion`:
+**Conflict detection:** If multiple environments detected that could be primary, use `[[USER:ask]]`:
 
 ```
-AskUserQuestion:
+[[USER:ask]]:
   question: "Multiple environments detected. Which is your PRIMARY environment?"
   options:
     - label: "uv (uv.lock, .venv)"
@@ -268,7 +268,7 @@ AskUserQuestion:
       description: "Poetry with poetry.lock"
 ```
 
-**铁律: Use AskUserQuestion, never stop and wait.** If user doesn't answer, pick the option with the strongest signal (lock file + venv > lock file alone > config file alone).
+**铁律: Use [[USER:ask]], never stop and wait.** If user doesn't answer, pick the option with the strongest signal (lock file + venv > lock file alone > config file alone).
 
 ### 8. Write to CLAUDE.md (REQ-006)
 
@@ -444,13 +444,18 @@ Run this detection script to verify all doit-skill external tools are available:
 ```bash
 echo "=== Tool Availability ==="
 
-# Skill tools
+# Skill tools — multi-CLI detection
 for skill in doit grill-me tdd diagnose prototype handoff improve-codebase-architecture caveman; do
-  if [ -d ".claude/skills/$skill" ]; then
-    echo "  [OK]   $skill (project skill)"
-  elif [ -d "$HOME/.claude/skills/$skill" ]; then
-    echo "  [OK]   $skill (global skill)"
-  else
+  _found=false
+  for _dir in ".claude/skills" ".opencode/skills" ".omp/skills" ".mimo/skills" \
+              "$HOME/.claude/skills" "$HOME/.opencode/skills" "$HOME/.config/omp/skills" "$HOME/.config/mimo/skills"; do
+    if [ -d "$_dir/$skill" ]; then
+      echo "  [OK]   $skill ($_dir)"
+      _found=true
+      break
+    fi
+  done
+  if [ "$_found" = false ]; then
     echo "  [MISS] $skill (skill)"
   fi
 done
@@ -464,8 +469,8 @@ for tool in rtk uv codegraph; do
   fi
 done
 
-# Context-Mode plugin
-if [ -d "$HOME/.claude/plugins" ] && grep -rl "context-mode" "$HOME/.claude/plugins/" >/dev/null 2>&1; then
+# Context-Mode plugin (multi-CLI)
+if grep -rl "context-mode" "$HOME/.claude/plugins/" "$HOME/.opencode/plugins/" 2>/dev/null; then
   echo "  [OK]   context-mode (plugin)"
 else
   echo "  [MISS] context-mode (plugin)"
@@ -478,15 +483,15 @@ else
   echo "  [MISS] tavily (MCP — needs API key)"
 fi
 
-# Claude Code plugins (code-review)
-if [ -d "$HOME/.claude/skills/code-review" ] || grep -rl "code-review" "$HOME/.claude/plugins/" 2>/dev/null; then
+# code-review (multi-CLI)
+if grep -rl "code-review" "$HOME/.claude/plugins/" "$HOME/.opencode/plugins/" 2>/dev/null; then
   echo "  [OK]   code-review (plugin)"
 else
   echo "  [MISS] code-review (plugin)"
 fi
 
-# MemPalace plugin
-if grep -rl "mempalace" "$HOME/.claude/plugins/" 2>/dev/null; then
+# MemPalace plugin (multi-CLI)
+if grep -rl "mempalace" "$HOME/.claude/plugins/" "$HOME/.opencode/plugins/" 2>/dev/null; then
   echo "  [OK]   mempalace (plugin)"
 else
   echo "  [MISS] mempalace (plugin)"
@@ -603,7 +608,7 @@ Check if `.doit/config.yaml` exists:
 **First, ask user about subagent and auto_commit preferences:**
 
 ```
-AskUserQuestion:
+[[USER:ask]]:
   question: "启用子代理并行执行？— 独立 REQ 并行可节省 50-70% 时间，但 token 消耗 2-4x。"
   header: "子代理"
   options:
@@ -614,7 +619,7 @@ AskUserQuestion:
 ```
 
 ```
-AskUserQuestion:
+[[USER:ask]]:
   question: "启用自动提交？— 每个 Phase 完成后自动 commit + push，无需确认。"
   header: "自动提交"
   options:
@@ -657,10 +662,10 @@ If `doc-capture.enabled` is false (user declined at install), write `doc-capture
 
 ### 15. Cannot Determine Environment
 
-**If detection finds nothing, or multiple conflicting signals:** use `AskUserQuestion`:
+**If detection finds nothing, or multiple conflicting signals:** use `[[USER:ask]]`:
 
 ```
-AskUserQuestion:
+[[USER:ask]]:
   question: "Cannot determine project environment. What should I use?"
   options:
     - label: "Python with uv (Recommended)"
@@ -673,4 +678,4 @@ AskUserQuestion:
       description: "Specify manually"
 ```
 
-**铁律: Use AskUserQuestion, never stop and wait.** If user doesn't answer, use the first option with the strongest file signal (pyproject.toml > package.json > environment.yml).
+**铁律: Use [[USER:ask]], never stop and wait.** If user doesn't answer, use the first option with the strongest file signal (pyproject.toml > package.json > environment.yml).

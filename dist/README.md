@@ -7,7 +7,7 @@ This directory contains tools for building the distributable package of doit-ski
 | Aspect | Dev (root repo) | Distribution |
 |--------|----------------|--------------|
 | `.doit/config.yaml` | `subagent: true` | NOT included — setup.sh writes `~/.doit/config.yaml` with `subagent: false` |
-| `.tokensave/` | Local code graph cache | Excluded |
+| `.tokensave/` | Legacy TokenSave cache (removed) | Excluded |
 | `.codegraph/` | Local index | Excluded |
 | `.env` | Local API keys | Excluded |
 | `data/` | Local data | Excluded |

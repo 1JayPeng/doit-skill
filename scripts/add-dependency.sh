@@ -21,12 +21,15 @@ case "$LEVEL" in
   *) echo "❌ Invalid level: '$LEVEL'. Use: bundled, optional, recommended"; exit 1 ;;
 esac
 
-# Check skill source (project-local first, then global)
-if [ -d ".claude/skills/$SKILL_NAME" ]; then
-  SKILL_SOURCE=".claude/skills/$SKILL_NAME"
-elif [ -d "$HOME/.claude/skills/$SKILL_NAME" ]; then
-  SKILL_SOURCE="$HOME/.claude/skills/$SKILL_NAME"
-else
+# Check skill source (project-local first, then global — multi-CLI)
+for _dir in ".claude/skills" ".opencode/skills" ".omp/skills" ".mimo/skills" \
+            "$HOME/.claude/skills" "$HOME/.opencode/skills" "$HOME/.config/omp/skills" "$HOME/.config/mimo/skills"; do
+  if [ -d "$_dir/$SKILL_NAME" ]; then
+    SKILL_SOURCE="$_dir/$SKILL_NAME"
+    break
+  fi
+done
+if [ -z "$SKILL_SOURCE" ]; then
   echo "❌ Skill '$SKILL_NAME' not found"
   echo "   Install it first, or manually place it in skills/$SKILL_NAME/"
   exit 1

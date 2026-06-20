@@ -14,7 +14,7 @@ Grill reveals idea is unworkable (tech infeasible, self-contradictory).
 **Action:** Terminate. Tell user why. Zero code generated -> zero loss.
 
 ### Phase 1 (Spec) — Grill Skipped
-Phase 1 completed or Phase 2 started without minimum grill questions via AskUserQuestion.
+Phase 1 completed or Phase 2 started without minimum grill questions via `[[USER:ask]]`.
 
 **Action:** Stop. Return to Phase 1 Step 2. Complete the full grill checklist (uncertainty scan, 5+ questions, internet search, MP search, grill summary). Do not discard REQs already written — use grill findings to supplement them, then merge into existing REQs.
 
@@ -111,7 +111,7 @@ Compact 压缩上下文后，`TaskUpdate` 可能因 `taskId` 丢失而报错：
 | `description is missing` (Agent) | Missing description+prompt | Both `description` AND `prompt` required |
 | `subject is missing` (TaskCreate) | Missing required fields | Both `subject` AND `description` required |
 | `taskId is missing` (TaskUpdate) | Compact lost taskId | See "Compact 后 Task 丢失" above |
-| `questions is missing` (AskUserQuestion) | Missing questions array | Array of {question, header, options, multiSelect} |
+| `questions is missing` (`[[USER:ask]]`) | Missing questions array | Array of {question, header, options, multiSelect} |
 | `path is missing` (ctx_read) | Missing file path | Use absolute path for ctx_read |
 
 **关键原则：** 永远不要用相同参数重试失败的工具调用。先检查 [tool-params.md](tool-params.md) 确认正确签名。
