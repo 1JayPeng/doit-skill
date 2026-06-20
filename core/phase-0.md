@@ -1,6 +1,26 @@
 ## Phase 0 — Classify Request (完整流程)
 
-**Step 0 — Sync with remote (MANDATORY, before anything else):**
+**铁律：Phase -1 必须先于 Phase 0 完成。** 模型首先应该对环境有个快速清晰的认知：编码环境、CLI 环境、bash 环境、code 环境、agent 环境、上下文。
+
+**Step -1 — Environment Detection (MANDATORY, absolute first step):**
+
+Before doing ANYTHING else (including sync with remote), execute [core/env-check.md](env-check.md):
+
+1. **Check env cache:** If `.doit/env-cache.json` exists and is <24h old and `.git/HEAD` hasn't changed → use cached values (fast path)
+2. **If cache miss or expired:** Run full Phase -1 environment detection:
+   - Detect project type (Cargo.toml, package.json, go.mod, etc.)
+   - Detect coding environment (language, runtime, versions)
+   - Detect CLI environment (Claude Code, OpenCode, Codex, oh-my-pi, MiMo, etc.)
+   - Detect bash environment (shell, tools available)
+   - Detect code environment (git status, branch, recent commits)
+   - Detect agent environment (MCP tools, skills, memory layers)
+   - Detect context (session memory, MemPalace, prior findings)
+3. **Build CLI Tool Guide** (Step 8b of env-check) — inject tool mapping into `[[CONFIG:main-instructions]]`
+4. **Announce environment summary** to user: detected CLI, project type, key tools available, any warnings
+
+**铁律：不完成 Step -1 就不能进入 Step 0。不了解环境就分类 = 盲分类 = 可能选错工作流。**
+
+**Step 0 — Sync with remote (MANDATORY, after env detection):**
 ```bash
 if git remote 2>/dev/null | grep -q .; then
   git pull --rebase 2>/dev/null || git pull 2>/dev/null || true

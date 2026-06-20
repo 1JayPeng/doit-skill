@@ -9,7 +9,9 @@ Spec-driven TDD. 10 phases. Nothing ships without spec. Review + Simplify + E2E 
 
 **Multi-CLI Support:** Claude Code, OpenCode, OpenAI Codex CLI, oh-my-pi, MiMo Code, and any MCP-supporting agent. Tool adapter auto-selected at install time via `--agent` flag.
 
-**Phase 0 是强制入口。** 任何 `/doit` 调用，必须先执行 Phase 0 分类，然后 announce 分类结果给用户，然后创建 Phase Task List（`[[TASK:create]]`）。不 announce = 用户不知道工作流在做什么 = 跳过。不创建 task 列表 = 模型无法跟踪进度 = 跳过。
+**Phase -1 是绝对强制入口。** 任何 `/doit` 调用，必须先执行 Phase -1 (环境检测)，建立对编码环境、CLI 环境、bash 环境、code 环境、agent 环境以及上下文的清晰认知，然后才能进入 Phase 0 分类。不完成 Phase -1 = 不知道自己在什么环境中工作 = 盲操作。
+
+**Phase 0 是分类入口。** Phase -1 完成后，执行 Phase 0 分类，然后 announce 分类结果给用户，然后创建 Phase Task List（`[[TASK:create]]`）。不 announce = 用户不知道工作流在做什么 = 跳过。不创建 task 列表 = 模型无法跟踪进度 = 跳过。
 
 **Type Q 例外：** 纯查询/研究工作不需要完整工作流。分类为 Type Q → 直接用工具回答 → Phase 10 (仅 `[[MEMORY:compress]]`)。
 
@@ -53,8 +55,8 @@ Non-Interruptive Q | Background >10s | Commit+Push | MP 读写对称 | 工作流
 | **9.5.5** | [learn/extract.md](learn/extract.md) | 结构化知识 → 用户确认 → 多层存储 |
 | **10** | [core/workflow.md](core/workflow.md)#phase-10 | Stats → MP → **`[[MEMORY:compress]]`** |
 
-**Phase Gate:** 3→4→5→6→7→8→9→9.5→9.5.5→10。**唯一合法结束 = Phase 10。**
-**Type Q 流程:** Phase 0 → 直接用工具回答 → Phase 10 (仅 `[[MEMORY:compress]]`)。不创建分支、不写 spec、不 commit。
+**Phase Gate:** -1→0→1→2→3→4→5→6→7→8→9→9.5→9.5.5→10。**唯一合法结束 = Phase 10。**
+**Type Q 流程:** Phase -1 → Phase 0 → 直接用工具回答 → Phase 10 (仅 `[[MEMORY:compress]]`)。不创建分支、不写 spec、不 commit。
 
 ## 辅助
 
