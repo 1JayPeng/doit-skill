@@ -41,7 +41,7 @@ Maps abstract `[[OPERATION]]` syntax to OpenCode native tool calls.
 | `[[AGENT:message to="..." message="..."]]` | Not directly supported — spawn new subagent with context |
 | `[[AGENT:stop task_id="..."]]` | Not directly supported — user must cancel |
 
-**Built-in subagent types:**
+**Usage Note:** Spawn multiple subagents in a single response when they work independently. `todowrite` is **disabled for subagents** by default — don't expect subagents to update task status. Use `explore` agent for read-only code research, `build` for implementation tasks.
 - `general` — full tool access, multi-step tasks
 - `explore` — read-only, fast codebase exploration
 - `scout` — read-only, external docs / dependency research
@@ -57,6 +57,8 @@ Maps abstract `[[OPERATION]]` syntax to OpenCode native tool calls.
 |----------|---------|
 | `[[USER:ask questions=[{question:"...", header:"...", options:[...]}]]]` | `question({ questions: [{ question: "...", header: "...", options: [...] }] })` |
 
+**Usage Note:** Batch multiple questions into one `question()` call. Keep options to 2-4. The `question` tool is only available when `permission.question` is set to `allow`.
+
 ### File Operations
 
 | Abstract | OpenCode |
@@ -66,12 +68,16 @@ Maps abstract `[[OPERATION]]` syntax to OpenCode native tool calls.
 | `[[FILE:edit path="..." old_string="..." new_string="..."]]` | `edit("...", "...", "...")` |
 | Apply diff | `apply_patch({ patchText: "..." })` |
 
+**Usage Note:** `edit()` requires the `old_string` to match exactly once. `apply_patch` is useful for multi-line changes but requires a properly formatted unified diff. Prefer `edit()` for simple replacements.
+
 ### Shell
 
 | Abstract | OpenCode |
 |----------|---------|
 | `[[SHELL:run command="..."]]` | `bash("...")` |
 | `[[SHELL:run command="..." background=true]]` | `bash("...", { run_in_background: true })` |
+
+**Usage Note:** Commands ≥10s MUST use `run_in_background: true`. Check `permission.bash` — if set to `ask`, each command requires user approval.
 
 ### Search
 

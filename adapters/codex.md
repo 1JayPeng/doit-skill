@@ -46,7 +46,7 @@ Maps abstract `[[OPERATION]]` syntax to OpenAI Codex CLI.
 
 **Subagent details:** v0.117.0+ uses path-based addresses (`/root/agent_a`). Configurable via `config.toml` `[agents]` section. Custom agents support read-only mode, sandbox overrides.
 
-**Task Usage Frequency:** Codex has no native task API. Tasks are tracked in `.doit/tasks.md`. **Update this file after every sub-step** using `sed` or `patch` to change `[ ]` to `[x]`. The file is the single source of truth for progress. Keep it current — stale task files mislead resume operations.
+**Usage Note:** Max 6 concurrent subagents. Use `shell("codex '<prompt>' &")` for background agents. Subagents cannot message each other directly — use shared files for inter-agent communication.
 
 ### User Interaction
 
@@ -55,6 +55,8 @@ Maps abstract `[[OPERATION]]` syntax to OpenAI Codex CLI.
 | `[[USER:ask questions=[...]]]` | In `suggest` mode: output markdown question for user to respond. In `auto-edit`/`auto` mode: not available. |
 
 **Note:** Codex approval modes: `suggest`, `auto-edit`, `auto`, `always-approve`. Interactive questions only work in `suggest` mode. For non-interactive modes, use defaults or skip.
+
+**Usage Note:** In `suggest` mode, questions render as markdown for user response. In `auto-edit` and `auto` modes, user interaction is NOT available — always provide sensible defaults. Batch questions when possible.
 
 ### File Operations
 
@@ -66,12 +68,16 @@ Maps abstract `[[OPERATION]]` syntax to OpenAI Codex CLI.
 
 **Note:** Codex's `apply_patch` is a shell pattern — the model constructs a diff string `{ "cmd": ["apply_patch", "*** Begin Patch..."] }`. Prefer `sed` for simple replacements.
 
+**Usage Note:** `sed` is the simplest and most reliable file edit method for Codex. `apply_patch` works but requires properly formatted unified diffs. For simple string replacements, prefer `sed` with unique search strings.
+
 ### Shell
 
 | Abstract | Codex |
 |----------|-------|
 | `[[SHELL:run command="..."]]` | `shell("...")` — primary native primitive |
 | `[[SHELL:run command="..." background=true]]` | `shell("... &")` |
+
+**Usage Note:** `shell` is the primary native primitive — most operations go through it. Commands ≥10s MUST append `&` for background execution. Don't poll background tasks.
 
 ### Scheduling
 

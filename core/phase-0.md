@@ -89,6 +89,17 @@ If `subagent.enabled: false` or not set → continue with single-agent flow.
 
 See [core/subagent.md](core/subagent.md) for full team orchestration details.
 
+**Step 2.8 — Clean Stale Tasks (MANDATORY, before creating new task list).**
+
+Before creating new tasks, identify and remove tasks from previous workflow runs:
+
+1. Call `[[TASK:list]]` to get current task list
+2. Identify stale tasks — any task with subject containing "Phase" or "REQ-" that is in `pending` or `in_progress` status from a previous workflow run
+3. Delete each stale task with `[[TASK:update taskId="..." status="deleted"]]` (or `completed` if the CLI doesn't support `deleted`)
+4. For file-based task management (`.doit/tasks.md`), truncate the file before creating new tasks
+
+**铁律：不清理旧 tasks 就创建新的 = 任务列表混乱 = 模型无法判断哪些是当前工作流的任务。**
+
 **Step 3 — Create Phase Task List (MANDATORY).**
 
 Execute ALL `[[TASK:create]]` calls in parallel:

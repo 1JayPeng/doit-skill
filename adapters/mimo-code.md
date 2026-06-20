@@ -44,6 +44,8 @@ Maps abstract `[[OPERATION]]` syntax to MiMo Code native tool calls.
 
 **Custom subagents** via `~/.config/mimo/settings.json` with custom prompts, models, and tool permissions.
 
+**Usage Note:** MiMo subagents are async by default. Use `task({ prompt: "..." })` for both sync and async. For worktree isolation, create git worktree first, then spawn subagent in that directory.
+
 ### User Interaction
 
 | Abstract | MiMo Code |
@@ -51,6 +53,8 @@ Maps abstract `[[OPERATION]]` syntax to MiMo Code native tool calls.
 | `[[USER:ask questions=[{question:"...", header:"...", options:[...]}]]]` | `question({ questions: [{ question: "...", header: "...", options: [...] }] })` |
 
 **Note:** MiMo has interactive TUI mode where `question` renders selectable options. In non-interactive mode, output markdown question and use defaults.
+
+**Usage Note:** Batch multiple questions into one call. In TUI mode, questions render as selectable options. In non-interactive/headless mode, skip interactive questions and use defaults.
 
 ### File Operations
 
@@ -62,12 +66,16 @@ Maps abstract `[[OPERATION]]` syntax to MiMo Code native tool calls.
 
 **Note:** MiMo supports safe editing with conflict detection. Edits are validated before applying.
 
+**Usage Note:** `edit()` requires `old_string` to match exactly once. MiMo's conflict detection prevents concurrent edit races. Prefer `edit()` over `write()` for modifications.
+
 ### Shell
 
 | Abstract | MiMo Code |
 |----------|---------|
 | `[[SHELL:run command="..."]]` | `bash("...")` |
 | `[[SHELL:run command="..." background=true]]` | `bash("...", { run_in_background: true })` |
+
+**Usage Note:** Commands ≥10s MUST use `run_in_background: true`. MiMo's `bash` is the shell primitive — use it for system commands, not file operations (prefer read/write/edit tools).
 
 ### Search
 
@@ -101,6 +109,8 @@ Maps abstract `[[OPERATION]]` syntax to MiMo Code native tool calls.
 |----------|---------|
 | `[[PLAN:enter]]` | Built-in Plan mode — `plan({ description: "..." })` |
 | `[[PLAN:exit]]` | Exit plan mode, begin implementation |
+
+**Usage Note:** MiMo's native Plan mode is ideal for Phase 2 — scope changes before implementation. Use `plan({ description: "..." })` to enter plan mode.
 
 **Note:** MiMo has a native Plan mode for scoping changes before implementation. Use for Phase 2 planning.
 

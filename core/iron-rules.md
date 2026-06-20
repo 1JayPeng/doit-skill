@@ -98,6 +98,8 @@ If MemPalace unavailable → skip silently. Filesystem remains primary.
 
 **铁律：任务列表是进度跟踪工具，不是装饰。活跃使用，不是创建完就放着。**
 
+**Stale Task 清理：** 在 Phase 0 创建新任务列表前，必须先调用 `[[TASK:list]]` 清理旧工作流残留的任务。不清理 = 任务列表混乱 = 模型无法判断当前工作流进度。
+
 ## 铁律 — 完整工作流不可跳过
 
 Phase 0 → 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 → 9 → 9.5 → 9.5.5 → 10
