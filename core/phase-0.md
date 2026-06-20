@@ -16,7 +16,7 @@ If caveman not found, announce `[WARN] caveman not installed -> verbose mode` an
 
 **分类驱动额外 skill 加载:**
 - Type F → Phase 1 [LOAD:phase-1] grill-me, Phase 3 [LOAD:phase-3] tdd
-- Type B → now [LOAD:phase-0] diagnose
+- Type B → now [LOAD:phase-0] diagnose → `[[SKILL:route target="diagnose"]]`
 - Type Q/R/S → no extra skills
 
 **Step 2 — Auto-classify.** Read [classifier.md](../classifier.md). Five types:

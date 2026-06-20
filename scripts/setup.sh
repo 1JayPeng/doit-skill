@@ -704,8 +704,11 @@ install_skill() {
     fi
   fi
 
-  # Skills are loaded from .claude/skills/<name>/ with SKILL.md at root
-  # No .claude-plugin/plugin.json needed
+  # Ensure .claude-plugin/ is copied (cp -r may skip dotfiles on some systems)
+  if [ -d "$DOIT_DIR/skills/$skill_name/.claude-plugin" ]; then
+    cp -r "$DOIT_DIR/skills/$skill_name/.claude-plugin" "$skill_path/.claude-plugin"
+  fi
+
   echo_success "$skill_name ready (SKILL.md at root)"
   return 0
 }

@@ -60,7 +60,7 @@ Check each tool's availability:
 echo "=== Tool Availability ==="
 
 # Skill tools — check in [[CONFIG:skill-dir]]
-for skill in doit grill-me tdd diagnose prototype handoff; do
+for skill in doit grill-me tdd diagnose prototype handoff improve-codebase-architecture; do
   if [ -d "[[CONFIG:skill-dir]]/$skill" ]; then
     echo "  [OK]   $skill (project skill)"
   elif [ -d "[[CONFIG:global-skill-dir]]/$skill" ]; then

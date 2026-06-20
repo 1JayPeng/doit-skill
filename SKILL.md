@@ -24,7 +24,7 @@ Spec-driven TDD. 10 phases. Nothing ships without spec. Review + Simplify + E2E 
 ## Skill Router
 
 On-demand load. **[RELEASE]** after phase + `[[MEMORY:compress]]`。
-caveman: Phase 0 [LOAD:session] 不释放 | grill-me: Phase 1 [LOAD:phase-1] 结束释放 | tdd: Phase 3 [LOAD:phase-3] 结束释放 | diagnose: Phase 0 Type B | handoff/prototype: 按需
+caveman: Phase 0 [LOAD:session] 不释放 | grill-me: Phase 1 [LOAD:phase-1] 结束释放 | tdd: Phase 3 [LOAD:phase-3] 结束释放 | diagnose: Phase 0 Type B | handoff/prototype: 按需 | improve-codebase-architecture: 按需
 
 ## 铁律 + 指令 + 工具
 

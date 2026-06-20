@@ -14,11 +14,19 @@
 
 | 指令 | 语义 | 示例 |
 |------|------|------|
+| `[LOAD:phase-0] diagnose` | Load diagnose at Phase 0 (Type B) | `[[SKILL:route target="diagnose"]]` |
 | `[LOAD:phase-1] grill-me` | Load grill-me at Phase 1 | `[[SKILL:route target="grill-me"]]` |
 | `[RELEASE:phase-1] grill-me` | Release + compress | Context freed |
+| `[LOAD:phase-3] tdd` | Load tdd at Phase 3 | `[[SKILL:route target="tdd"]]` |
 | `[LOAD:session] caveman` | Load at Phase 0, keep for session | No release |
+| `[LOAD:on-demand]` | handoff/prototype/improve-codebase-architecture | User triggers directly |
 
-**Skill 加载策略:** grill-me loads at Phase 1 [LOAD:phase-1], releases at Phase 1 end. caveman stays for session.
+**Skill 加载策略:**
+- caveman: Phase 0 [LOAD:session] 不释放
+- grill-me: Phase 1 [LOAD:phase-1] 开始 → [RELEASE:phase-1] 结束释放
+- tdd: Phase 3 [LOAD:phase-3] 开始 → [RELEASE:phase-3] 结束后释放
+- diagnose: Phase 0 Type B [LOAD:phase-0] → [RELEASE:phase-0] D6 完成后释放
+- handoff/prototype/improve-codebase-architecture: 按需加载，完成后立即释放
 
 ## Phase 0 — Classify Request
 
