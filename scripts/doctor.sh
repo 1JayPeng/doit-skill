@@ -103,6 +103,7 @@ for tool in "${EXTERNAL_TOOLS[@]}"; do
                 echo "  ✅ context-mode installed (plugin)"
             else
                 echo "  ℹ️ context-mode not installed (recommended)"
+                echo "     Install: claude plugin install context-mode@context-mode"
             fi
             ;;
         "rtk")
@@ -110,6 +111,7 @@ for tool in "${EXTERNAL_TOOLS[@]}"; do
                 echo "  ✅ rtk installed"
             else
                 echo "  ℹ️  rtk not installed (recommended)"
+                echo "     Install: cargo install rtk"
             fi
             ;;
         "uv")
@@ -117,6 +119,7 @@ for tool in "${EXTERNAL_TOOLS[@]}"; do
                 echo "  ✅ uv installed"
             else
                 echo "  ℹ️  uv not installed (recommended)"
+                echo "     Install: curl -LsSf https://astral.sh/uv/install.sh | sh"
             fi
             ;;
         "rust")
@@ -124,6 +127,7 @@ for tool in "${EXTERNAL_TOOLS[@]}"; do
                 echo "  ✅ rust/cargo installed"
             else
                 echo "  ℹ️  rust not installed (required for rtk)"
+                echo "     Install: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh"
             fi
             ;;
         "tavily")
@@ -133,6 +137,7 @@ for tool in "${EXTERNAL_TOOLS[@]}"; do
                 echo "  ✅ tavily configured (settings.json)"
             else
                 echo "  ℹ️  tavily not configured (optional)"
+                echo "     Configure: claude mcp add tavily --transport http --env TAVILY_API_KEY=\$TAVILY_API_KEY 'https://api.tavily.com/v1/mcp'"
             fi
             ;;
         "caveman")
@@ -144,6 +149,7 @@ for tool in "${EXTERNAL_TOOLS[@]}"; do
                 echo "  ✅ caveman installed (hooks)"
             else
                 echo "  ℹ️  caveman not installed (recommended)"
+                echo "     Install: claude plugin install caveman@caveman"
             fi
             ;;
         "code-review")
@@ -153,6 +159,7 @@ for tool in "${EXTERNAL_TOOLS[@]}"; do
                 echo "  ✅ code-review installed (plugin)"
             else
                 echo "  ℹ️  code-review not installed (recommended)"
+                echo "     Install: claude plugin install code-review"
             fi
             ;;
         "mempalace")
@@ -160,16 +167,19 @@ for tool in "${EXTERNAL_TOOLS[@]}"; do
                 echo "  ✅ mempalace installed (plugin)"
             else
                 echo "  ℹ️  mempalace plugin not installed (recommended)"
+                echo "     Install: claude plugin install --scope user mempalace"
             fi
             if command -v mempalace >/dev/null 2>&1; then
                 echo "  ✅ mempalace CLI installed"
             else
                 echo "  ℹ️  mempalace CLI not installed"
+                echo "     Install: uv tool install mempalace"
             fi
             if [ -d ".mempalace" ]; then
                 echo "  ✅ mempalace initialized"
             else
                 echo "  ℹ️  mempalace not initialized"
+                echo "     Initialize: mempalace init . --yes"
             fi
             ;;
         "headroom")
@@ -177,11 +187,13 @@ for tool in "${EXTERNAL_TOOLS[@]}"; do
                 echo "  ✅ headroom installed"
             else
                 echo "  ℹ️  headroom not installed (recommended)"
+                echo "     Install: uv tool install 'headroom-ai[mcp,proxy]'"
             fi
             if claude mcp list 2>/dev/null | grep -q headroom; then
                 echo "  ✅ headroom MCP configured"
             else
                 echo "  ℹ️  headroom MCP not configured"
+                echo "     Configure: headroom mcp install"
             fi
             ;;
         "lean-ctx")
@@ -189,6 +201,7 @@ for tool in "${EXTERNAL_TOOLS[@]}"; do
                 echo "  ✅ lean-ctx installed"
             else
                 echo "  ℹ️  lean-ctx not installed (recommended)"
+                echo "     Install: curl -fsSL https://leanctx.com/install.sh | sh"
             fi
             if [ -f ".claude/rules/lean-ctx.md" ]; then
                 echo "  ✅ lean-ctx rules configured (project-local)"
@@ -196,10 +209,26 @@ for tool in "${EXTERNAL_TOOLS[@]}"; do
                 echo "  ✅ lean-ctx rules configured (global)"
             else
                 echo "  ℹ️  lean-ctx rules not configured"
+                echo "     Configure: lean-ctx init --agent claude"
             fi
             ;;
     esac
 done
+
+# codegraph (separate check - not in case block)
+echo "  Checking codegraph..."
+if command -v codegraph >/dev/null 2>&1; then
+    echo "  ✅ codegraph installed"
+else
+    echo "  ℹ️  codegraph not installed (recommended)"
+    echo "     Install: npm i -g @colbymchenry/codegraph"
+fi
+if [ -d ".codegraph" ]; then
+    echo "  ✅ codegraph index initialized"
+else
+    echo "  ℹ️  codegraph index not initialized"
+    echo "     Initialize: codegraph init -i"
+fi
 echo ""
 echo "=========================================="
 echo "  ✅ doit-skill Doctor complete!"

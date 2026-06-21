@@ -155,9 +155,11 @@ if (Test-Command ctx) {
     Write-Host "  [OK] context-mode installed (plugin)" -ForegroundColor Green
   } else {
     Write-Host "  [INFO] context-mode not installed (recommended)" -ForegroundColor Yellow
+    Write-Host "     Install: claude plugin install context-mode@context-mode"
   }
 } else {
   Write-Host "  [INFO] context-mode not installed (recommended)" -ForegroundColor Yellow
+  Write-Host "     Install: claude plugin install context-mode@context-mode"
 }
 
 # rtk
@@ -165,6 +167,7 @@ if (Test-Command rtk) {
   Write-Host "  [OK] rtk installed" -ForegroundColor Green
 } else {
   Write-Host "  [INFO] rtk not installed (recommended)" -ForegroundColor Yellow
+  Write-Host "     Install: cargo install rtk"
 }
 
 # uv
@@ -172,6 +175,7 @@ if (Test-Command uv) {
   Write-Host "  [OK] uv installed" -ForegroundColor Green
 } else {
   Write-Host "  [INFO] uv not installed (recommended)" -ForegroundColor Yellow
+  Write-Host "     Install: curl -LsSf https://astral.sh/uv/install.sh | sh"
 }
 
 # rust
@@ -179,6 +183,7 @@ if (Test-Command cargo) {
   Write-Host "  [OK] rust/cargo installed" -ForegroundColor Green
 } else {
   Write-Host "  [INFO] rust not installed (required for rtk)" -ForegroundColor Yellow
+  Write-Host "     Install: winget install Rust-lang.Rustup"
 }
 
 # tavily
@@ -197,6 +202,7 @@ if ($tavilyOk) {
   Write-Host "  [OK] tavily configured (MCP)" -ForegroundColor Green
 } else {
   Write-Host "  [INFO] tavily not configured (optional)" -ForegroundColor Yellow
+  Write-Host "     Configure: claude mcp add tavily --transport http --env TAVILY_API_KEY=%TAVILY_API_KEY% 'https://api.tavily.com/v1/mcp'"
 }
 
 # caveman
@@ -215,6 +221,7 @@ if ($cavemanOk) {
   Write-Host "  [OK] caveman installed" -ForegroundColor Green
 } else {
   Write-Host "  [INFO] caveman not installed (recommended)" -ForegroundColor Yellow
+  Write-Host "     Install: claude plugin install caveman@caveman"
 }
 
 # code-review
@@ -230,6 +237,7 @@ if ($reviewOk) {
   Write-Host "  [OK] code-review installed" -ForegroundColor Green
 } else {
   Write-Host "  [INFO] code-review not installed (recommended)" -ForegroundColor Yellow
+  Write-Host "     Install: claude plugin install code-review"
 }
 
 # mempalace
@@ -243,18 +251,21 @@ if ($mpOk) {
   Write-Host "  [OK] mempalace installed (plugin)" -ForegroundColor Green
 } else {
   Write-Host "  [INFO] mempalace plugin not installed (recommended)" -ForegroundColor Yellow
+  Write-Host "     Install: claude plugin install --scope user mempalace"
 }
 
 if (Test-Command mempalace) {
   Write-Host "  [OK] mempalace CLI installed" -ForegroundColor Green
 } else {
   Write-Host "  [INFO] mempalace CLI not installed" -ForegroundColor Yellow
+  Write-Host "     Install: uv tool install mempalace"
 }
 
 if (Test-Path ".mempalace") {
   Write-Host "  [OK] mempalace initialized" -ForegroundColor Green
 } else {
   Write-Host "  [INFO] mempalace not initialized" -ForegroundColor Yellow
+  Write-Host "     Initialize: mempalace init . --yes"
 }
 
 # headroom
@@ -262,6 +273,7 @@ if (Test-Command headroom) {
   Write-Host "  [OK] headroom installed" -ForegroundColor Green
 } else {
   Write-Host "  [INFO] headroom not installed (recommended)" -ForegroundColor Yellow
+  Write-Host "     Install: uv tool install 'headroom-ai[mcp,proxy]'"
 }
 
 try {
@@ -270,6 +282,7 @@ try {
     Write-Host "  [OK] headroom MCP configured" -ForegroundColor Green
   } else {
     Write-Host "  [INFO] headroom MCP not configured" -ForegroundColor Yellow
+    Write-Host "     Configure: headroom mcp install"
   }
 } catch { }
 
@@ -278,6 +291,7 @@ if (Test-Command lean-ctx) {
   Write-Host "  [OK] lean-ctx installed" -ForegroundColor Green
 } else {
   Write-Host "  [INFO] lean-ctx not installed (recommended)" -ForegroundColor Yellow
+  Write-Host "     Install: curl -fsSL https://leanctx.com/install.sh | sh"
 }
 
 if (Test-Path ".claude/rules/lean-ctx.md") {
@@ -286,6 +300,7 @@ if (Test-Path ".claude/rules/lean-ctx.md") {
   Write-Host "  [OK] lean-ctx rules configured (global)" -ForegroundColor Green
 } else {
   Write-Host "  [INFO] lean-ctx rules not configured" -ForegroundColor Yellow
+  Write-Host "     Configure: lean-ctx init --agent claude"
 }
 
 # codegraph
@@ -293,6 +308,14 @@ if (Test-Command codegraph) {
   Write-Host "  [OK] codegraph installed" -ForegroundColor Green
 } else {
   Write-Host "  [INFO] codegraph not installed (recommended)" -ForegroundColor Yellow
+  Write-Host "     Install: npm i -g @colbymchenry/codegraph"
+}
+
+if (Test-Path ".codegraph") {
+  Write-Host "  [OK] codegraph index initialized" -ForegroundColor Green
+} else {
+  Write-Host "  [INFO] codegraph index not initialized" -ForegroundColor Yellow
+  Write-Host "     Initialize: codegraph init -i"
 }
 
 Write-Host ""
