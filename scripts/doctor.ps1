@@ -100,7 +100,7 @@ if (Test-Path $doitPath) {
     if (Test-Path $sfPath) {
       Write-Host "  [OK] $sf present" -ForegroundColor Green
     } else {
-      Write-Host "  [FAIL] $sf missing — re-run install" -ForegroundColor Red
+      Write-Host "  [FAIL] $sf missing" -ForegroundColor Red
     }
   }
 
@@ -126,7 +126,6 @@ if (Test-Path $doitPath) {
   }
 } else {
   Write-Host "  [FAIL] doit skill not installed" -ForegroundColor Red
-  Write-Host "  Run: powershell -ExecutionPolicy Bypass -File scripts/setup.ps1"
 }
 Write-Host ""
 
@@ -138,7 +137,6 @@ foreach ($skill in $bundledSkills) {
     Write-Host "  [OK] $skill installed" -ForegroundColor Green
   } else {
     Write-Host "  [FAIL] $skill not installed" -ForegroundColor Red
-    Write-Host "  Re-run: powershell -ExecutionPolicy Bypass -File scripts/setup.ps1"
   }
 }
 Write-Host ""
@@ -157,13 +155,9 @@ if (Test-Command ctx) {
     Write-Host "  [OK] context-mode installed (plugin)" -ForegroundColor Green
   } else {
     Write-Host "  [INFO] context-mode not installed (recommended)" -ForegroundColor Yellow
-    Write-Host "  Install: claude plugin marketplace add mksglu/context-mode"
-    Write-Host "     claude plugin install context-mode@context-mode"
   }
 } else {
   Write-Host "  [INFO] context-mode not installed (recommended)" -ForegroundColor Yellow
-  Write-Host "  Install: claude plugin marketplace add mksglu/context-mode"
-  Write-Host "     claude plugin install context-mode@context-mode"
 }
 
 # rtk
@@ -171,8 +165,6 @@ if (Test-Command rtk) {
   Write-Host "  [OK] rtk installed" -ForegroundColor Green
 } else {
   Write-Host "  [INFO] rtk not installed (recommended)" -ForegroundColor Yellow
-  Write-Host "  Install: cargo install rtk"
-  Write-Host "  Or: curl -fsSL ${GH_PROXY}/https://raw.githubusercontent.com/rtk-ai/rtk/refs/heads/master/install.sh | sh"
 }
 
 # uv
@@ -180,7 +172,6 @@ if (Test-Command uv) {
   Write-Host "  [OK] uv installed" -ForegroundColor Green
 } else {
   Write-Host "  [INFO] uv not installed (recommended)" -ForegroundColor Yellow
-  Write-Host "  Install: pip install uv"
 }
 
 # rust
@@ -188,7 +179,6 @@ if (Test-Command cargo) {
   Write-Host "  [OK] rust/cargo installed" -ForegroundColor Green
 } else {
   Write-Host "  [INFO] rust not installed (required for rtk)" -ForegroundColor Yellow
-  Write-Host "  Install: https://www.rust-lang.org/tools/install"
 }
 
 # tavily
@@ -207,7 +197,6 @@ if ($tavilyOk) {
   Write-Host "  [OK] tavily configured (MCP)" -ForegroundColor Green
 } else {
   Write-Host "  [INFO] tavily not configured (optional)" -ForegroundColor Yellow
-  Write-Host "  Configure: claude mcp add --transport http tavily https://mcp.tavily.com/mcp/?tavilyApiKey=<your-key>"
 }
 
 # caveman
@@ -226,7 +215,6 @@ if ($cavemanOk) {
   Write-Host "  [OK] caveman installed" -ForegroundColor Green
 } else {
   Write-Host "  [INFO] caveman not installed (recommended)" -ForegroundColor Yellow
-  Write-Host "  Install: curl -fsSL ${GH_PROXY}/https://raw.githubusercontent.com/JuliusBrussee/caveman/main/install.sh | bash"
 }
 
 # code-review
@@ -242,7 +230,6 @@ if ($reviewOk) {
   Write-Host "  [OK] code-review installed" -ForegroundColor Green
 } else {
   Write-Host "  [INFO] code-review not installed (recommended)" -ForegroundColor Yellow
-  Write-Host "  Install: claude plugin install code-review"
 }
 
 # mempalace
@@ -256,22 +243,18 @@ if ($mpOk) {
   Write-Host "  [OK] mempalace installed (plugin)" -ForegroundColor Green
 } else {
   Write-Host "  [INFO] mempalace plugin not installed (recommended)" -ForegroundColor Yellow
-  Write-Host "  Install: claude plugin marketplace add MemPalace/mempalace"
-  Write-Host "     claude plugin install --scope user mempalace"
 }
 
 if (Test-Command mempalace) {
   Write-Host "  [OK] mempalace CLI installed" -ForegroundColor Green
 } else {
   Write-Host "  [INFO] mempalace CLI not installed" -ForegroundColor Yellow
-  Write-Host "  Install: uv tool install mempalace"
 }
 
 if (Test-Path ".mempalace") {
   Write-Host "  [OK] mempalace initialized" -ForegroundColor Green
 } else {
   Write-Host "  [INFO] mempalace not initialized" -ForegroundColor Yellow
-  Write-Host "  Run: mempalace init ."
 }
 
 # headroom
@@ -279,7 +262,6 @@ if (Test-Command headroom) {
   Write-Host "  [OK] headroom installed" -ForegroundColor Green
 } else {
   Write-Host "  [INFO] headroom not installed (recommended)" -ForegroundColor Yellow
-  Write-Host "  Install: uv tool install 'headroom-ai[mcp,proxy]'"
 }
 
 try {
@@ -288,7 +270,6 @@ try {
     Write-Host "  [OK] headroom MCP configured" -ForegroundColor Green
   } else {
     Write-Host "  [INFO] headroom MCP not configured" -ForegroundColor Yellow
-    Write-Host "  Configure: headroom mcp install"
   }
 } catch { }
 
@@ -297,7 +278,6 @@ if (Test-Command lean-ctx) {
   Write-Host "  [OK] lean-ctx installed" -ForegroundColor Green
 } else {
   Write-Host "  [INFO] lean-ctx not installed (recommended)" -ForegroundColor Yellow
-  Write-Host "  Install: curl -fsSL https://leanctx.com/install.sh | sh"
 }
 
 if (Test-Path ".claude/rules/lean-ctx.md") {
@@ -306,7 +286,6 @@ if (Test-Path ".claude/rules/lean-ctx.md") {
   Write-Host "  [OK] lean-ctx rules configured (global)" -ForegroundColor Green
 } else {
   Write-Host "  [INFO] lean-ctx rules not configured" -ForegroundColor Yellow
-  Write-Host "  Configure: ./scripts/setup.sh (includes lean-ctx)"
 }
 
 # codegraph
@@ -314,7 +293,6 @@ if (Test-Command codegraph) {
   Write-Host "  [OK] codegraph installed" -ForegroundColor Green
 } else {
   Write-Host "  [INFO] codegraph not installed (recommended)" -ForegroundColor Yellow
-  Write-Host "  Install: npm i -g @colbymchenry/codegraph"
 }
 
 Write-Host ""

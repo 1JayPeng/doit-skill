@@ -78,7 +78,6 @@ if [ -d "$SKILL_DIR/doit" ]; then
     done
 else
     echo "  ❌ doit skill not installed"
-    echo "  💡 Run: cd doit-skill && ./scripts/setup.sh"
 fi
 echo ""
 
@@ -89,7 +88,6 @@ for skill in "${BUNDLED_SKILLS[@]}"; do
         echo "  ✅ $skill installed"
     else
         echo "  ❌ $skill not installed"
-        echo "  💡 Re-run: cd doit-skill && ./scripts/setup.sh"
     fi
 done
 echo ""
@@ -105,8 +103,6 @@ for tool in "${EXTERNAL_TOOLS[@]}"; do
                 echo "  ✅ context-mode installed (plugin)"
             else
                 echo "  ℹ️ context-mode not installed (recommended)"
-                echo "  💡 Install: claude plugin marketplace add mksglu/context-mode"
-                echo "     claude plugin install context-mode@context-mode"
             fi
             ;;
         "rtk")
@@ -114,7 +110,6 @@ for tool in "${EXTERNAL_TOOLS[@]}"; do
                 echo "  ✅ rtk installed"
             else
                 echo "  ℹ️  rtk not installed (recommended)"
-                echo "  💡 Install: curl -fsSL ${GH_PROXY}/https://raw.githubusercontent.com/rtk-ai/rtk/refs/heads/master/install.sh | sh"
             fi
             ;;
         "uv")
@@ -122,7 +117,6 @@ for tool in "${EXTERNAL_TOOLS[@]}"; do
                 echo "  ✅ uv installed"
             else
                 echo "  ℹ️  uv not installed (recommended)"
-                echo "  💡 Install: pip install uv"
             fi
             ;;
         "rust")
@@ -130,7 +124,6 @@ for tool in "${EXTERNAL_TOOLS[@]}"; do
                 echo "  ✅ rust/cargo installed"
             else
                 echo "  ℹ️  rust not installed (required for rtk)"
-                echo "  💡 Install: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh"
             fi
             ;;
         "tavily")
@@ -140,7 +133,6 @@ for tool in "${EXTERNAL_TOOLS[@]}"; do
                 echo "  ✅ tavily configured (settings.json)"
             else
                 echo "  ℹ️  tavily not configured (optional)"
-                echo "  💡 Configure: claude mcp add --transport http tavily https://mcp.tavily.com/mcp/?tavilyApiKey=<your-key>"
             fi
             ;;
         "caveman")
@@ -152,7 +144,6 @@ for tool in "${EXTERNAL_TOOLS[@]}"; do
                 echo "  ✅ caveman installed (hooks)"
             else
                 echo "  ℹ️  caveman not installed (recommended)"
-                echo "  💡 Install: curl -fsSL ${GH_PROXY}/https://raw.githubusercontent.com/JuliusBrussee/caveman/main/install.sh | bash"
             fi
             ;;
         "code-review")
@@ -162,7 +153,6 @@ for tool in "${EXTERNAL_TOOLS[@]}"; do
                 echo "  ✅ code-review installed (plugin)"
             else
                 echo "  ℹ️  code-review not installed (recommended)"
-                echo "  💡 Install: claude plugin install code-review"
             fi
             ;;
         "mempalace")
@@ -170,20 +160,16 @@ for tool in "${EXTERNAL_TOOLS[@]}"; do
                 echo "  ✅ mempalace installed (plugin)"
             else
                 echo "  ℹ️  mempalace plugin not installed (recommended)"
-                echo "  💡 Install: claude plugin marketplace add MemPalace/mempalace"
-                echo "     claude plugin install --scope user mempalace"
             fi
             if command -v mempalace >/dev/null 2>&1; then
                 echo "  ✅ mempalace CLI installed"
             else
                 echo "  ℹ️  mempalace CLI not installed"
-                echo "  💡 Install: uv tool install mempalace"
             fi
             if [ -d ".mempalace" ]; then
                 echo "  ✅ mempalace initialized"
             else
                 echo "  ℹ️  mempalace not initialized"
-                echo "  💡 Run: mempalace init ."
             fi
             ;;
         "headroom")
@@ -191,13 +177,11 @@ for tool in "${EXTERNAL_TOOLS[@]}"; do
                 echo "  ✅ headroom installed"
             else
                 echo "  ℹ️  headroom not installed (recommended)"
-                echo "  💡 Install: uv tool install 'headroom-ai[mcp,proxy]'"
             fi
             if claude mcp list 2>/dev/null | grep -q headroom; then
                 echo "  ✅ headroom MCP configured"
             else
                 echo "  ℹ️  headroom MCP not configured"
-                echo "  💡 Configure: headroom mcp install"
             fi
             ;;
         "lean-ctx")
@@ -205,7 +189,6 @@ for tool in "${EXTERNAL_TOOLS[@]}"; do
                 echo "  ✅ lean-ctx installed"
             else
                 echo "  ℹ️  lean-ctx not installed (recommended)"
-                echo "  💡 Install: curl -fsSL https://leanctx.com/install.sh | sh"
             fi
             if [ -f ".claude/rules/lean-ctx.md" ]; then
                 echo "  ✅ lean-ctx rules configured (project-local)"
@@ -213,7 +196,6 @@ for tool in "${EXTERNAL_TOOLS[@]}"; do
                 echo "  ✅ lean-ctx rules configured (global)"
             else
                 echo "  ℹ️  lean-ctx rules not configured"
-                echo "  💡 Configure: ./scripts/setup.sh (includes lean-ctx)"
             fi
             ;;
     esac
