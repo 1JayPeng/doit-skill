@@ -333,13 +333,6 @@ echo_skip()    { echo -e "${CYAN}[~]${NC} $1"; }
 echo_warn()    { echo -e "${YELLOW}[!]${NC} $1"; }
 echo_error()   { echo -e "${RED}[✗]${NC} $1"; }
 
-echo "=========================================="
-echo "  doit-skill Installer"
-echo "  $(date)"
-echo "  Agent: $AGENT_TYPE"
-echo "=========================================="
-echo ""
-
 # Show hint if re-installing (tools already present)
 if command -v rtk >/dev/null 2>&1; then
   echo "  [HINT] Some tools already installed. Use --skip-updates to speed up re-install."
@@ -620,6 +613,18 @@ if ! git clone --depth 1 "$REPO_URL" "$DOIT_DIR"; then
   exit 1
 fi
 echo_success "Repository cloned to $DOIT_DIR"
+
+# Read version from SKILL.md
+DOIT_VERSION=$(grep -m1 '^version:' "$DOIT_DIR/SKILL.md" 2>/dev/null | cut -d'"' -f2 || echo "unknown")
+
+# Banner (after clone so we have the version)
+echo ""
+echo "=========================================="
+echo "  doit-skill Installer v$DOIT_VERSION"
+echo "  $(date)"
+echo "  Agent: $AGENT_TYPE"
+echo "=========================================="
+echo ""
 
 # Step 1: Install required skills
 echo "=========================================="

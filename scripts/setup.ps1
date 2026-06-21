@@ -293,17 +293,8 @@ if ($Global) {
 }
 
 # ============================================================================
-# Header
+# Header placeholder — banner printed after clone (to show version)
 # ============================================================================
-Write-Host "=========================================="
-Write-Host "  doit-skill Installer (PowerShell)"
-Write-Host "  $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')"
-Write-Host "  Agent: $($script:AgentType)"
-Write-Host "  Platform: $([System.Environment]::OSVersion.VersionString)"
-Write-Host "  PowerShell: $($PSVersionTable.PSVersion.ToString())"
-Write-Host "  Package Manager: $($script:PkgMgr)"
-Write-Host "=========================================="
-Write-Host ""
 
 # ============================================================================
 # Interactive config prompts
@@ -512,6 +503,31 @@ try {
     exit 1
   }
   Write-Success "Repository cloned to $DoitDir"
+
+  # Read version from SKILL.md
+  $DoitVersion = "unknown"
+  $skillMd = Join-Path $DoitDir "SKILL.md"
+  if (Test-Path $skillMd) {
+    $versionLine = Select-String -Path $skillMd -Pattern '^version:' -SimpleMatch | Select-Object -First 1
+    if ($versionLine) {
+      $versionMatch = $versionLine.Line -match 'version:\s*"([^"]+)"'
+      if ($versionMatch) {
+        $DoitVersion = $matches[1]
+      }
+    }
+  }
+
+  # Banner (after clone so we have the version)
+  Write-Host ""
+  Write-Host "=========================================="
+  Write-Host "  doit-skill Installer v$DoitVersion (PowerShell)"
+  Write-Host "  $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')"
+  Write-Host "  Agent: $($script:AgentType)"
+  Write-Host "  Platform: $([System.Environment]::OSVersion.VersionString)"
+  Write-Host "  PowerShell: $($PSVersionTable.PSVersion.ToString())"
+  Write-Host "  Package Manager: $($script:PkgMgr)"
+  Write-Host "=========================================="
+  Write-Host ""
 } finally {
   # Cleanup temp dir on exit
   Register-EngineEvent -SourceIdentifier PowerShell.Exiting -Action {
