@@ -2,9 +2,86 @@
 
 **Subagent orchestration is a native capability of most AI coding CLIs.**
 
-**Config gate:** Read `.doit/config.yaml` `subagent.enabled`. Default `false` (disabled). Set to `true` to enable. **本仓库（doit-skill）默认 `true`。**
+**Config gate:** Read `.doit/config.yaml` `subagent.enabled`. Default `true` (enabled). Set to `false` to disable.
 
-**Subagent tool access:** Subagents get full tool permissions through `general-purpose` agent type. MCP tools (codegraph, context-mode, mempalace) are available to subagents. Subagent via `[[AGENT:spawn]]` gets same tool permissions as main agent.
+**Subagent tool access:** Subagents get full tool permissions. MCP tools (codegraph, context-mode, mempalace) are available to subagents. Subagent via `[[AGENT:spawn]]` gets same tool permissions as main agent. Agent type varies by CLI adapter — see [adapters/](../adapters/).
+
+## 自主并行模式 — Autonomous Parallel (轻量级并行)
+
+**与团队wave模式的区别：** 团队wave模式有层级分工（Architect→Developer→Reviewer），适用于完整的Feature开发。自主并行模式则是主代理**自主判断**任务可拆分，直接派发多个子代理并行执行，无需角色层级。
+
+**核心铁律：主代理应该主动发挥主观能动性，不是被动等待指令。** 遇到以下情况，立即使用并行子代理而不需要用户明确要求。
+
+### 何时触发自主并行
+
+满足以下 ALL 条件时，主代理应立即使用并行子代理：
+
+1. **任务可拆分** — 能分解为 2+ 独立子任务
+2. **子任务无依赖** — 每个子任务不依赖其他子任务的结果
+3. **目标文件不重叠** — 每个子任务修改的文件不冲突（同文件不并行铁律）
+4. **主代理能验证结果** — 主代理有能力检查每个子代理的产出是否正确
+
+### 适用场景
+
+| 场景 | 拆分方式 | 子代理数量 |
+|------|---------|-----------|
+| 仓库全面审查 | 按模块/目录拆分 | 2-4 |
+| 批量路径更新 | 按文件分组拆分 | 2-4 |
+| 研究调研 | 按搜索维度拆分 | 2-3 |
+| 代码审查 | 安全/架构/复杂度并行 | 2-3 |
+| Bug调查（多模块） | 按影响范围拆分 | 2-3 |
+| 文档同步更新 | 按文档类型拆分 | 2-3 |
+| Feature开发（多REQ无依赖） | 按REQ拆分 | N |
+
+### 不适用场景（主代理直接执行）
+
+| 场景 | 原因 |
+|------|------|
+| 单文件修改 | 子代理开销不值得 |
+| 简单命令 | 直接执行更快 |
+| 需要用户输入 | 子代理无法交互 |
+| 子任务有依赖 | 需要团队wave模式的波次调度 |
+| 上下文 <500行 | 直接读取更高效 |
+
+### 自主并行流程
+
+```
+Step 1: 主代理分析任务，识别可并行的子任务
+Step 2: 确认文件不重叠（用 codegraph_impact 或 grep 检查）
+Step 3: 并行派发子代理（background=true）
+Step 4: 继续其他工作，等待子代理完成
+Step 5: 收集结果，验证正确性
+Step 6: 合并结果，报告用户
+```
+
+### 自主并行 vs 团队Wave模式 — 选择指南
+
+```
+任务需要完整的 Phase 1-7 工作流？
+  ├─ YES → 团队Wave模式（Architect→Developer→Reviewer）
+  └─ NO → 自主并行模式
+       ├─ 子任务可独立拆分？
+       │   ├─ YES → 并行子代理（2-N个，background=true）
+       │   └─ NO → 主代理直接执行
+```
+
+### 提示词模板 — 自主并行子代理
+
+```
+你是主代理派发的并行子代理之一，负责 [具体子任务]。
+
+任务范围：[描述具体要做的事]
+目标文件：[文件列表]
+约束：只修改目标文件，不修改范围外的文件
+
+完成后返回：
+[Subagent Result]
+Task: [子任务描述]
+Status: PASS | FAIL
+Files Modified: [文件列表]
+Summary: [做了什么，1-2句话]
+Notes: [注意事项，可选]
+```
 
 ## 三级团队模型 — Three-Tier Team
 
@@ -152,8 +229,8 @@ Type B (bug): Conductor + diagnose skill
 **Never specify `model` parameter. Subagent inherits main conversation's model.**
 
 ```
-[[AGENT:spawn description="Architecture review" prompt="Review the architecture..." type="plan"]]
-[[AGENT:spawn description="Quick file search" prompt="Find all usages of..." type="general"]]
+[[AGENT:spawn description="Architecture review" prompt="Review the architecture..."]]
+[[AGENT:spawn description="Quick file search" prompt="Find all usages of..."]]
 ```
 
 ### Message (Continue Agent)
@@ -168,18 +245,18 @@ Type B (bug): Conductor + diagnose skill
 [[AGENT:stop task_id="<agent_id>"]]
 ```
 
-## Available Agent Types
+## Available Agent Types (by Capability)
 
-| Type | Use | Tools |
-|------|-----|-------|
-| **general-purpose** | General research, search, multi-step | All |
-| **claude** | Default, any task | All |
-| **Explore** | Fast read-only code search | Except Agent, Edit, Write |
-| **Plan** | Architecture design, implementation plans | Except Agent, Edit, Write |
+Agent types are defined by **capability**, not by CLI-specific naming. Each CLI adapter maps capabilities to its native types.
 
-**铁律: Use `general-purpose` or `Plan` types. Avoid `Explore` if it hardcodes specific models.**
+| Capability | Description | Claude Code | OpenCode | oh-my-pi | MiMo | Codex |
+|---|---|---|---|---|---|---|
+| **Full tools** | General research, search, multi-step, file editing | `general-purpose` | `general`, `build` | `task()` | `general` | `shell()` |
+| **Read-only + planning** | Architecture design, analysis, no file mutation | `Plan` | `explore`, `scout` | read-only task | `explore` | read-only |
 
-**Agent types vary by CLI adapter. See [adapters/](../adapters/) for specifics.**
+**铁律: Pick capability, not type name. The adapter resolves to the correct agent type.**
+
+**See [adapters/](../adapters/) for per-CLI agent type details.**
 
 ### 铁律 — No Same-File Parallel Writes
 
@@ -333,7 +410,7 @@ Notes:
 - Build REQ dependency graph -> derive waves
 - Dispatch subagents by role (Architect, Developer, Reviewer, Tester, Simplifier)
 - Poll subagent progress
-- Supervise tool usage and iron rule compliance ([core/iron-rules.md](iron-rules.md))
+- Supervise tool usage and iron rule compliance ([core/iron-rules.md](core/iron-rules.md))
 - Trigger whip mechanism
 - Collect all subagent results
 - Verify spec alignment
@@ -392,7 +469,7 @@ REQ-XXX: <description>
 工具使用:
   [ ] Used codegraph_context/codegraph_search
   [ ] Used context-mode tools (ctx_search, ctx_execute)
-  [ ] No forbidden tools (Bash for large output)
+  [ ] No forbidden tools (large shell output without compression)
 
 TDD 循环:
   [ ] Wrote tests first (RED)
@@ -420,7 +497,7 @@ Status: PASS | FAIL | PARTIAL
 Files Modified: [file1, file2]
 Tests: PASS (3/3) | FAIL (1/3)
 Commit: abc1234 (pushed)
-Tools Used: [codegraph_context, Edit, Bash]
+Tools Used: [codegraph_context, [[FILE:edit]], [[SHELL:run]]]
 Iron Rules Violated: [] | [detail]
 Notes: <optional>
 ```
@@ -483,7 +560,7 @@ build_conductor_prompt(req, spec, context, role):
   ### 铁律 1：工具使用规范
   - MUST use codegraph_context to understand code
   - MUST use context-mode tools (ctx_search, ctx_execute)
-  - MUST NOT use Explore agent (use general-purpose)
+  - MUST NOT use read-only agent types for write tasks (use Full tools)
   - MUST NOT use Bash for output >20 lines
 
   ### 铁律 2：TDD 循环不可跳过
@@ -539,6 +616,17 @@ build_conductor_prompt(req, spec, context, role):
 | Simple one-line command | Agent overhead > direct exec | Direct `[[SHELL:run]]` |
 | Need real-time feedback | Agent results delayed | Main flow direct exec |
 | Context < 500 lines read | Agent overhead not worth it | Direct `[[FILE:read]]` |
+
+### 自主并行 vs 团队Wave模式 — 选择指南
+
+```
+任务需要完整的 Phase 1-7 工作流？
+  ├─ YES → 团队Wave模式（Architect→Developer→Reviewer）
+  └─ NO → 自主并行模式
+       ├─ 子任务可独立拆分？
+       │   ├─ YES → 并行子代理（2-N个，background=true）
+       │   └─ NO → 主代理直接执行
+```
 
 ### Error Handling
 

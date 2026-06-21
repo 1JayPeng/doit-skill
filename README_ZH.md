@@ -383,23 +383,35 @@ cd doit-skill
 ```
 doit-skill/
 ├── SKILL.md          # 主入口
-├── env-check.md      # 阶段 -1: 环境检测
 ├── classifier.md     # 需求类型检测
 ├── doc-capture.md    # 文档捕获（预阶段）
 ├── doit-config.md    # 配置参考
 ├── spec.md           # 阶段 1: Grill + REQ 生成
 ├── plan.md           # 阶段 2: 代码图谱扫描
 ├── debug.md          # 调试工作流 D0-D6 (类型 B)
-├── execute.md        # 阶段 3: TDD 循环 + 审查+简化
 ├── e2e.md            # 阶段 4: 端到端测试
 ├── review.md         # 阶段 5: 代码审查
-├── review-simplify.md -> shared/review-simplify.md
-├── commit.md -> shared/commit.md
 ├── errors.md         # 失败处理
-├── shared/           # 共享阶段（功能 + 调试共用）
-│   ├── review-simplify.md
-│   ├── e2e-verify.md
-│   └── commit.md
+├── core/             # 核心工作流（工具无关）
+│   ├── workflow.md   # Phase 0-10 工作流
+│   ├── iron-rules.md # 铁律
+│   ├── phase-0.md    # Phase 0: 分类
+│   ├── phase-1.md    # Phase 1: spec + grill
+│   ├── execute.md    # Phase 3: TDD 执行
+│   ├── env-check.md  # Phase -1: 环境检测
+│   ├── subagent.md   # 子代理配置
+│   └── shared/       # 共享阶段
+│       ├── review-simplify.md
+│       ├── e2e-verify.md
+│       ├── commit.md
+│       └── phase-gate.md
+├── adapters/         # 工具适配器
+│   ├── claude-code.md
+│   ├── opencode.md
+│   ├── codex.md
+│   ├── oh-my-pi.md
+│   ├── mimo-code.md
+│   └── default.md
 ├── skills/           # 内置技能依赖
 │   ├── grill-me/     # 想法验证
 │   ├── tdd/          # TDD 循环

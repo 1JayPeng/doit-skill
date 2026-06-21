@@ -10,6 +10,7 @@ Maps abstract `[[OPERATION:name]]` syntax to native tool calls for each AI codin
 | [opencode.md](opencode.md) | OpenCode | todowrite, question, bash, @subagent |
 | [codex.md](codex.md) | OpenAI Codex CLI | shell (all operations via shell) |
 | [default.md](default.md) | Generic MCP agent | Generic fallback |
+| [jcode.md](jcode.md) | jcode | swarm, read, edit, bash, browser, memory |
 
 ## Abstract Operations
 
@@ -37,6 +38,17 @@ Maps abstract `[[OPERATION:name]]` syntax to native tool calls for each AI codin
 | `[[MEMORY:compress]]` | Compress session context |
 | `[[WEB:fetch]]` | Fetch web content |
 | `[[WEB:search]]` | Search the web |
+
+## Platform Notes
+
+| Platform | Installer | Shell | Notes |
+|----------|-----------|-------|-------|
+| Linux/macOS | `setup.sh` | bash/zsh | Full POSIX support |
+| Windows (native) | `setup.ps1` | PowerShell | Native PS cmdlets, no WSL |
+| Windows (WSL) | `setup.sh` | bash | Full POSIX via WSL |
+| Windows (Git Bash) | `setup.sh` | bash | Full POSIX via Git Bash |
+
+**PowerShell equivalents:** `command -v` → `Get-Command`, `grep` → `Select-String`, `find` → `Get-ChildItem -Recurse`, `rsync` → `robocopy`, `ln -s` → `New-Item -ItemType SymbolicLink`
 
 ## Config Variables
 

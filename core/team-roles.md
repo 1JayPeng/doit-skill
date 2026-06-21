@@ -3,14 +3,23 @@
 
 ## Role Directory
 
-| Role | Agent Type | Phase | Lifecycle | Count |
+| Role | Capability | Phase | Lifecycle | Count |
 |------|-----------|-------|-----------|-------|
 | **Conductor** | Main agent | 0-10 | 全程驻留 | 1 |
-| **Researcher** | `general-purpose` | 1 | 波次 | 1-3 |
-| **Architect** | `Plan` | 1-2 | 波次 | 1 |
-| **Developer** | `general-purpose` | 3 | 持续 | N (动态) |
-| **Tester** | `general-purpose` | 4-7 | 持续 | 1 |
-| **Reviewer** | `Plan` | 5-6 | 持续 | 1 |
+| **Researcher** | Full tools | 1 | 波次 | 1-3 |
+| **Architect** | Read-only + planning | 1-2 | 波次 | 1 |
+| **Developer** | Full tools | 3 | 持续 | N (动态) |
+| **Tester** | Full tools | 4-7 | 持续 | 1 |
+| **Reviewer** | Read-only + planning | 5-6 | 持续 | 1 |
+
+**Capability → Agent type mapping by CLI:**
+
+| Capability | Claude Code | OpenCode | oh-my-pi | MiMo | Codex |
+|---|---|---|---|---|---|
+| Full tools | `general-purpose` | `general` / `build` | `task()` | `general` | `shell()` |
+| Read-only + planning | `Plan` | `explore` | read-only | `explore` | read-only |
+
+**See [adapters/](../adapters/) for per-CLI agent type details.**
 
 **波次角色**: Phase 完成即释放，不跨波次保留。
 **持续角色**: 在指定 Phase 范围内全程驻留，可跨波次接收任务。
@@ -48,7 +57,7 @@
 | 属性 | 值 |
 |------|-----|
 | 阶段 | Phase 1 |
-| Agent type | `general-purpose` |
+| Capability | Full tools |
 | Lifecycle | 波次 — Phase 1 完成即释放 |
 | 数量 | 1-3（按研究维度拆分） |
 
@@ -59,9 +68,9 @@
 - 用户需求分析：从模糊需求中提取可执行 REQ
 
 **工具:**
-- `tavily_search`, `tavily_research`: 联网搜索
+- `tavily_search`, `tavily_research`: 联网搜索 (MCP)
 - `ctx_fetch_and_index`: 网页内容索引
-- `WebFetch`: 单页抓取
+- `[[WEB:fetch]]`: 单页抓取
 
 **产出:**
 - 调研报告：`.spec/research.md`
@@ -89,7 +98,7 @@ Notes: <上下文补充>
 | 属性 | 值 |
 |------|-----|
 | 阶段 | Phase 1-2 |
-| Agent type | `Plan` |
+| Capability | Read-only + planning |
 | Lifecycle | 波次 — Phase 2 完成即释放 |
 | 数量 | 1 |
 
@@ -131,7 +140,7 @@ Notes: <波次调度表 + 文件分配>
 | 属性 | 值 |
 |------|-----|
 | 阶段 | Phase 3 |
-| Agent type | `general-purpose` |
+| Capability | Full tools |
 | Lifecycle | 持续 — Phase 3 全程驻留 |
 | 数量 | N（按独立 REQ 数动态决定） |
 
@@ -142,10 +151,10 @@ Notes: <波次调度表 + 文件分配>
 - 完成后 git commit + push 到独立分支
 
 **工具:**
-- `codegraph_*`: 代码理解
+- `codegraph_*`, `tokensave_*`: 代码理解
 - `ctx_*`: 命令执行、搜索
-- `Edit`, `Write`: 文件修改
-- `Bash`: 测试命令（仅限短输出）
+- `[[FILE:edit]]`, `[[FILE:write]]`: 文件修改
+- `[[SHELL:run]]`: 测试命令（仅限短输出）
 
 **约束:**
 - **同文件不并行**: 文件分配表已由 Architect 生成，严格遵守
@@ -156,13 +165,13 @@ Notes: <波次调度表 + 文件分配>
 **Developer 波次执行:**
 ```
 Wave 1: [REQ-001, REQ-003]     # 无依赖，并行
-  [[AGENT:spawn desc="REQ-001: ..." worktree=true background=true]]
-  [[AGENT:spawn desc="REQ-003: ..." worktree=true background=true]]
+  [[AGENT:spawn description="REQ-001: ..." prompt="..." worktree=true background=true]]
+  [[AGENT:spawn description="REQ-003: ..." prompt="..." worktree=true background=true]]
   wait_for_all(Wave 1)
   collect_results()
 
 Wave 2: [REQ-002]               # 依赖 REQ-001
-  [[AGENT:spawn desc="REQ-002: ..." worktree=true background=true]]
+  [[AGENT:spawn description="REQ-002: ..." prompt="..." worktree=true background=true]]
   wait_for_all(Wave 2)
   collect_results()
 ```
@@ -188,7 +197,7 @@ Notes: <branch: feat/req-001, commit: abc1234>
 | 属性 | 值 |
 |------|-----|
 | 阶段 | Phase 4-7 |
-| Agent type | `general-purpose` |
+| Capability | Full tools |
 | Lifecycle | 持续 — Phase 4-7 全程驻留 |
 | 数量 | 1 |
 
@@ -202,7 +211,7 @@ Notes: <branch: feat/req-001, commit: abc1234>
 - 覆盖率报告：测试覆盖率数据
 
 **工具:**
-- `Bash`: 测试运行器
+- `[[SHELL:run]]`: 测试运行器
 - `ctx_shell`: 压缩输出
 - `ctx_execute`: 测试分析脚本
 
@@ -231,7 +240,7 @@ Notes: <L0 全通过, L1 3/4 通过, L2 待确认>
 | 属性 | 值 |
 |------|-----|
 | 阶段 | Phase 5-6 |
-| Agent type | `Plan` |
+| Capability | Read-only + planning |
 | Lifecycle | 持续 — Phase 5-6 全程驻留 |
 | 数量 | 1 |
 
@@ -337,10 +346,10 @@ Session start → 编排所有 Phase → Session end → [[MEMORY:compress]]
 
 | 场景 | 推荐角色 | 原因 |
 |------|---------|------|
-| 需要联网搜索 | Researcher | `general-purpose` + web 工具 |
-| 需要代码分析 | Architect | `Plan` + codegraph |
-| 需要写代码 | Developer | `general-purpose` + Edit/Write |
-| 需要跑测试 | Tester | `general-purpose` + shell |
-| 需要审代码 | Reviewer | `Plan` + read-only 工具 |
+| 需要联网搜索 | Researcher | Full tools + web MCP |
+| 需要代码分析 | Architect | Read-only + codegraph |
+| 需要写代码 | Developer | Full tools + `[[FILE:edit]]` |
+| 需要跑测试 | Tester | Full tools + `[[SHELL:run]]` |
+| 需要审代码 | Reviewer | Read-only + analysis |
 | 简单查询 | 主代理直执行 | 子代理开销不值得 |
 | 单文件修改 | 主代理直执行 | 无需隔离 |

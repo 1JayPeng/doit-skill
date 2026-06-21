@@ -41,7 +41,7 @@ for spec-driven TDD workflows. When making changes to doit-skill:
 
 This repo's style is documented here for developer reference. The actual
 commit-style detection and CLAUDE.md writing is done by the skill's
-Phase 8 (`shared/commit.md`) when run in any user project.
+Phase 8 (`core/shared/commit.md`) when run in any user project.
 
 ```
 <type>: <short description>

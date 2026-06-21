@@ -25,11 +25,13 @@ Maps abstract `[[OPERATION]]` syntax to oh-my-pi (omp) native tools.
 | `[[TASK:list]]` | `read(".doit/tasks.md")` |
 | `[[TASK:get taskId="..."]]` | `read(".doit/tasks.md")` + parse |
 
-**Note:** omp has no native task management. Tasks tracked in `.doit/tasks.md`:
+**Note:** omp has no native task management. Tasks tracked in `.doit/tasks.md` via file edits:
 ```markdown
 - [ ] Phase 0 - Classify: Classify request
 - [x] Phase 1 - Spec: Done
 ```
+
+**Task Usage Frequency:** oh-my-pi lacks native task management, relying on `.doit/tasks.md`. **Edit this file after every sub-step** using `edit()` — change `[ ]` to `[x]` as tasks complete. Without native task tools, this file is the ONLY progress indicator. Stale task files confuse the user and waste context space.
 
 ### Agent (Subagent)
 
@@ -43,6 +45,10 @@ Maps abstract `[[OPERATION]]` syntax to oh-my-pi (omp) native tools.
 
 **Subagent features:** Isolated workers with typed results back to parent. Loopback bridge allows subagents to call read, search, task tools.
 
+**Usage Note:** Use `task({ prompt: "..." })` for subagent orchestration. Subagents have typed results — define the return type in the prompt for better type safety. Background tasks (`background: true`) run asynchronously.
+
+**Task Usage Frequency:** oh-my-pi has no native task API. Tasks are tracked in `.doit/tasks.md`. **Update this file after every sub-step** using `edit()` to change `[ ]` to `[x]`. The file is the single source of truth for progress. If the file becomes stale, progress tracking breaks.
+
 ### User Interaction
 
 | Abstract | oh-my-pi |
@@ -50,6 +56,8 @@ Maps abstract `[[OPERATION]]` syntax to oh-my-pi (omp) native tools.
 | `[[USER:ask questions=[{question:"...", header:"...", options:[...]}]]]` | Interactive TUI mode — output formatted question, user responds inline. Non-interactive mode: use defaults. |
 
 **Note:** omp has interactive TUI with themes. Questions are presented in the terminal interface. In non-interactive/headless mode, use recommended defaults.
+
+**Usage Note:** Batch multiple questions when possible. In headless mode, always provide sensible defaults so the workflow doesn't block.
 
 ### File Operations
 
@@ -61,12 +69,16 @@ Maps abstract `[[OPERATION]]` syntax to oh-my-pi (omp) native tools.
 
 **Note:** omp's `edit` is hash-anchored — it uses content hashes instead of line numbers, preventing concurrent agent runs from clobbering each other. LSP integration provides symbol-aware editing (rename across files, go-to-definition).
 
+**Usage Note:** Hash-anchored edits are safer than line-number based edits — they won't drift if concurrent edits change line numbers. When `edit` fails, re-read the file first to get fresh content hashes. For symbol-level refactoring, prefer `lsp.rename()` over manual `edit()` calls.
+
 ### Shell
 
 | Abstract | oh-my-pi |
 |----------|---------|
 | `[[SHELL:run command="..."]]` | `bash("...")` |
 | `[[SHELL:run command="..." background=true]]` | `bash("...", { background: true })` |
+
+**Usage Note:** Commands ≥10s MUST use `background: true`. omp runs persistent Python and Bun workers — for data processing tasks, prefer submitting to the worker kernel over spawning a new shell process.
 
 **Note:** omp runs persistent Python and Bun workers. Both kernels can call back into agent tools (read, search, task) over a loopback bridge.
 

@@ -24,8 +24,8 @@ GH_PROXY="https://v6.gh-proxy.org"
 BUNDLED_SKILLS=("grill-me" "tdd" "diagnose" "prototype" "handoff" "improve-codebase-architecture")
 BUILTIN_SKILLS=()
 EXTERNAL_TOOLS=("context-mode" "rtk" "uv" "tavily" "caveman" "code-review" "mempalace" "headroom" "lean-ctx")
-SHARED_FILES=("shared/review-simplify.md" "shared/e2e-verify.md" "shared/commit.md")
-SYMLINK_TARGETS=("review-simplify.md:shared/review-simplify.md" "commit.md:shared/commit.md")
+SHARED_FILES=("core/shared/review-simplify.md" "core/shared/e2e-verify.md" "core/shared/commit.md")
+SYMLINK_TARGETS=("review-simplify.md:core/shared/review-simplify.md" "commit.md:core/shared/commit.md")
 
 echo "=========================================="
 echo "  doit-skill Doctor"
@@ -38,7 +38,7 @@ echo "[1/3] Checking doit skill installation..."
 if [ -d "$SKILL_DIR/doit" ]; then
     echo "  ✅ doit skill installed"
     # Check for core files
-    core_files=("SKILL.md" "rules.md" "phases.md" "classifier.md" "spec.md" "plan.md" "execute.md" "e2e.md" "review.md" "review-simplify.md" "commit.md" "errors.md" "setup.md")
+    core_files=("SKILL.md" "core/iron-rules.md" "core/workflow.md" "classifier.md" "spec.md" "plan.md" "core/execute.md" "e2e.md" "review.md" "core/shared/review-simplify.md" "core/shared/commit.md" "errors.md" "setup.md")
     missing_core=""
     for file in "${core_files[@]}"; do
         if [ ! -f "$SKILL_DIR/doit/$file" ]; then

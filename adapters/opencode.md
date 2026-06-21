@@ -29,6 +29,8 @@ Maps abstract `[[OPERATION]]` syntax to OpenCode native tool calls.
 
 **Note:** OpenCode `todowrite` manages todos by content matching, not by ID. To "update" a task, re-write the full todo list with updated status. `todowrite` is **disabled for subagents** by default.
 
+**Task Usage Frequency:** OpenCode's `todowrite` is the primary progress tracking mechanism. **Call `todowrite` after every sub-step** to update status. Even though OpenCode doesn't emit stale task warnings like Claude Code, maintaining an accurate todo list is essential for the user to see progress. The todo list IS the progress bar.
+
 ### Agent (Subagent)
 
 | Abstract | OpenCode |
@@ -39,7 +41,7 @@ Maps abstract `[[OPERATION]]` syntax to OpenCode native tool calls.
 | `[[AGENT:message to="..." message="..."]]` | Not directly supported — spawn new subagent with context |
 | `[[AGENT:stop task_id="..."]]` | Not directly supported — user must cancel |
 
-**Built-in subagent types:**
+**Usage Note:** Spawn multiple subagents in a single response when they work independently. `todowrite` is **disabled for subagents** by default — don't expect subagents to update task status. Use `explore` agent for read-only code research, `build` for implementation tasks.
 - `general` — full tool access, multi-step tasks
 - `explore` — read-only, fast codebase exploration
 - `scout` — read-only, external docs / dependency research
@@ -47,11 +49,15 @@ Maps abstract `[[OPERATION]]` syntax to OpenCode native tool calls.
 
 **Custom subagents** via `opencode.json` → `agent` key with `mode: "subagent"`. Controlled by `permission.task` with glob patterns.
 
+**Task Usage Frequency:** OpenCode uses `todowrite` for task management. Unlike Claude Code, `todowrite` doesn't have system-level stale warnings, but **still call it after every sub-step** to maintain progress visibility. Keep the todo list current — it's the only progress tracking mechanism visible to the user.
+
 ### User Interaction
 
 | Abstract | OpenCode |
 |----------|---------|
 | `[[USER:ask questions=[{question:"...", header:"...", options:[...]}]]]` | `question({ questions: [{ question: "...", header: "...", options: [...] }] })` |
+
+**Usage Note:** Batch multiple questions into one `question()` call. Keep options to 2-4. The `question` tool is only available when `permission.question` is set to `allow`.
 
 ### File Operations
 
@@ -62,12 +68,16 @@ Maps abstract `[[OPERATION]]` syntax to OpenCode native tool calls.
 | `[[FILE:edit path="..." old_string="..." new_string="..."]]` | `edit("...", "...", "...")` |
 | Apply diff | `apply_patch({ patchText: "..." })` |
 
+**Usage Note:** `edit()` requires the `old_string` to match exactly once. `apply_patch` is useful for multi-line changes but requires a properly formatted unified diff. Prefer `edit()` for simple replacements.
+
 ### Shell
 
 | Abstract | OpenCode |
 |----------|---------|
 | `[[SHELL:run command="..."]]` | `bash("...")` |
 | `[[SHELL:run command="..." background=true]]` | `bash("...", { run_in_background: true })` |
+
+**Usage Note:** Commands ≥10s MUST use `run_in_background: true`. Check `permission.bash` — if set to `ask`, each command requires user approval.
 
 ### Search
 

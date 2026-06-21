@@ -4,12 +4,28 @@
 #
 # Installs doit-skill and all dependencies.
 # Supports:
-#   --agent <type>     Target AI coding CLI: claude|opencode|codex|oh-my-pi|mimo|auto (default: auto)
+#   --agent <type>     Target AI coding CLI: claude|opencode|codex|oh-my-pi|mimo|jcode|auto (default: auto)
 #   --skip-optional    Skip optional skills and external tools
 #   --skip-updates     Skip updating already-installed tools
+#
+# Windows native: On Windows without WSL, this script auto-redirects to setup.ps1.
+# On WSL or Git Bash, this script runs normally.
 
 # No set -e: we handle errors explicitly. set -e + 2>/dev/null = silent death.
 trap 'echo_error "Installation interrupted by user. Partial install may be in place." && exit 130' INT
+
+# Windows native detection (not WSL) — redirect to PowerShell installer
+if [ "$MSYSTEM" = "" ] && [ "$WSL_DISTRO_NAME" = "" ] && command -v powershell.exe >/dev/null 2>&1; then
+  echo "=========================================="
+  echo "  Windows detected (native PowerShell)"
+  echo "  Redirecting to PowerShell installer..."
+  echo "=========================================="
+  echo ""
+  echo "Running: powershell -ExecutionPolicy Bypass -File scripts/setup.ps1"
+  echo ""
+  powershell -ExecutionPolicy Bypass -File "$(dirname "$0")/setup.ps1"
+  exit $?
+fi
 
 # Configuration
 # Detect target AI coding CLI
@@ -19,6 +35,7 @@ detect_agent() {
     command -v claude >/dev/null 2>&1 && echo "claude" && return
     command -v opencode >/dev/null 2>&1 && echo "opencode" && return
     command -v codex >/dev/null 2>&1 && echo "codex" && return
+    command -v jcode >/dev/null 2>&1 && echo "jcode" && return
     # Default to claude if no specific agent detected
     echo "claude"
     return
@@ -62,6 +79,12 @@ _set_agent_paths() {
       GLOBAL_SKILL_DIR="$HOME/.config/mimo/skills"
       MAIN_INSTRUCTIONS="AGENTS.md"
       MCP_CONFIG_FILE="$HOME/.config/mimo/settings.json"
+      ;;
+    jcode)
+      SKILL_DIR=".jcode/skills"
+      GLOBAL_SKILL_DIR="$HOME/.jcode/skills"
+      MAIN_INSTRUCTIONS="AGENTS.md"
+      MCP_CONFIG_FILE="$HOME/.jcode/mcp.json"
       ;;
     *)
       SKILL_DIR=".ai/skills"
@@ -576,7 +599,7 @@ echo "    • code-review      (claude plugin install code-review)"
 
   echo "  Options (configurable at install):"
   echo "    • doc-capture    (persist reference docs, default: enabled)"
-  echo "    • subagent       (parallel orchestration, default: disabled)"
+  echo "    • subagent       (parallel orchestration, default: enabled)"
   echo "    • auto_commit    (skip commit/push confirmation, default: disabled)"
   echo "    • --global       install to ~/.claude/skills/ instead of .claude/skills/"
 
@@ -632,7 +655,7 @@ if [ -d "$DOIT_DST" ]; then
 
   # Fix broken symlinks: if symlink target was copied as regular file, replace it
   for lnk in review-simplify.md commit.md; do
-    target="shared/$lnk"
+    target="core/shared/$lnk"
     if [ -f "$DOIT_DST/$lnk" ] && [ ! -L "$DOIT_DST/$lnk" ]; then
       rm "$DOIT_DST/$lnk"
       ln -s "$target" "$DOIT_DST/$lnk"
@@ -641,13 +664,13 @@ if [ -d "$DOIT_DST" ]; then
     fi
   done
 
-  # Ensure shared/ directory exists with all files
-  if [ ! -d "$DOIT_DST/shared" ] && [ -d "$DOIT_DIR/shared" ]; then
-    cp -a "$DOIT_DIR/shared" "$DOIT_DST/shared"
+  # Ensure core/shared/ directory exists with all files
+  if [ ! -d "$DOIT_DST/core/shared" ] && [ -d "$DOIT_DIR/core/shared" ]; then
+    cp -a "$DOIT_DIR/core/shared" "$DOIT_DST/core/shared"
     while IFS= read -r f; do
       UPDATED_FILES+=("$f")
-    done < <(find "$DOIT_DST/shared" -type f | sed "s|$DOIT_DST/||")
-    echo_success "shared/ directory restored"
+    done < <(find "$DOIT_DST/core/shared" -type f | sed "s|$DOIT_DST/||")
+    echo_success "core/shared/ directory restored"
   fi
 
   # Clean excluded dirs

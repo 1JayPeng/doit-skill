@@ -72,9 +72,53 @@ If MemPalace is available:
 
 If MemPalace unavailable → skip silently. Filesystem remains primary.
 
+## 铁律 — Active Task Management (活跃任务管理)
+
+**任务不是创建完就放着。** 每个子步骤完成后立即更新任务状态。
+
+**子步骤定义**：一个独立的、可识别的操作单元。例如：
+- 读一个文件理解上下文 → 1 个子步骤
+- 执行一次搜索 → 1  个子步骤
+- 完成一个 REQ 的实现 → 1 个子步骤
+- 运行一次测试 → 1 个子步骤
+
+**频率要求**：
+- 开始子步骤 → 先标记 `in_progress`
+- 完成子步骤 → 立即标记 `completed`
+- **最多 3 个子步骤不允许有 task 状态更新** —— 超过 = 违反铁律
+- Phase 边界是最低要求，不是唯一要求。子步骤之间也要更新。
+
+**CLI 适配**（通过 `[[TASK:*]]` 抽象操作自动适配）：
+- Claude Code → `TaskCreate` / `TaskUpdate`
+- OpenCode → `todowrite`
+- oh-my-pi → 编辑 `.doit/tasks.md`
+- Codex → 编辑 `.doit/tasks.md`
+
+**为什么**：不活跃的任务管理会导致系统警告（"task tools haven't been used recently"），浪费上下文空间。更重要的是，不跟踪进度 = 不知道自己在哪 = 容易重复执行或遗漏步骤。
+
+**铁律：任务列表是进度跟踪工具，不是装饰。活跃使用，不是创建完就放着。**
+
+**Stale Task 清理：** 在 Phase 0 创建新任务列表前，必须先调用 `[[TASK:list]]` 清理旧工作流残留的任务。不清理 = 任务列表混乱 = 模型无法判断当前工作流进度。
+
+## 铁律 — Phase -1 不可跳过
+
+**Phase -1 (环境检测) 是绝对强制入口，必须先于 Phase 0 (分类) 完成。**
+
+模型首先应该对环境有个快速清晰的认知：
+- 编码环境（语言、运行时、版本）
+- CLI 环境（Claude Code / OpenCode / Codex / oh-my-pi / MiMo）
+- bash 环境（shell、工具可用性）
+- code 环境（git status、branch、recent commits）
+- agent 环境（MCP tools、skills、memory layers）
+- 上下文（session memory、MemPalace、prior findings）
+
+**不完成 Phase -1 就进入 Phase 0 = 盲分类 = 可能选错工作流。**
+
+Phase -1 有缓存机制：如果 `.doit/env-cache.json` 存在且 <24h 且 `.git/HEAD` 未变，可以快速使用缓存值。但这仍然是必须执行的步骤，只是可以快速完成。
+
 ## 铁律 — 完整工作流不可跳过
 
-Phase 0 → 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 → 9 → 9.5 → 9.5.5 → 10
+Phase -1 → 0 → 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 → 9 → 9.5 → 9.5.5 → 10
 
 **跳过 = 工作流未完成。** Type Q/S/B have abbreviated flows defined in Phase 0 classifier.
 
