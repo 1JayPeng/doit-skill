@@ -577,7 +577,7 @@ if [ "$DRY_RUN" = true ]; then
   echo ""
   if [ "$SKIP_OPTIONAL" = false ]; then
     echo "  External tools (installed by default):"
-    echo "    • context-mode     (claude plugin marketplace add mksglu/context-mode)"
+    echo "    • context-mode     (claude plugin marketplace add mksglu/claude-context-mode/plugin)"
     echo "    • rtk              (cargo install rtk)"
     echo "    • uv               (official install script)"
     echo "    • rust               (rustup, Tsinghua mirror)"
@@ -843,13 +843,13 @@ else
       echo_skip "context-mode already installed (skipping update)"
     else
       echo_info "Updating context-mode..."
-      spin 60 "context-mode update" claude plugin install context-mode@context-mode --pty || echo_warn "context-mode update failed"
+      spin 60 "context-mode update" claude plugin install context-mode@claude-context-mode/plugin --pty || echo_warn "context-mode update failed"
       echo_success "context-mode updated"
     fi
   else
     echo_info "Installing context-mode..."
-    spin 120 "context-mode marketplace add" claude plugin marketplace add mksglu/context-mode --pty || echo_warn "Failed to add context-mode marketplace"
-    spin 180 "context-mode install" claude plugin install context-mode@context-mode --pty || echo_warn "Failed to install context-mode"
+    spin 120 "context-mode marketplace add" claude plugin marketplace add mksglu/claude-context-mode/plugin --pty || echo_warn "Failed to add context-mode marketplace"
+    spin 180 "context-mode install" claude plugin install context-mode@claude-context-mode/plugin --pty || echo_warn "Failed to install context-mode"
   fi
 
   # RTK
@@ -1078,8 +1078,7 @@ with open('$_claude_settings', 'w') as f:
       fi
     else
       echo_info "Installing mempalace..."
-      spin 120 "mempalace marketplace add" claude plugin marketplace add MemPalace/mempalace --pty || echo_warn "Failed to add mempalace marketplace"
-      spin 180 "mempalace install" claude plugin install --scope user mempalace --pty || echo_warn "Failed to install mempalace (install manually: claude plugin install --scope user mempalace)"
+      spin 120 "mempalace add" claude plugin add mempalace@mempalace --marketplace github:milla-jovovich/mempalace --pty || echo_warn "Failed to add mempalace"
     fi
   else
     echo_info "mempalace Claude Code plugin — skipping for $AGENT_TYPE (MCP server configured separately)"
@@ -1155,7 +1154,7 @@ if [ "$SKIP_OPTIONAL" = false ] && [ "${_skip_step_3:-false}" = "false" ]; then
       cp "$_lean_ctx_global_rules" .claude/rules/lean-ctx.md
       echo_success "lean-ctx project rules configured (.claude/rules/lean-ctx.md)"
     else
-      echo_warn "lean-ctx global rules not found — run lean-ctx init --agent claude manually first"
+      echo_warn "lean-ctx global rules not found — run lean-ctx onboard (auto-detected) manually first"
     fi
 
     if [ -f "$HOME/.claude/settings.local.json" ]; then
@@ -1294,6 +1293,17 @@ if [ "$SKIP_OPTIONAL" = false ] && [ "${_skip_step_3:-false}" = "false" ]; then
     fi
   fi
   fi  # end _skip_step_3 wrapper
+fi
+
+# Step 3.9: Uninstall tokensave (replaced by codegraph)
+if [ "$SKIP_OPTIONAL" = false ] && [ "${_skip_step_3:-false}" = "false" ]; then
+  if command -v tokensave >/dev/null 2>&1; then
+    echo_info "tokensave detected — uninstalling (replaced by codegraph)..."
+    spin 60 "tokensave uninstall" "tokensave uninstall --agent claude" || echo_warn "tokensave uninstall failed (remove manually)"
+    echo_success "tokensave uninstalled"
+  else
+    echo_skip "tokensave not installed (no uninstall needed)"
+  fi
 fi
 
 # Step 4: Run doctor before cleanup

@@ -2,6 +2,8 @@
 
 **Bug is a feature where the spec already exists.** The user told us what should happen. Something broke. Find out why, fix it, prove it's fixed.
 
+**前置条件：** Phase -1 (环境检测) 必须已完成。[LOAD] [core/env-check.md](core/env-check.md)。如需快速检测，参见 env-check.md 的 Type S 快速检测模式。
+
 ## D0 — Diagnose (Reproduce)
 
 **Before writing any code, reproduce the bug.**
@@ -12,13 +14,18 @@
 
 **Tool Calling for diagnosis:**
 1. `codegraph_context(task="<bug description>")` — get focused context for the affected area
-2. `codegraph_search("symbol_from_error")` — find the specific symbol in the error
-3. `codegraph_node(symbol)` — get function signature/body
+2. `codegraph_search(query="<symbol_from_error>")` — find the specific symbol in the error
+3. `codegraph_node(symbol="<name>")` — get function signature/body
 4. `codegraph_callers(symbol)` — who calls this function (upstream call chain)
 5. `codegraph_callees(symbol)` — what does this call (downstream call chain)
-6. `codegraph_impact(symbol)` — blast radius
-7. `ctx_execute(language="shell", code="<reproduce command>")` — reproduce the bug, auto-index output
-- **Fallback:** `grep -rn "<keyword>" src/` + `find` + `Read`.
+6. `ctx_execute(language="shell", code="<reproduce command>")` — reproduce the bug, auto-index output
+
+**Fallback (requires tokensave):**
+- `tokensave_diagnostics(scope="workspace")` — run cargo check / tsc / pyright for type errors
+- `tokensave_diagnose(cargo_output="<stderr>")` — parse compiler/linter diagnostics mapped to graph nodes
+- `tokensave_test_map(file="<bug_file>")` — find existing tests covering this code
+- `tokensave_affected_tests(files=[<bug_file>], depth=2)` — find affected tests via dependency graph
+- **Fallback for codegraph:** `grep -rn "<keyword>" src/` + `find` + `Read`.
 - **Fallback for ctx_execute:** native Bash tool.
 
 Use `diagnose` skill for root cause analysis if needed.
@@ -79,7 +86,8 @@ PASS: test_xxx_regression
 **Tool Calling:**
 - `ctx_execute(language="shell", code="<original bug trigger command>")` — reproduce original failure, now should pass
 - `ctx_execute(language="shell", code="<run all e2e tests>")` — full regression suite
-- `grep -rn "<changed_symbol>" tests/` to find tests referencing changed code.
+- **Fallback (requires tokensave):** `tokensave_affected_tests(files=[<changed_files>], depth=3)` — find affected tests by dependency graph
+  - **Fallback:** `grep -rn "<changed_symbol>" tests/` to find tests referencing changed code.
 - **Fallback for ctx_execute:** native Bash tool.
 
 1. **Run the original bug trigger in real env** — same command/input that caused the crash
@@ -101,7 +109,7 @@ Check specifically for bugs:
 <!-- D5: Shared phase. Single source of truth: core/shared/e2e-verify.md -->
 ## D5 — E2E Verification Loop
 
-**Shared phase. See [e2e-verify.md](core/shared/e2e-verify.md).** (This is the same file as feature flow's Phase 7.)
+**Shared phase. See [core/shared/e2e-verify.md](core/shared/e2e-verify.md).** (This is the same file as feature flow's Phase 7.)
 
 Spec alignment check compares actual output against the bug report — what the user reported should happen.
 

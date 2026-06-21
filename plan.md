@@ -21,6 +21,12 @@
 
 ### Step 1: Code Graph Scan
 
+**lean-ctx batch read** — after identifying relevant files, batch read signatures:
+```
+[CALL] ctx_multi_read(paths=[<relevant_files>], mode="signatures") — batch read API surface
+```
+**Why:** one `ctx_multi_read` call replaces N individual `ctx_read` calls, saving ~3000 tokens for 5-10 files.
+
 **CodeGraph**（精准代码图查询，跨语言 AST）：
 1. `codegraph_context(task="<feature description>")` — 理解功能流，获取相关符号 + 关系 + 代码
 2. `codegraph_search("symbolName")` — 定位特定符号
@@ -29,12 +35,6 @@
 5. `codegraph_impact(symbol)` — 评估编辑爆炸半径
 6. `codegraph_node(symbol)` — 符号完整源码
 7. `codegraph_explore(query)` — 一次检查多个相关符号的源码
-
-**lean-ctx batch read** — after identifying relevant files, batch read signatures:
-```
-[CALL] ctx_multi_read(paths=[<relevant_files>], mode="signatures") — batch read API surface
-```
-**Why:** one `ctx_multi_read` call replaces N individual `ctx_read` calls, saving ~3000 tokens for 5-10 files.
 
 **CodeGraph 使用原则：**
 - **Trust the results** — don't re-verify with grep. The index is pre-built.
@@ -50,7 +50,23 @@
 - `mempalace_check_duplicate content="<ADR: decision, rationale, tradeoff>" threshold=0.87`
 - `mempalace_add_drawer wing="<project>" room="decisions" content="<ADR: decision, rationale, tradeoff>"`
 
-**Rule:** `codegraph_context` first, then narrow with `codegraph_search`/`codegraph_impact`.
+**Fallback (requires tokensave) — 高级分析工具（按需使用）：**
+- `tokensave_diagnostics(scope="workspace")` — run type checker
+- `tokensave_dead_code()` — find potentially unreachable code
+- `tokensave_complexity()` — functions ranked by complexity
+- `tokensave_test_map(node_id)` — test coverage per symbol
+- `tokensave_test_risk(path="...")` — high-risk untested symbols
+- `tokensave_unsafe_patterns(kinds=[...])` — find panic/unsafe sites
+- `tokensave_todos(kinds=["HACK", "TODO"])` — find TODO/FIXME markers
+- `tokensave_type_hierarchy(node_id="<id>")` — full type hierarchy tree
+- `tokensave_impls(trait="<name>")` — list all impl blocks for a trait
+- `tokensave_derives(qualified_name="<type>")` — list #[derive(...)] macros
+- `tokensave_dsm(path="<src_dir>", format="clusters")` — design structure matrix
+- `tokensave_coupling(direction="fan_in")` — most depended-on files
+- `tokensave_hotspots()` — highest connectivity symbols
+- `tokensave_signature_search(returns="Result<", params=["&mut self"])` — search by signature shape
+
+**Rule:** `codegraph_context` first, then narrow with `codegraph_search`/`codegraph_impact`. Use fallback tools above for advanced static analysis when tokensave is installed.
 
 #### Subagent Parallel Code Analysis (Optional, when 2+ independent modules)
 

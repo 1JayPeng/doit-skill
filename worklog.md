@@ -8,9 +8,9 @@
 
 | 层级 | 工具 | 用途 |
 |------|------|------|
-| 1 | `.doit/worklog.json` | 结构化日志文件（唯一写入点） |
+| 1 | `.doit/worklog.ndjson` | NDJSON 格式日志文件（每行一个 JSON 对象，唯一写入点） |
 
-**写入逻辑：** 直接追加到 `.doit/worklog.json`。Phase 10 会话结束时统一提取到 MemPalace。
+**写入逻辑：** 每个 phase 追加一行 JSON 到 `.doit/worklog.ndjson`。每行是独立的合法 JSON 对象（NDJSON 格式）。Phase 10 会话结束时统一提取到 MemPalace。
 
 **为什么简化为单层：**
 - 每 phase 都调记忆 MCP → token 浪费
@@ -57,7 +57,7 @@
 
 ### 文件系统（唯一写入层）
 
-每个 phase 完成后，追加到 `.doit/worklog.json`：
+每个 phase 完成后，追加一行 JSON 到 `.doit/worklog.ndjson`（NDJSON 格式）：
 
 ```bash
 # Phase 完成后执行
@@ -73,7 +73,7 @@ echo '{
   "blockers": [],
   "test_results": "PASS (5/5)",
   "commit": "a1b2c3d"
-}' >> .doit/worklog.json
+}' >> .doit/worklog.ndjson
 ```
 
 ### Phase 10 统一提取到 MemPalace

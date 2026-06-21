@@ -38,12 +38,11 @@
     "tools": {
       "rtk": "curl -fsSL https://v6.gh-proxy.org/https://raw.githubusercontent.com/rtk-ai/rtk/refs/heads/master/install.sh | sh",
       "uv": "pip install uv",
-      "context-mode": "claude plugin marketplace add mksglu/context-mode && claude plugin install context-mode@context-mode",
+      "context-mode": "claude plugin marketplace add mksglu/claude-context-mode/plugin && claude plugin install context-mode@claude-context-mode/plugin",
       "caveman": "curl -fsSL https://v6.gh-proxy.org/https://raw.githubusercontent.com/JuliusBrussee/caveman/main/install.sh | bash",
-      "code-review": "claude plugin install code-review",
-      "mempalace": "claude plugin marketplace add MemPalace/mempalace && claude plugin install --scope user mempalace",
+      "mempalace": "claude plugin add mempalace@mempalace --marketplace github:milla-jovovich/mempalace",
       "headroom": "uv tool install 'headroom-ai[mcp,proxy]' && headroom mcp install",
-      "lean-ctx": "curl -fsSL https://leanctx.com/install.sh | sh && lean-ctx onboard && lean-ctx init --agent claude",
+      "lean-ctx": "curl -fsSL https://leanctx.com/install.sh | sh && lean-ctx onboard",
       "tavily": "claude mcp add --transport http tavily https://mcp.tavily.com/mcp/?tavilyApiKey=<your-key>",
       "codegraph": "npm i -g @colbymchenry/codegraph && codegraph install --yes && codegraph init -i"
     }

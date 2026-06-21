@@ -23,7 +23,7 @@ fi
 GH_PROXY="https://v6.gh-proxy.org"
 BUNDLED_SKILLS=("grill-me" "tdd" "diagnose" "prototype" "handoff" "improve-codebase-architecture")
 BUILTIN_SKILLS=()
-EXTERNAL_TOOLS=("context-mode" "rtk" "uv" "tavily" "caveman" "code-review" "mempalace" "headroom" "lean-ctx")
+EXTERNAL_TOOLS=("context-mode" "rtk" "uv" "tavily" "caveman" "mempalace" "headroom" "lean-ctx")
 SHARED_FILES=("core/shared/review-simplify.md" "core/shared/e2e-verify.md" "core/shared/commit.md")
 SYMLINK_TARGETS=("review-simplify.md:core/shared/review-simplify.md" "commit.md:core/shared/commit.md")
 
@@ -103,7 +103,7 @@ for tool in "${EXTERNAL_TOOLS[@]}"; do
                 echo "  ✅ context-mode installed (plugin)"
             else
                 echo "  ℹ️ context-mode not installed (recommended)"
-                echo "     Install: claude plugin install context-mode@context-mode"
+                echo "     Install: claude plugin install context-mode@claude-context-mode/plugin"
             fi
             ;;
         "rtk")
@@ -152,22 +152,12 @@ for tool in "${EXTERNAL_TOOLS[@]}"; do
                 echo "     Install: claude plugin install caveman@caveman"
             fi
             ;;
-        "code-review")
-            if [ -d "$SKILL_DIR/code-review" ]; then
-                echo "  ✅ code-review installed (skill)"
-            elif grep -rl "code-review" "$HOME/.claude/plugins/" > /dev/null 2>&1; then
-                echo "  ✅ code-review installed (plugin)"
-            else
-                echo "  ℹ️  code-review not installed (recommended)"
-                echo "     Install: claude plugin install code-review"
-            fi
-            ;;
         "mempalace")
             if grep -rl "mempalace" "$HOME/.claude/plugins/" > /dev/null 2>&1; then
                 echo "  ✅ mempalace installed (plugin)"
             else
                 echo "  ℹ️  mempalace plugin not installed (recommended)"
-                echo "     Install: claude plugin install --scope user mempalace"
+                echo "     Install: claude plugin add mempalace@mempalace --marketplace github:milla-jovovich/mempalace"
             fi
             if command -v mempalace >/dev/null 2>&1; then
                 echo "  ✅ mempalace CLI installed"
@@ -209,7 +199,7 @@ for tool in "${EXTERNAL_TOOLS[@]}"; do
                 echo "  ✅ lean-ctx rules configured (global)"
             else
                 echo "  ℹ️  lean-ctx rules not configured"
-                echo "     Configure: lean-ctx init --agent claude"
+                echo "     Configure: lean-ctx onboard (auto-detects CLI)"
             fi
             ;;
     esac

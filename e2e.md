@@ -115,17 +115,18 @@ with sync_playwright() as p:
 
 ### Run E2E Tests
 
-**Primary (fast path — full suite via context-mode):**
-```
-ctx_execute(language="shell", code="cargo test --no-fail-fast")
-```
-
-**Fallback (full suite):**
+**Primary (full suite):**
 ```
 ctx_execute(language="shell", code="uv run pytest tests/e2e/ -v --tb=short")
 ctx_execute(language="shell", code="uv run python -m pytest tests/e2e/ -v --tb=short")
 ```
 - **Context-Mode unavailable:** native Bash tool (output not indexed).
+
+**Fallback (requires tokensave) — only affected tests:**
+```
+tokensave_affected_tests(files=[<changed_files>])
+tokensave_run_affected_tests(changed_paths=[<changed_files>])
+```
 
 ### Detect Test Framework (before generating tests)
 
@@ -143,17 +144,22 @@ ctx_batch_execute(
 - **Fallback:** If Context-Mode unavailable -> parallel Bash calls to `cat` + `find`.
 
 **codegraph** tools for understanding entry points:
-1. `codegraph_search("entry_point_name")` — find the entry point function
-2. `codegraph_node(symbol)` — get function signature for test generation
-3. `codegraph_explore(query)` — explore related symbols
-- **Fallback:** `grep -rn "def " src/` + `Read` the file.
+1. `codegraph_search(query="<entry_point_name>")` — find the entry point function
+2. `codegraph_node(symbol="<name>")` — get function signature for test generation
+
+**Fallback (requires tokensave):**
+- `tokensave_signature(qualified_name="<entry_point>")` — get function signature without body
+- `tokensave_test_map(file="<source_file>")` — check existing test coverage
+- `tokensave_config(key="dependencies", path="Cargo.toml")` — read project config (TOML/JSON)
+- `tokensave_outline(file="<entry_point_file>")` — flat list of top-level symbols
 
 ### Spec Alignment Check Tools
 
 After tests pass, compare output against spec:
 1. `ctx_search(queries=[<REQ descriptions>])` — look up spec REQs from indexed content
    - **Fallback:** Read `.spec/current.md` directly.
-2. `git diff --name-only` + `git diff <file>` — which files/symbols changed
+2. `codegraph_context(task="<REQ description>")` — which symbols changed, semantic impact
+   - **Fallback:** `git diff --name-only` + `git diff <file>`.
 
 ## L0/L1 自动生成
 
@@ -208,11 +214,11 @@ assert "too long" in r.stderr.lower() or "invalid" in r.stderr.lower()
 
 ## L2/L3 HITL
 
-**铁律: Use [[USER:ask]], never stop and wait.**
+**铁律: Use AskUserQuestion, never stop and wait.**
 
 向用户呈现未测试的参数组合：
 ```
-[[USER:ask]]:
+AskUserQuestion:
   question: "Which param combos need manual e2e testing?"
   header: "E2E L2"
   options:

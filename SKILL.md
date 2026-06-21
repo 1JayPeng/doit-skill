@@ -1,16 +1,13 @@
 ---
 name: doit
 description: "Spec-driven TDD workflow. Auto-classifies simple/feature/bug. Triggers: 我想做, 帮我加, 我需要, add feature, implement, I want to, build."
-version: "1.1.0"
 ---
 
 # Do It
 
 Spec-driven TDD. 10 phases. Nothing ships without spec. Review + Simplify + E2E + commit mandatory.
 
-**Multi-CLI Support:** Claude Code, OpenCode, OpenAI Codex CLI, oh-my-pi, MiMo Code, jcode, and any MCP-supporting agent. Tool adapter auto-selected at install time via `--agent` flag.
-
-**Platform:** Linux, macOS, Windows (native PowerShell via `setup.ps1`, no WSL required). Environment detection auto-selects bash vs PowerShell commands.
+**Multi-CLI Support:** Claude Code, OpenCode, OpenAI Codex CLI, oh-my-pi, MiMo Code, and any MCP-supporting agent. Tool adapter auto-selected at install time via `--agent` flag.
 
 **Phase -1 是绝对强制入口。** 任何 `/doit` 调用，必须先执行 Phase -1 (环境检测)，建立对编码环境、CLI 环境、bash 环境、code 环境、agent 环境以及上下文的清晰认知，然后才能进入 Phase 0 分类。不完成 Phase -1 = 不知道自己在什么环境中工作 = 盲操作。
 
@@ -37,13 +34,13 @@ caveman: Phase 0 [LOAD:session] 不释放 | grill-me: Phase 1 [LOAD:phase-1] 结
 Non-Interruptive Q | Background >10s | Commit+Push | MP 读写对称 | 工作流不可跳过 | 减少暂停 | Grill 5+/3+ | 危险操作确认 | Review+Simplify
 **[CALL]** = MCP。**[LOAD]** = 读文件。**[LOAD:phase-N]** = 加载 skill。**[RELEASE:phase-N]** = 释放 + `[[MEMORY:compress]]`。
 5 层: codegraph, lean-ctx, context-mode, headroom (Proxy 60-95% 节省), mempalace。MCP 工具链在所有支持的 CLI 中保持一致。
-**Subagent: 默认启用** (`subagent.enabled: true`)。三级团队 [core/subagent.md](core/subagent.md)。[core/team-roles.md](core/team-roles.md)。**自主并行模式** — 主代理主动判断并行机会，不需用户指令。[core/subagent.md](core/subagent.md)
+**Subagent: 默认启用** (`subagent.enabled: true`)。三级团队 [core/subagent.md](core/subagent.md)。[core/team-roles.md](core/team-roles.md)
 
 ## Phase Index
 
 | Phase | [LOAD] | 说明 |
 |-------|--------|------|
-| **-1** | [core/env-check.md](core/env-check.md) | 环境检测 → Skill/MCP/LSP 检测 → `[[CONFIG:main-instructions]]` + config |
+| **-1** | [core/env-check.md](core/env-check.md) | 环境检测 → `[[CONFIG:main-instructions]]` + config |
 | **0** | [core/phase-0.md](core/phase-0.md) | Sync → [LOAD:session] caveman → 分类(R/S/F/B) → MP sweep → **`[[TASK:create]]` task list** |
 | **1** | [core/phase-1.md](core/phase-1.md), [learn/inject.md](learn/inject.md) | [LOAD:phase-1] grill-me → Grill(5+/3+) via `[[USER:ask]]` → Spec → Branch → Gate → [RELEASE:phase-1] |
 | **2** | [learn/inject.md](learn/inject.md), [plan.md](plan.md) | codegraph_context → Impact → Order |
@@ -80,6 +77,7 @@ Non-Interruptive Q | Background >10s | Commit+Push | MP 读写对称 | 工作流
 | `[[FILE:read]]` | Read file | Adapter → Read / read / cat |
 | `[[FILE:write]]` | Write file | Adapter → Write / write / heredoc |
 | `[[FILE:edit]]` | Edit file | Adapter → Edit / edit / patch |
+| `[[FILE:delete]]` | Delete file | Adapter → Delete / rm |
 | `[[SHELL:run]]` | Run command | Adapter → Bash / bash / shell |
 | `[[SCHEDULE:wakeup]]` | Schedule wakeup | Adapter → ScheduleWakeup / sleep |
 | `[[SKILL:route]]` | Route to skill | Adapter → Skill({}) / load markdown |
@@ -92,7 +90,7 @@ Non-Interruptive Q | Background >10s | Commit+Push | MP 读写对称 | 工作流
 | Variable | Description | Example Values |
 |----------|-------------|----------------|
 | `[[CONFIG:main-instructions]]` | Project instructions file | CLAUDE.md, AGENTS.md |
-| `[[CONFIG:skill-dir]]` | Skills directory | .claude/skills/, .opencode/skills/, .omp/skills/, .mimo/skills/, .jcode/skills/ |
-| `[[CONFIG:global-skill-dir]]` | Global skills | ~/.claude/skills/, ~/.opencode/skills/, ~/.config/omp/skills/, ~/.config/mimo/skills/, ~/.jcode/skills/ |
+| `[[CONFIG:skill-dir]]` | Skills directory | .claude/skills/, .opencode/skills/, .omp/skills/, .mimo/skills/ |
+| `[[CONFIG:global-skill-dir]]` | Global skills | ~/.claude/skills/, ~/.opencode/skills/, ~/.config/omp/skills/, ~/.config/mimo/skills/ |
 | `[[CONFIG:settings-file]]` | Settings file | .claude/settings.json, .opencode/settings.json |
 | `[[CONFIG:mcp-config]]` | MCP config | ~/.claude.json, ~/.opencode/mcp.json |

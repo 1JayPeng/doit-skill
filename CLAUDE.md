@@ -20,7 +20,7 @@ for spec-driven TDD workflows. When making changes to doit-skill:
 3. **Follow the workflow**:
    - Phase 0: Classify request
    - Phase 1: Generate spec (grill with Tavily MCP)
-   - Phase 2: Plan with code graph (codegraph)
+   - Phase 2: Plan with code graph (codegraph or tokensave)
    - Phase 3: Execute TDD with context-mode
    - Phase 4: E2E tests
    - Phase 5: Review
@@ -67,6 +67,18 @@ Co-Authored-By: Claude Opus 4.7 <noreply@anthropic.com>
 When developing doit-skill locally, follow the same workflow the skill
 enforces for user projects: check git status, learn commit style,
 commit, and push to remote branch.
+
+## Built-in Skills — Triple Copy Architecture
+
+doit bundles 6 skills (grill-me, tdd, diagnose, prototype, handoff, improve-codebase-architecture). These exist in three locations:
+
+| Location | Purpose |
+|----------|---------|
+| `doit/skills/` (source) | Development copy, in this repo |
+| `myskill/skills/` (dev repo) | Local dev mirror, synced via `setup.sh` |
+| `~/.claude/skills/<name>/` (installed) | Runtime copy, installed per user |
+
+**Recommended management:** Edit only in `doit/skills/` (source). Run `./scripts/setup.sh` to sync to all locations. Never edit installed copies directly — they will be overwritten on reinstall.
 
 ## Pre-commit Checks
 

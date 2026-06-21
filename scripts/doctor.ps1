@@ -300,7 +300,7 @@ if (Test-Path ".claude/rules/lean-ctx.md") {
   Write-Host "  [OK] lean-ctx rules configured (global)" -ForegroundColor Green
 } else {
   Write-Host "  [INFO] lean-ctx rules not configured" -ForegroundColor Yellow
-  Write-Host "     Configure: lean-ctx init --agent claude"
+  Write-Host "     Configure: lean-ctx onboard (auto-detected)"
 }
 
 # codegraph

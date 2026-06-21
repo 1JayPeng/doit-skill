@@ -24,12 +24,23 @@ Run `code-review` skill. Focus:
 - Over-abstraction -> flatten
 
 **codegraph tools for code review (use flexibly, pick what fits):**
-- `codegraph_context(task="<feature>")` — understand the changes in context
-- `codegraph_search("symbolName")` — find specific symbols
-- `codegraph_callers(symbol)` / `codegraph_callees(symbol)` — call chains
-- `codegraph_impact(symbol)` — blast radius of changes
-- `codegraph_explore(query)` — inspect multiple related symbols
-- **Fallback:** `git diff` + `git diff --stat` + manual review.
+- `codegraph_callers(symbol)` — see what calls a changed symbol (blast radius)
+- `codegraph_impact(symbol)` — assess edit blast radius
+- `codegraph_node(symbol)` — inspect full symbol source
+
+**Fallback (requires tokensave) — advanced analysis tools:**
+- `tokensave_health(details=true)` — baseline quality signal before review
+- `tokensave_diff_context(files=[<changed_files>])` — semantic diff of changed symbols, dependents, affected tests
+- `tokensave_simplify_scan(files=[<changed_files>])` — auto-detect duplications, dead code, coupling, complexity
+- `tokensave_dead_code()` — find symbols with no incoming edges (potentially unreachable)
+- `tokensave_unused_imports()` — find unreferenced import/use nodes
+- `tokensave_complexity(path="<changed_dir>", limit=5)` — rank functions by complexity, find hotspots
+- `tokensave_circular()` — detect circular file dependencies
+- `tokensave_recursion()` — detect recursive/mutually-recursive call cycles
+- `tokensave_similar(symbol="<new_function_name>")` — find similarly named symbols
+- `tokensave_signature_search(params="&mut self", returns="Result")` — find functions with matching signatures
+- `tokensave_diagnostics(scope="workspace")` — run type-checker (cargo check / tsc / pyright) before committing
+- **Fallback:** If tokensave unavailable -> `git diff` + `git diff --stat` manually review.
 
 #### Subagent Parallel Review (Optional, when multiple review dimensions)
 
@@ -39,36 +50,59 @@ Security, Architecture, and Complexity reviews are independent → run concurren
 // Parallel review agents
 Agent({
   description: "Security review",
-  prompt: "Run security review: grep for unsafe patterns, TODO/FIXME markers, check public API surface. Report all security vulnerabilities.",
+  prompt: "Run security review: codegraph_context for '<feature>' security analysis. If tokensave installed, also run tokensave_unsafe_patterns, tokensave_todos, tokensave_module_api. Report all security vulnerabilities.",
   subagent_type: "general-purpose",
   run_in_background: true
 })
 
 Agent({
   description: "Architecture review",
-  prompt: "Run architecture review: check coupling, hotspots, dependency depth using codegraph. Report structural issues.",
+  prompt: "Run architecture review: codegraph_context for '<feature>' structural analysis. If tokensave installed, also run tokensave_dsm, tokensave_coupling, tokensave_hotspots. Report structural issues.",
   subagent_type: "Plan",
   run_in_background: true
 })
 
+Agent({
+  description: "Complexity review",
+  prompt: "Run complexity review: codegraph_context for '<feature>' complexity analysis. If tokensave installed, also run tokensave_complexity, tokensave_god_class, tokensave_gini. Report complexity hotspots.",
+  subagent_type: "general-purpose",
+  run_in_background: true
+})
+
 // 主流程继续：准备 Spec Final Check
-// 当后台 agent 完成后，汇总 2 个审查报告
+// 当后台 agent 完成后，汇总 3 个审查报告
 ```
 
-**Merge results:** Combine findings into a single review report. Prioritize: Security > Architecture.
+**Merge results:** Combine findings into a single review report. Prioritize: Security > Architecture > Complexity.
 
 ### 2. Architecture Check
 
 Run `improve-codebase-architecture` skill for insight only. **Do not execute architectural refactors.** Suggest, don't break.
 
-**codegraph tools for architecture analysis:**
-- `codegraph_context(task="<architecture concern>")` — understand architectural patterns
-- `codegraph_files` — project file structure
-- **Fallback:** `grep -rn` + `find` for architectural overview.
+**Manual trigger:** At any time, run `/improve-codebase-architecture` to get a deep architectural analysis. No automatic trigger exists — this is an on-demand skill.
+
+**Fallback (requires tokensave) — advanced architecture analysis:**
+- `tokensave_dsm(path="<src_dir>", format="clusters")` — design structure matrix, reveals clusters and layering violations
+- `tokensave_coupling(direction="fan_in")` — which files are depended on most (high coupling risk)
+- `tokensave_coupling(direction="fan_out")` — which files depend on most others (fragile modules)
+- `tokensave_hotspots()` — highest connectivity symbols (change blast radius)
+- `tokensave_dependency_depth()` — longest dependency chains, fragile files
+- `tokensave_gini(metric="complexity")` — find god files with uneven complexity distribution
+- **Fallback:** If tokensave unavailable -> `grep -rn` + `find` for architectural overview.
 
 ### 3. Security Review
 
-**Fallback:** `grep -rn "TODO\|FIXME\|HACK\|unsafe" src/`.
+**codegraph tools for security scanning:**
+- `codegraph_search("unsafe")` — find unsafe code patterns
+- `codegraph_search("TODO")` — find TODO/FIXME/HACK markers
+
+**Fallback (requires tokensave) — advanced security scanning:**
+- `tokensave_unsafe_patterns(kinds=["unwrap", "expect", "panic", "todo", "unimplemented", "unsafe_block"])` — surface panic/unsafe sites
+- `tokensave_todos(kinds=["HACK", "TODO"])` — find security-related TODOs
+- `tokensave_doc_coverage(path="<src_dir>")` — public symbols missing documentation (API surface gaps)
+- `tokensave_test_risk(path="<src_dir>")` — risk-weighted test-gap analysis (high risk = high fan-in + low coverage)
+- `tokensave_module_api(path="<src_dir>")` — public API surface (attack surface inventory)
+- **Fallback:** If TokenSave unavailable -> `grep -rn "TODO\|FIXME\|HACK\|unsafe" src/`.
 
 ### 4. Spec Final Check
 

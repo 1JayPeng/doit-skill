@@ -69,7 +69,7 @@ If no in-progress work found → tell user "No in-progress workflow found. Type 
 4. **跳过 Phase 1-9.5** — 无 spec、无 branch、无 commit、无知识提取
 5. **Phase 10** — 仅运行 headroom_compress，跳过其他统计
 
-**铁律：Type Q 不创建分支、不写 spec、不 commit、不提取知识。** 纯查询 = 纯回答。
+**铁律：Type Q 不创建分支、不写 spec、不 commit、不提取知识。** 纯查询 = 纯回答。Type Q 排除在 Commit+Push 铁律之外。
 
 ## Type F — Feature
 
@@ -82,16 +82,6 @@ If no in-progress work found → tell user "No in-progress workflow found. Type 
 **铁律：涉及 2+ 文件的变更 = 强制 Type F。不判断"是否复杂"，只看文件数量。**
 
 **Action:** Full phases 1-8.
-
-**子代理策略选择：**
-
-| 条件 | 策略 | 说明 |
-|------|------|------|
-| 完整Feature，有Phase 1-7需求 | 团队Wave模式 | Architect→Developer→Reviewer |
-| 多文件但无依赖关系 | 并行子代理 | 2-N个background子代理 |
-| 单文件或简单修改 | 主代理直接执行 | 子代理开销不值得 |
-
-详见 [core/subagent.md](core/subagent.md)「自主并行模式」。
 
 ## Type B — Bug
 

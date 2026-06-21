@@ -72,7 +72,7 @@ Show the extracted record to the user and ask for confirmation/edits:
   Errors: Command injection in add-dependency.sh (fixed)
   Patterns: Auth middleware, Role-based access control
 
-[[USER:ask]] Confirm knowledge extraction?
+[AskUserQuestion] Confirm knowledge extraction?
   Options:
   - Confirm and save (Recommended)
   - Edit before save
@@ -90,20 +90,16 @@ mempalace_check_duplicate content="<summary>"   # Check for duplicates
 mempalace_add_drawer wing="<project>" room="knowledge_distillation" content="<summary>"
 ```
 
-**Layer 1.5: lean-ctx Knowledge Graph (Cross-session, embeddable)**
-```
-[CALL] ctx_knowledge(action="remember", key="<feature>", value="<summary>", category="architecture")
-[CALL] ctx_knowledge(action="pattern", pattern_type="<pattern_name>", value="<code pattern>", examples=[<file_paths>])
-[CALL] ctx_knowledge(action="feedback", value="<lesson_learned>", category="workflow")
-[CALL] ctx_knowledge(action="relate", query="<feature>", value="<related_concept>") — link to existing knowledge
-```
-**Why:** `ctx_knowledge` stores in lean-ctx's persistent knowledge graph with embeddings, searchable across sessions via `ctx_semantic_search`. Complements MemPalace — lean-ctx is faster for code-adjacent queries, MemPalace for deep project history.
-
 **Layer 2: Filesystem (Backup)**
 ```bash
 mkdir -p .doit/knowledge/
 cp <record> .doit/knowledge/<date>-<project>-<short-id>.json
 ```
+
+**为什么只保留 2 层：**
+- MemPalace 提供语义搜索和知识图谱，适合跨会话检索
+- Filesystem 提供可追踪的持久备份（git 可追踪变更）
+- 移除 AgentMemory 和 Context-Mode 层：减少 token 开销，避免重复写入
 
 ### Step 5: Report Extraction Status
 
@@ -179,7 +175,4 @@ knowledge:
   require_confirmation: true # Ask user before saving
   extract_failed: true       # Also extract failed sessions
   max_records: 1000          # Max records per project (cleanup oldest)
-  layers:                    # Which layers to use
-    mempalace: true          # Primary
-    filesystem: true         # Always
 ```

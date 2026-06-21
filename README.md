@@ -286,7 +286,7 @@ lean-ctx --version
 # 3. Connect all AI tools
 lean-ctx onboard
 source ~/.bashrc
-lean-ctx init --agent claude
+lean-ctx onboard (auto-detected)
 
 # 4. Manual fallback (if step 3 doesn't configure Claude Code)
 claude mcp add lean-ctx lean-ctx
@@ -430,15 +430,6 @@ A single `/doit` invocation may not complete the entire workflow. To continue fr
 ```
 doit-skill/
 ├── SKILL.md              # Main entry point (multi-CLI aware)
-├── classifier.md         # Request classifier
-├── doc-capture.md        # Pre-phase documentation capture
-├── doit-config.md        # Configuration reference
-├── spec.md               # Phase 1: grill + REQ generation
-├── plan.md               # Phase 2: code graph scan
-├── debug.md              # Debug workflow D0-D6 (Type B)
-├── e2e.md                # Phase 4: end-to-end testing
-├── review.md             # Phase 5: code review
-├── errors.md             # Error handling
 ├── core/                 # Tool-agnostic workflow definitions
 │   ├── workflow.md       # Phase 0-10 workflow
 │   ├── iron-rules.md     # Iron rules
@@ -447,7 +438,6 @@ doit-skill/
 │   ├── execute.md        # Phase 3: TDD execution
 │   ├── env-check.md      # Phase -1: environment detection
 │   ├── subagent.md       # Subagent configuration
-│   ├── team-roles.md     # Team role definitions
 │   └── shared/           # Shared phases
 │       ├── review-simplify.md
 │       ├── e2e-verify.md
@@ -467,13 +457,11 @@ doit-skill/
 │   ├── prototype/        # Throwaway prototypes
 │   ├── handoff/          # Session handoff
 │   └── improve-codebase-architecture/
-├── learn/                # Knowledge extraction
-│   ├── inject.md         # Spec injection
-│   └── extract.md        # Knowledge distillation
-└── scripts/              # Install and utility scripts
-    ├── setup.sh          # Full install (--agent flag)
-    ├── doctor.sh         # Dependency health check
-    └── add-dependency.sh
+├── scripts/              # Install and utility scripts
+│   ├── setup.sh          # Full install (--agent flag)
+│   ├── doctor.sh         # Dependency health check
+│   └── add-dependency.sh
+└── [legacy files...]     # phases.md, rules.md, env-check.md, etc.
 ```
 
 ## Adding Dependencies
