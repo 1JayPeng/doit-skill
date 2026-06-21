@@ -4,7 +4,7 @@
 #
 # Installs doit-skill and all dependencies.
 # Supports:
-#   --agent <type>     Target AI coding CLI: claude|opencode|codex|oh-my-pi|mimo|auto (default: auto)
+#   --agent <type>     Target AI coding CLI: claude|opencode|codex|oh-my-pi|mimo|jcode|auto (default: auto)
 #   --skip-optional    Skip optional skills and external tools
 #   --skip-updates     Skip updating already-installed tools
 
@@ -19,6 +19,7 @@ detect_agent() {
     command -v claude >/dev/null 2>&1 && echo "claude" && return
     command -v opencode >/dev/null 2>&1 && echo "opencode" && return
     command -v codex >/dev/null 2>&1 && echo "codex" && return
+    command -v jcode >/dev/null 2>&1 && echo "jcode" && return
     # Default to claude if no specific agent detected
     echo "claude"
     return
@@ -62,6 +63,12 @@ _set_agent_paths() {
       GLOBAL_SKILL_DIR="$HOME/.config/mimo/skills"
       MAIN_INSTRUCTIONS="AGENTS.md"
       MCP_CONFIG_FILE="$HOME/.config/mimo/settings.json"
+      ;;
+    jcode)
+      SKILL_DIR=".jcode/skills"
+      GLOBAL_SKILL_DIR="$HOME/.jcode/skills"
+      MAIN_INSTRUCTIONS="AGENTS.md"
+      MCP_CONFIG_FILE="$HOME/.jcode/mcp.json"
       ;;
     *)
       SKILL_DIR=".ai/skills"

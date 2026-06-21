@@ -1,13 +1,14 @@
 ---
 name: doit
 description: "Spec-driven TDD workflow. Auto-classifies simple/feature/bug. Triggers: 我想做, 帮我加, 我需要, add feature, implement, I want to, build."
+version: "1.0.0"
 ---
 
 # Do It
 
 Spec-driven TDD. 10 phases. Nothing ships without spec. Review + Simplify + E2E + commit mandatory.
 
-**Multi-CLI Support:** Claude Code, OpenCode, OpenAI Codex CLI, oh-my-pi, MiMo Code, and any MCP-supporting agent. Tool adapter auto-selected at install time via `--agent` flag.
+**Multi-CLI Support:** Claude Code, OpenCode, OpenAI Codex CLI, oh-my-pi, MiMo Code, jcode, and any MCP-supporting agent. Tool adapter auto-selected at install time via `--agent` flag.
 
 **Phase -1 是绝对强制入口。** 任何 `/doit` 调用，必须先执行 Phase -1 (环境检测)，建立对编码环境、CLI 环境、bash 环境、code 环境、agent 环境以及上下文的清晰认知，然后才能进入 Phase 0 分类。不完成 Phase -1 = 不知道自己在什么环境中工作 = 盲操作。
 
@@ -40,7 +41,7 @@ Non-Interruptive Q | Background >10s | Commit+Push | MP 读写对称 | 工作流
 
 | Phase | [LOAD] | 说明 |
 |-------|--------|------|
-| **-1** | [core/env-check.md](core/env-check.md) | 环境检测 → `[[CONFIG:main-instructions]]` + config |
+| **-1** | [core/env-check.md](core/env-check.md) | 环境检测 → Skill/MCP/LSP 检测 → `[[CONFIG:main-instructions]]` + config |
 | **0** | [core/phase-0.md](core/phase-0.md) | Sync → [LOAD:session] caveman → 分类(R/S/F/B) → MP sweep → **`[[TASK:create]]` task list** |
 | **1** | [core/phase-1.md](core/phase-1.md), [learn/inject.md](learn/inject.md) | [LOAD:phase-1] grill-me → Grill(5+/3+) via `[[USER:ask]]` → Spec → Branch → Gate → [RELEASE:phase-1] |
 | **2** | [learn/inject.md](learn/inject.md), [plan.md](plan.md) | codegraph_context → Impact → Order |

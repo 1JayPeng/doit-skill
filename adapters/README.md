@@ -10,6 +10,7 @@ Maps abstract `[[OPERATION:name]]` syntax to native tool calls for each AI codin
 | [opencode.md](opencode.md) | OpenCode | todowrite, question, bash, @subagent |
 | [codex.md](codex.md) | OpenAI Codex CLI | shell (all operations via shell) |
 | [default.md](default.md) | Generic MCP agent | Generic fallback |
+| [jcode.md](jcode.md) | jcode | swarm, read, edit, bash, browser, memory |
 
 ## Abstract Operations
 

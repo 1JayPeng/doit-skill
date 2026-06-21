@@ -37,10 +37,14 @@ Write detected environment section to `[[CONFIG:main-instructions]]`. If `## Env
 ```markdown
 ## Environment
 
-**Detected:** 2026-06-16
+**Detected:** [date]
+**Doit Version:** [version from SKILL.md frontmatter]
 **Project Type:** [type]
 **Runtime:** [runtime info]
 **Tools:** [tool availability]
+**Skills:** [skill status]
+**MCP:** [MCP server status]
+**LSP:** [LSP server status]
 ```
 
 ### 8b. Build CLI Tool Guide (MANDATORY)
@@ -103,63 +107,176 @@ Inject sections into `[[CONFIG:main-instructions]]` if not already present:
 
 **Note:** Adapter resolves `[[CONFIG:main-instructions]]` to actual filename (CLAUDE.md / AGENTS.md) and `[[SHELL:run]]`/`[[SCHEDULE:wakeup]]` to native tool calls.
 
-### 11. Check External Tool Availability
+### 11. Check Skill Availability
 
-Check each tool's availability:
+Check each bundled skill's availability in both project-local and global skill directories:
 
 ```bash
-echo "=== Tool Availability ==="
+echo "=== Skill Availability ==="
+SKILL_DIR="[[CONFIG:skill-dir]]"
+GLOBAL_SKILL_DIR="[[CONFIG:global-skill-dir]]"
 
-# Skill tools — check in [[CONFIG:skill-dir]]
 for skill in doit grill-me tdd diagnose prototype handoff improve-codebase-architecture; do
-  if [ -d "[[CONFIG:skill-dir]]/$skill" ]; then
-    echo "  [OK]   $skill (project skill)"
-  elif [ -d "[[CONFIG:global-skill-dir]]/$skill" ]; then
-    echo "  [OK]   $skill (global skill)"
+  if [ -d "$SKILL_DIR/$skill" ]; then
+    # Check if skill has version info
+    SKILL_VERSION=$(grep -m1 "^version:" "$SKILL_DIR/$skill/SKILL.md" 2>/dev/null | cut -d'"' -f2 || echo "unknown")
+    echo "  [OK]   $skill v${SKILL_VERSION:-?} (project skill: $SKILL_DIR/$skill)"
+  elif [ -d "$GLOBAL_SKILL_DIR/$skill" ]; then
+    SKILL_VERSION=$(grep -m1 "^version:" "$GLOBAL_SKILL_DIR/$skill/SKILL.md" 2>/dev/null | cut -d'"' -f2 || echo "unknown")
+    echo "  [OK]   $skill v${SKILL_VERSION:-?} (global skill: $GLOBAL_SKILL_DIR/$skill)"
   else
-    echo "  [MISS] $skill (skill)"
+    echo "  [MISS] $skill (not found in $SKILL_DIR or $GLOBAL_SKILL_DIR)"
   fi
 done
-
-# External tools
-for tool in rtk uv codegraph; do
-  if command -v "$tool" >/dev/null 2>&1; then
-    echo "  [OK]   $tool ($(command -v $tool))"
-  else
-    echo "  [MISS] $tool"
-  fi
-done
-
-# MCP tools — check via [[CONFIG:mcp-config]]
-# (MCP config check is tool-agnostic, uses filesystem)
 ```
 
-**Per-tool fallback:**
-| Tool | Unavailable → Fallback | Affected Phases |
-|------|----------------------|-----------------|
+**Skill health check:** For each installed skill, verify:
+- `SKILL.md` exists and has frontmatter (name, description)
+- `version` field in frontmatter is present
+- No obvious syntax errors (YAML frontmatter valid)
+
+### 12. Check MCP Server Availability
+
+Check which MCP servers are configured and accessible:
+
+```bash
+echo "=== MCP Server Availability ==="
+MCP_CONFIG="[[CONFIG:mcp-config]]"
+
+# Check if MCP config exists
+if [ -f "$MCP_CONFIG" ]; then
+  echo "  Config: $MCP_CONFIG (exists)"
+
+  # Extract server names from MCP config (JSON format)
+  # Common MCP servers to check:
+  for mcp_server in codegraph lean-ctx context-mode headroom mempalace tavily; do
+    if grep -q "$mcp_server" "$MCP_CONFIG" 2>/dev/null; then
+      echo "  [OK]   $mcp_server (configured)"
+    fi
+  done
+else
+  # Check common MCP config locations as fallback
+  for mcp_config_path in "$HOME/.claude.json" "$HOME/.jcode/mcp.json" ".jcode/mcp.json" ".claude/mcp.json"; do
+    if [ -f "$mcp_config_path" ]; then
+      echo "  Config: $mcp_config_path (fallback)"
+      break
+    fi
+  done
+  echo "  [WARN] Primary MCP config not found — using fallback or unavailable"
+fi
+
+# Plugin-based MCP servers (Claude Code)
+if [ -d "$HOME/.claude/plugins/" ]; then
+  for plugin_dir in "$HOME/.claude/plugins/"*/; do
+    PLUGIN_NAME=$(basename "$plugin_dir")
+    if [ -f "$plugin_dir/plugin.json" ] || [ -f "$plugin_dir/package.json" ]; then
+      echo "  [OK]   $PLUGIN_NAME (plugin)"
+    fi
+  done
+fi
+```
+
+**Per-MCP fallback:**
+| MCP Server | Unavailable → Fallback | Affected Phases |
+|-----------|----------------------|-----------------|
 | codegraph | `grep` + `find` | 2, 3, 5, 6, 7, 8 |
 | context-mode | native shell (no auto-index) | 2, 3, 4, 7, 8 |
-| tavily MCP | `[[WEB:search]]` | 1 |
-| rtk | shell (no token opt) | all |
+| lean-ctx | native Read/Bash/Grep | all |
+| tavily | `[[WEB:search]]` | 1 |
+| headroom | no compression (higher token cost) | 10 |
 | mempalace | filesystem only (.doit/docs/) | -1, 1, 2, 3, 8 |
 
-### 11b. MemPalace Health Check (if available)
+### 13. Check LSP Server Availability
 
-If MemPalace MCP is available:
+Check if Language Server Protocol servers are available for the project:
+
+```bash
+echo "=== LSP Server Availability ==="
+
+# Detect language servers based on project type
+detect_lsp() {
+  local has_lsp=false
+
+  # TypeScript/JavaScript
+  if [ -f "tsconfig.json" ] || [ -f "package.json" ]; then
+    for lsp in typescript-language-server tsserver nls; do
+      if command -v "$lsp" >/dev/null 2>&1; then
+        echo "  [OK]   $lsp (TypeScript/JavaScript)"
+        has_lsp=true
+        break
+      fi
+    done
+  fi
+
+  # Rust
+  if [ -f "Cargo.toml" ]; then
+    if command -v rust-analyzer >/dev/null 2>&1; then
+      echo "  [OK]   rust-analyzer (Rust)"
+      has_lsp=true
+    else
+      # Check if rust-analyzer is in PATH via rustup
+      if command -v rustup >/dev/null 2>&1; then
+        echo "  [OK]   rust-analyzer (via rustup)"
+        has_lsp=true
+      else
+        echo "  [MISS] rust-analyzer (Rust)"
+      fi
+    fi
+  fi
+
+  # Python
+  if [ -f "requirements.txt" ] || [ -f "setup.py" ] || [ -f "pyproject.toml" ]; then
+    for lsp in pyright pylsp python-lsp-server ruff; do
+      if command -v "$lsp" >/dev/null 2>&1; then
+        echo "  [OK]   $lsp (Python)"
+        has_lsp=true
+        break
+      fi
+    done
+  fi
+
+  # Go
+  if [ -f "go.mod" ]; then
+    if command -v gopls >/dev/null 2>&1; then
+      echo "  [OK]   gopls (Go)"
+      has_lsp=true
+    else
+      echo "  [MISS] gopls (Go)"
+    fi
+  fi
+
+  if [ "$has_lsp" = false ]; then
+    echo "  [INFO] No LSP detected for project type"
+  fi
+}
+
+detect_lsp
 ```
-mempalace_status → check total_drawers, wings
-mempalace_kg_stats → check entities, triples
+
+**LSP usage in doit:**
+- LSP enables symbol lookup, go-to-definition, find-references in Phase 2-3
+- OpenCode has built-in `lsp()` tool for definition/reference lookup
+- Without LSP, falls back to `grep` + `codegraph` for symbol resolution
+
+### 14. Announce Detected Environment
+
+Announce tool availability, skill status, MCP servers, LSP servers, and any warnings.
+
+**Announce format:**
+```
+[ENV] CLI: [CLI name] | Adapter: [adapter file]
+[ENV] Project: [type] | Runtime: [runtime]
+[ENV] Skills: [N installed, M missing]
+[ENV] MCP: [N configured] — [list key servers]
+[ENV] LSP: [servers found]
+[ENV] Doit version: [version]
 ```
 
-### 12. Announce Detected Environment
-
-Announce tool availability and any warnings.
-
-### 13. Save Cache
+### 15. Save Cache
 
 Save env cache to `.doit/env-cache.json`.
 
-### 14. Init .doit/config.yaml
+### 16. Init .doit/config.yaml
 
 Write `~/.doit/config.yaml` from user choices. Use `[[USER:ask]]` for interactive config:
 
@@ -175,6 +292,25 @@ headroom:
     enabled: true
 ```
 
-### 15. Cannot Determine Environment
+### 17. Cannot Determine Environment
 
 If detection fails, announce warning and continue with defaults.
+
+## Environment Awareness — All Phases
+
+**Environment info is not just for Phase -1.** The detected environment must be accessible throughout the workflow. Each phase should be able to reference:
+
+1. **CLI Tool Guide** — Which native tools to call for each abstract operation
+2. **Skill availability** — Which bundled skills are installed, which features to enable
+3. **MCP servers** — Which MCP tools are available, what fallback to use
+4. **LSP status** — Whether symbol-level code navigation is available
+
+**How environment info persists:**
+- Written to `[[CONFIG:main-instructions]]` in Phase -1, visible to all phases
+- Cached in `.doit/env-cache.json` for quick lookup
+- If cache becomes stale (git HEAD changes), re-run detection
+
+**When to re-check environment:**
+- After installing new tools or MCP servers mid-workflow
+- When a phase reports tool unavailability that was previously detected
+- When switching branches that may have different project types
