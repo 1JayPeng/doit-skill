@@ -186,7 +186,96 @@ fi
 | headroom | no compression (higher token cost) | 10 |
 | mempalace | filesystem only (.doit/docs/) | -1, 1, 2, 3, 8 |
 
-### 13. Check LSP Server Availability
+### 13. Check Shell Environment (Platform Detection)
+
+Detect whether the shell is bash/zsh (Unix/WSL) or PowerShell (Windows native):
+
+```bash
+# Unix shell detection (bash/zsh)
+if [ -n "$BASH_VERSION" ]; then
+  echo "SHELL=linux/bash"
+elif [ -n "$ZSH_VERSION" ]; then
+  echo "SHELL=linux/zsh"
+fi
+```
+
+```powershell
+# PowerShell detection (Windows native)
+if ($PSVersionTable.PSVersion -and $PSVersionTable.Platform) {
+  "SHELL=windows/powershell"
+} elseif ($IsWindows) {
+  "SHELL=windows/powershell"
+}
+```
+
+**PowerShell-specific environment notes:**
+- `command -v` → `Get-Command` (or `Test-Command` helper)
+- `grep` → `Select-String`
+- `find` → `Get-ChildItem -Recurse`
+- `sed` → `-replace` operator
+- `md5sum` → `Get-FileHash -Algorithm MD5`
+- `rsync` → `robocopy`
+- `mktemp` → `[System.IO.Path]::GetTempPath()`
+- `ln -s` → `New-Item -ItemType SymbolicLink` (admin required)
+- `$HOME` → `$HOME` (works in both, but Windows paths use `\`)
+
+**PowerShell equivalent detection scripts for env-check:**
+
+```powershell
+# Project type detection (PowerShell)
+$markers = @("Cargo.toml", "package.json", "go.mod", "setup.py", "requirements.txt", "tsconfig.json")
+foreach ($marker in $markers) {
+  if (Test-Path $marker) {
+    "PROJECT_TYPE=$marker"
+    break
+  }
+}
+
+# Skill availability check (PowerShell)
+$skillDir = "[[CONFIG:skill-dir]]"
+$globalSkillDir = "[[CONFIG:global-skill-dir]]"
+foreach ($skill in @("doit", "grill-me", "tdd", "diagnose", "prototype", "handoff")) {
+  $local = Join-Path $skillDir $skill
+  $global_ = Join-Path $globalSkillDir $skill
+  if (Test-Path $local) {
+    "  [OK] $skill (local: $local)"
+  } elseif (Test-Path $global_) {
+    "  [OK] $skill (global: $global_)"
+  } else {
+    "  [MISS] $skill"
+  }
+}
+
+# MCP config check (PowerShell)
+$mcpConfig = "[[CONFIG:mcp-config]]"
+if (Test-Path $mcpConfig) {
+  $content = Get-Content $mcpConfig -Raw
+  foreach ($server in @("codegraph", "lean-ctx", "context-mode", "headroom", "mempalace", "tavily")) {
+    if ($content -match $server) {
+      "  [OK] $server (configured)"
+    }
+  }
+}
+
+# LSP check (PowerShell)
+if ((Test-Path "tsconfig.json") -or (Test-Path "package.json")) {
+  if (Get-Command "typescript-language-server" -ErrorAction SilentlyContinue) {
+    "  [OK] typescript-language-server"
+  }
+}
+if (Test-Path "Cargo.toml") {
+  if (Get-Command "rust-analyzer" -ErrorAction SilentlyContinue) {
+    "  [OK] rust-analyzer"
+  }
+}
+if (Test-Path "requirements.txt") {
+  if (Get-Command "pyright" -ErrorAction SilentlyContinue) {
+    "  [OK] pyright"
+  }
+}
+```
+
+### 14. Check LSP Server Availability
 
 Check if Language Server Protocol servers are available for the project:
 
@@ -258,13 +347,14 @@ detect_lsp
 - OpenCode has built-in `lsp()` tool for definition/reference lookup
 - Without LSP, falls back to `grep` + `codegraph` for symbol resolution
 
-### 14. Announce Detected Environment
+### 15. Announce Detected Environment
 
 Announce tool availability, skill status, MCP servers, LSP servers, and any warnings.
 
 **Announce format:**
 ```
 [ENV] CLI: [CLI name] | Adapter: [adapter file]
+[ENV] Platform: [linux/bash | linux/zsh | windows/powershell]
 [ENV] Project: [type] | Runtime: [runtime]
 [ENV] Skills: [N installed, M missing]
 [ENV] MCP: [N configured] — [list key servers]
@@ -272,11 +362,11 @@ Announce tool availability, skill status, MCP servers, LSP servers, and any warn
 [ENV] Doit version: [version]
 ```
 
-### 15. Save Cache
+### 16. Save Cache
 
 Save env cache to `.doit/env-cache.json`.
 
-### 16. Init .doit/config.yaml
+### 17. Init .doit/config.yaml
 
 Write `~/.doit/config.yaml` from user choices. Use `[[USER:ask]]` for interactive config:
 
@@ -292,7 +382,7 @@ headroom:
     enabled: true
 ```
 
-### 17. Cannot Determine Environment
+### 18. Cannot Determine Environment
 
 If detection fails, announce warning and continue with defaults.
 

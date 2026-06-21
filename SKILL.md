@@ -10,6 +10,8 @@ Spec-driven TDD. 10 phases. Nothing ships without spec. Review + Simplify + E2E 
 
 **Multi-CLI Support:** Claude Code, OpenCode, OpenAI Codex CLI, oh-my-pi, MiMo Code, jcode, and any MCP-supporting agent. Tool adapter auto-selected at install time via `--agent` flag.
 
+**Platform:** Linux, macOS, Windows (native PowerShell via `setup.ps1`, no WSL required). Environment detection auto-selects bash vs PowerShell commands.
+
 **Phase -1 是绝对强制入口。** 任何 `/doit` 调用，必须先执行 Phase -1 (环境检测)，建立对编码环境、CLI 环境、bash 环境、code 环境、agent 环境以及上下文的清晰认知，然后才能进入 Phase 0 分类。不完成 Phase -1 = 不知道自己在什么环境中工作 = 盲操作。
 
 **Phase 0 是分类入口。** Phase -1 完成后，执行 Phase 0 分类，然后 announce 分类结果给用户，然后创建 Phase Task List（`[[TASK:create]]`）。不 announce = 用户不知道工作流在做什么 = 跳过。不创建 task 列表 = 模型无法跟踪进度 = 跳过。
@@ -90,7 +92,7 @@ Non-Interruptive Q | Background >10s | Commit+Push | MP 读写对称 | 工作流
 | Variable | Description | Example Values |
 |----------|-------------|----------------|
 | `[[CONFIG:main-instructions]]` | Project instructions file | CLAUDE.md, AGENTS.md |
-| `[[CONFIG:skill-dir]]` | Skills directory | .claude/skills/, .opencode/skills/, .omp/skills/, .mimo/skills/ |
-| `[[CONFIG:global-skill-dir]]` | Global skills | ~/.claude/skills/, ~/.opencode/skills/, ~/.config/omp/skills/, ~/.config/mimo/skills/ |
+| `[[CONFIG:skill-dir]]` | Skills directory | .claude/skills/, .opencode/skills/, .omp/skills/, .mimo/skills/, .jcode/skills/ |
+| `[[CONFIG:global-skill-dir]]` | Global skills | ~/.claude/skills/, ~/.opencode/skills/, ~/.config/omp/skills/, ~/.config/mimo/skills/, ~/.jcode/skills/ |
 | `[[CONFIG:settings-file]]` | Settings file | .claude/settings.json, .opencode/settings.json |
 | `[[CONFIG:mcp-config]]` | MCP config | ~/.claude.json, ~/.opencode/mcp.json |

@@ -7,9 +7,25 @@
 #   --agent <type>     Target AI coding CLI: claude|opencode|codex|oh-my-pi|mimo|jcode|auto (default: auto)
 #   --skip-optional    Skip optional skills and external tools
 #   --skip-updates     Skip updating already-installed tools
+#
+# Windows native: On Windows without WSL, this script auto-redirects to setup.ps1.
+# On WSL or Git Bash, this script runs normally.
 
 # No set -e: we handle errors explicitly. set -e + 2>/dev/null = silent death.
 trap 'echo_error "Installation interrupted by user. Partial install may be in place." && exit 130' INT
+
+# Windows native detection (not WSL) — redirect to PowerShell installer
+if [ "$MSYSTEM" = "" ] && [ "$WSL_DISTRO_NAME" = "" ] && command -v powershell.exe >/dev/null 2>&1; then
+  echo "=========================================="
+  echo "  Windows detected (native PowerShell)"
+  echo "  Redirecting to PowerShell installer..."
+  echo "=========================================="
+  echo ""
+  echo "Running: powershell -ExecutionPolicy Bypass -File scripts/setup.ps1"
+  echo ""
+  powershell -ExecutionPolicy Bypass -File "$(dirname "$0")/setup.ps1"
+  exit $?
+fi
 
 # Configuration
 # Detect target AI coding CLI
