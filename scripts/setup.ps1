@@ -665,40 +665,56 @@ if (Test-Path $DoitDst) {
   $afterSnap = Get-DirSnapshot -Dir $DoitDst
   Compare-Snapshots -BeforeSnap $beforeSnap -AfterSnap $afterSnap
 
-  # Fix symlinks (Windows: use real files instead of symlinks)
+  # Migration: fix stale symlinks from old layout (shared/ → core/shared/)
   $symlinkFiles = @("review-simplify.md", "commit.md")
   foreach ($lnk in $symlinkFiles) {
     $linkPath = Join-Path $DoitDst $lnk
     $targetRel = "core/shared/$lnk"
     $targetPath = Join-Path $DoitDst $targetRel
 
-    if (Test-Path $targetPath) {
-      # On Windows, create a hard link or just copy (symlinks require admin)
-      if ($script:IsAdmin) {
-        # Try symlink first
-        try {
-          if (Test-Path $linkPath) { Remove-Item $linkPath -Force }
-          New-Item -ItemType SymbolicLink -Path $linkPath -Target $targetPath -Force | Out-Null
-          $script:UpdatedFiles += "$lnk (symlink created)"
-          Write-Success "$lnk -> symlink to $targetRel"
-        } catch {
-          # Fallback to hard link
-          try {
-            if (Test-Path $linkPath) { Remove-Item $linkPath -Force }
-            New-Item -ItemType HardLink -Path $linkPath -Target $targetPath -Force | Out-Null
-            Write-Success "$lnk -> hard link to $targetRel"
-          } catch {
-            # Last resort: copy
-            Copy-Item -Path $targetPath -Destination $linkPath -Force
-            Write-Success "$lnk -> copied from $targetRel"
-          }
+    # Check if it's a stale symlink pointing to old shared/ path
+    $stale = $false
+    if (Test-Path $linkPath) {
+      $item = Get-Item $linkPath
+      if ($item.Target) {
+        $oldRel = "shared/$lnk"
+        if ($item.Target -like "*\$($oldRel.Replace('/', '\'))*" -or $item.Target -like "*/$oldRel*") {
+          $stale = $true
+          Remove-Item $linkPath -Force
+          Write-Success "$lnk -> migrated shared/ → core/shared/ (stale symlink removed)"
         }
-      } else {
-        # No admin: copy the file
-        Copy-Item -Path $targetPath -Destination $linkPath -Force
-        Write-Success "$lnk -> copied from $targetRel (no symlink perms)"
       }
     }
+
+    if (-not (Test-Path $linkPath) -or $stale) {
+      if (Test-Path $targetPath) {
+        if ($script:IsAdmin) {
+          try {
+            New-Item -ItemType SymbolicLink -Path $linkPath -Target $targetPath -Force | Out-Null
+            $script:UpdatedFiles += "$lnk (symlink created)"
+            Write-Success "$lnk -> symlink to $targetRel"
+          } catch {
+            try {
+              New-Item -ItemType HardLink -Path $linkPath -Target $targetPath -Force | Out-Null
+              Write-Success "$lnk -> hard link to $targetRel"
+            } catch {
+              Copy-Item -Path $targetPath -Destination $linkPath -Force
+              Write-Success "$lnk -> copied from $targetRel"
+            }
+          }
+        } else {
+          Copy-Item -Path $targetPath -Destination $linkPath -Force
+          Write-Success "$lnk -> copied from $targetRel (no symlink perms)"
+        }
+      }
+    }
+  }
+
+  # Migration: remove deprecated root-level shared/ directory
+  $oldShared = Join-Path $DoitDst "shared"
+  if (Test-Path $oldShared) {
+    Remove-Item -Path $oldShared -Recurse -Force
+    Write-Success "removed deprecated shared/ directory (use core/shared/)"
   }
 
   # Clean excluded dirs

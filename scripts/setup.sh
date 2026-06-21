@@ -653,16 +653,30 @@ if [ -d "$DOIT_DST" ]; then
   collect_changes "$BEFORE_SNAP" "$AFTER_SNAP"
   rm -f "$BEFORE_SNAP" "$AFTER_SNAP"
 
-  # Fix broken symlinks: if symlink target was copied as regular file, replace it
+  # Migration: fix stale symlinks from old layout (shared/ → core/shared/)
   for lnk in review-simplify.md commit.md; do
     target="core/shared/$lnk"
-    if [ -f "$DOIT_DST/$lnk" ] && [ ! -L "$DOIT_DST/$lnk" ]; then
+    if [ -L "$DOIT_DST/$lnk" ]; then
+      old_target=$(readlink "$DOIT_DST/$lnk")
+      if [ "$old_target" = "shared/$lnk" ]; then
+        rm "$DOIT_DST/$lnk"
+        ln -s "$target" "$DOIT_DST/$lnk"
+        UPDATED_FILES+=("$lnk (symlink migrated)")
+        echo_success "$lnk -> migrated $old_target → $target"
+      fi
+    elif [ -f "$DOIT_DST/$lnk" ]; then
       rm "$DOIT_DST/$lnk"
       ln -s "$target" "$DOIT_DST/$lnk"
       UPDATED_FILES+=("$lnk (symlink fixed)")
       echo_success "$lnk -> fixed symlink (was regular file)"
     fi
   done
+
+  # Migration: remove deprecated root-level shared/ directory
+  if [ -d "$DOIT_DST/shared" ]; then
+    rm -rf "$DOIT_DST/shared"
+    echo_success "removed deprecated shared/ directory (use core/shared/)"
+  fi
 
   # Ensure core/shared/ directory exists with all files
   if [ ! -d "$DOIT_DST/core/shared" ] && [ -d "$DOIT_DIR/core/shared" ]; then

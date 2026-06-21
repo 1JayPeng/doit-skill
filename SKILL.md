@@ -1,7 +1,7 @@
 ---
 name: doit
 description: "Spec-driven TDD workflow. Auto-classifies simple/feature/bug. Triggers: 我想做, 帮我加, 我需要, add feature, implement, I want to, build."
-version: "1.0.0"
+version: "1.1.0"
 ---
 
 # Do It
