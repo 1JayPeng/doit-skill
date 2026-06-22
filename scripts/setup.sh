@@ -1246,28 +1246,157 @@ if [ "$SKIP_OPTIONAL" = false ] && [ "${_skip_step_3:-false}" = "false" ]; then
 
   if command -v lean-ctx >/dev/null 2>&1; then
     lean-ctx --version 2>&1 || true
-    echo_info "Connecting lean-ctx to all AI tools..."
-    spin 120 "lean-ctx onboard" lean-ctx onboard || echo_warn "lean-ctx onboard failed"
-    source "$HOME/.bashrc" 2>/dev/null || true
 
-    # lean-ctx init --agent X is interactive (prompts for confirmation).
-    # Do the project-level config non-interactively:
-    #   1. Copy global rules → project-local .claude/rules/lean-ctx.md
-    #   2. Create .claude/settings.local.json with lean-ctx hooks
+    # --- Inline lean-ctx initialization (replaces black-box `lean-ctx onboard`) ---
+    # lean-ctx onboard is non-interactive but hides what it does. We inline the
+    # key steps so setup.sh is self-contained, verifiable, and works in piped mode.
+
+    echo_info "Configuring lean-ctx global rules..."
     _lean_ctx_global_rules="$HOME/.claude/rules/lean-ctx.md"
+    if [ ! -f "$_lean_ctx_global_rules" ]; then
+      mkdir -p "$HOME/.claude/rules"
+      cat > "$_lean_ctx_global_rules" <<'LEANCTX_RULES_EOF'
+# lean-ctx — Context Engineering Layer
+<!-- lean-ctx-rules-v11 -->
+
+## Tool Mapping (MANDATORY — use instead of native equivalents)
+| Instead of | Use | Example |
+|------------|-----|---------|
+| Read/cat/head/tail | `ctx_read(path, mode)` | `ctx_read("src/main.rs", "full")` |
+| Grep/rg/find | `ctx_search(pattern, path)` | `ctx_search("fn handle", "src/")` |
+| Shell/bash | `ctx_shell(command)` | `ctx_shell("cargo test")` |
+| Edit (when Read unavailable) | `ctx_edit(path, old, new)` | `ctx_edit("f.rs", "old", "new")` |
+
+## ctx_read Mode Selection
+| Goal | When |
+|------|------|
+| `full` | Files you will edit |
+| `map` | Context-only, won't edit |
+| `signatures` | API surface only |
+| `diff` | After edits (changed lines) |
+| `aggressive` | Large files, syntax-stripped |
+| `lines:N-M` | Specific region |
+| `auto` | Unsure — system selects |
+
+## Workflow (follow this order)
+1. **Orient:** `ctx_overview(task)` or `ctx_compose(task, path)` for unfamiliar tasks
+2. **Locate:** `ctx_search(pattern, path)` for exact text; `ctx_semantic_search(query)` for concepts
+3. **Read:** `ctx_read(path, mode)` with appropriate mode from table above
+4. **Edit:** `ctx_edit(path, old_string, new_string)` or native Edit if available
+5. **Verify:** `ctx_read(path, "diff")` + `ctx_shell("test command")`
+6. **Record:** `ctx_knowledge(action="remember", content="...")` for non-obvious findings
+
+## Proactive (use without being asked)
+- `ctx_overview(task)` — at session start for orientation
+- `ctx_compress` — when context grows large (at phase boundaries)
+- `ctx_knowledge(action="wakeup")` — at session start to surface prior findings
+
+## Compression Bypass (only when compressed output hides needed detail)
+`ctx_read(path, "lines:N-M")` → `ctx_read(path, "full")` → `ctx_shell(cmd, raw=true)`
+Return to compressed defaults after one expanded retrieval.
+
+## Risk Gate (before high-impact edits)
+Before editing exported symbols, auth, DB schemas, or 3+ files: run `ctx_impact(action="analyze")`
+and `ctx_callgraph(action="callers")` to confirm blast radius.
+
+## Session
+- **Start:** `ctx_session(action="status")` + `ctx_knowledge(action="wakeup")`
+- **End:** `ctx_session(action="decision", content="what was done + next steps")`
+- **On [CHECKPOINT]:** `ctx_session(action="task", value="current status")`
+
+NEVER use native Read/Grep/Shell when ctx_* equivalents are available.
+<!-- /lean-ctx -->
+LEANCTX_RULES_EOF
+      echo_success "lean-ctx global rules written ($_lean_ctx_global_rules)"
+    else
+      echo_success "lean-ctx global rules already exist ($_lean_ctx_global_rules)"
+    fi
+
+    echo_info "Configuring lean-ctx shell hook..."
+    # Add shell hook to .bashrc if not present
+    if ! grep -q 'lean-ctx shell hook' "$HOME/.bashrc" 2>/dev/null; then
+      cat >> "$HOME/.bashrc" <<'LEANCTX_BASHRC_EOF'
+
+# lean-ctx shell hook — begin
+if [ -f "$HOME/.config/lean-ctx/shell-hook.bash" ]; then
+. "$HOME/.config/lean-ctx/shell-hook.bash"
+fi
+# lean-ctx shell hook — end
+LEANCTX_BASHRC_EOF
+      # Add agent aliases
+      echo '# >>> lean-ctx agent aliases >>>' >> "$HOME/.bashrc"
+      echo 'alias claude='"'"'LEAN_CTX_AGENT=1 BASH_ENV="$HOME/.bashenv" claude'"'"'' >> "$HOME/.bashrc"
+      echo 'alias opencode='"'"'LEAN_CTX_AGENT=1 BASH_ENV="$HOME/.bashenv" opencode'"'"'' >> "$HOME/.bashrc"
+      echo 'alias codex='"'"'LEAN_CTX_AGENT=1 BASH_ENV="$HOME/.bashenv" codex'"'"'' >> "$HOME/.bashrc"
+      echo '# <<< lean-ctx agent aliases <<<' >> "$HOME/.bashrc"
+      echo_success "lean-ctx shell hook + agent aliases written to .bashrc"
+    else
+      echo_success "lean-ctx shell hook already in .bashrc"
+    fi
+
+    echo_info "Configuring lean-ctx for each detected AI tool..."
+    # lean-ctx init --agent X configures MCP, rules, and hooks per CLI
+    # Supported: claude, opencode, codex, pi (oh-my-pi)
+    # NOT supported: mimo, jcode (skip silently)
+    _lean_ctx_supported="claude opencode codex pi"
+    for _agent in $AGENT_LIST; do
+      # Map oh-my-pi -> pi (lean-ctx name)
+      _lc_agent="$_agent"
+      [ "$_agent" = "oh-my-pi" ] && _lc_agent="pi"
+
+      if echo "$_lean_ctx_supported" | grep -qw "$_lc_agent"; then
+        echo_info "  lean-ctx init --agent $_lc_agent..."
+        lean-ctx init --agent "$_lc_agent" >/dev/null 2>&1 && \
+          echo_success "  lean-ctx configured for $_agent ($_lc_agent)" || \
+          echo_warn "  lean-ctx init failed for $_agent ($_lc_agent)"
+      else
+        echo_info "  lean-ctx does not support $_agent — skipping"
+      fi
+    done
+
+    # Write global Claude Code hooks to ~/.claude/settings.json
+    echo_info "Configuring lean-ctx global hooks..."
+    _claude_settings="$HOME/.claude/settings.json"
+    if [ -f "$_claude_settings" ] && grep -q 'lean-ctx hook' "$_claude_settings" 2>/dev/null; then
+      echo_success "lean-ctx global hooks already in settings.json"
+    elif [ -f "$_claude_settings" ]; then
+      # Inject lean-ctx hooks into existing settings.json
+      python3 -c "
+import json
+with open('$_claude_settings', 'r') as f:
+    data = json.load(f)
+hooks = data.setdefault('hooks', {})
+lean_hooks = {
+    'PostToolUse': [{'hooks': [{'command': 'lean-ctx hook observe', 'type': 'command'}], 'matcher': '.*'}],
+    'PreCompact': [{'hooks': [{'command': 'lean-ctx hook observe', 'type': 'command'}], 'matcher': '.*'}],
+    'PreToolUse': [
+        {'hooks': [{'command': 'lean-ctx hook rewrite', 'type': 'command'}], 'matcher': 'Bash|bash'},
+        {'hooks': [{'command': 'lean-ctx hook redirect', 'type': 'command'}], 'matcher': 'Read|read|ReadFile|read_file|View|view|Grep|grep|Search|search|ListFiles|list_files|ListDirectory|list_directory'}
+    ],
+    'SessionEnd': [{'hooks': [{'command': 'lean-ctx hook observe', 'type': 'command'}], 'matcher': '.*'}],
+    'SessionStart': [{'hooks': [{'command': 'lean-ctx hook observe', 'type': 'command'}], 'matcher': '.*'}],
+    'Stop': [{'hooks': [{'command': 'lean-ctx hook observe', 'type': 'command'}], 'matcher': '.*'}],
+    'UserPromptSubmit': [{'hooks': [{'command': 'lean-ctx hook observe', 'type': 'command'}], 'matcher': '.*'}]
+}
+hooks.update(lean_hooks)
+with open('$_claude_settings', 'w') as f:
+    json.dump(data, f, indent=2, ensure_ascii=False)
+" 2>/dev/null && echo_success "lean-ctx global hooks written to settings.json" || echo_warn "Failed to write lean-ctx global hooks"
+    else
+      echo_info "No settings.json found — lean-ctx hooks will be configured by lean-ctx init --agent claude"
+    fi
+
+    # Copy global rules → project-local .claude/rules/lean-ctx.md
     if [ -f "$_lean_ctx_global_rules" ]; then
       mkdir -p .claude/rules
       cp "$_lean_ctx_global_rules" .claude/rules/lean-ctx.md
       echo_success "lean-ctx project rules configured (.claude/rules/lean-ctx.md)"
-    else
-      echo_warn "lean-ctx global rules not found — run lean-ctx onboard (auto-detected) manually first"
     fi
 
-    if [ -f "$HOME/.claude/settings.local.json" ]; then
-      echo_success "lean-ctx project hooks already configured (.claude/settings.local.json)"
-    else
+    # Write project-local hooks
+    if [ ! -f ".claude/settings.local.json" ]; then
       mkdir -p .claude
-      cat > .claude/settings.local.json <<'LEANCTX_EOF'
+      cat > .claude/settings.local.json <<'LEANCTX_PROJECT_EOF'
 {
   "hooks": {
     "PostToolUse": [{"hooks": [{"command": "lean-ctx hook observe", "type": "command"}], "matcher": ".*"}],
@@ -1280,11 +1409,14 @@ if [ "$SKIP_OPTIONAL" = false ] && [ "${_skip_step_3:-false}" = "false" ]; then
     "UserPromptSubmit": [{"hooks": [{"command": "lean-ctx hook observe", "type": "command"}], "matcher": ".*"}]
   }
 }
-LEANCTX_EOF
+LEANCTX_PROJECT_EOF
       echo_success "lean-ctx project hooks configured (.claude/settings.local.json)"
+    else
+      echo_success "lean-ctx project hooks already configured"
     fi
 
-    echo_success "lean-ctx installed"
+    source "$HOME/.bashrc" 2>/dev/null || true
+    echo_success "lean-ctx installed and configured"
   fi
 fi
 
