@@ -4,7 +4,8 @@
 #
 # Installs doit-skill and all dependencies.
 # Supports:
-#   --agent <type>     Target AI coding CLI: claude|opencode|codex|oh-my-pi|mimo|jcode|auto (default: auto)
+#   --agent <type>     Target AI coding CLI (single): claude|opencode|codex|oh-my-pi|mimo|jcode|auto
+#   --agents "a b"     Target multiple CLIs (comma or space separated), auto-detects all if omitted
 #   --skip-optional    Skip optional skills and external tools
 #   --skip-updates     Skip updating already-installed tools
 #
@@ -28,7 +29,7 @@ if [ "$MSYSTEM" = "" ] && [ "$WSL_DISTRO_NAME" = "" ] && command -v powershell.e
 fi
 
 # Configuration
-# Detect target AI coding CLI
+# Detect target AI coding CLI(s)
 detect_agent() {
   local agent="$1"
   if [ "$agent" = "auto" ]; then
@@ -43,6 +44,23 @@ detect_agent() {
   echo "$agent"
 }
 
+# Detect ALL installed AI coding CLIs (space-separated)
+detect_all_agents() {
+  local agents=()
+  command -v claude >/dev/null 2>&1 && agents+=(claude)
+  command -v opencode >/dev/null 2>&1 && agents+=(opencode)
+  command -v codex >/dev/null 2>&1 && agents+=(codex)
+  command -v omp >/dev/null 2>&1 && agents+=(oh-my-pi)
+  command -v mimo >/dev/null 2>&1 && agents+=(mimo)
+  command -v jcode >/dev/null 2>&1 && agents+=(jcode)
+  if [ ${#agents[@]} -eq 0 ]; then
+    agents+=(claude)  # fallback
+  fi
+  echo "${agents[@]}"
+}
+
+# AGENT_LIST: space-separated list of all detected agents (populated after arg parsing)
+AGENT_LIST=""
 AGENT_TYPE="${AGENT:-auto}"
 AGENT_TYPE=$(detect_agent "$AGENT_TYPE")
 export AGENT_TYPE
@@ -309,6 +327,15 @@ while [ $i -le $# ]; do
       export AGENT_TYPE
       _set_agent_paths "$AGENT_TYPE"
       ;;
+    --agents)
+      i=$((i + 1))
+      # Comma or space separated list of agents
+      AGENT_LIST="${!i}"
+      AGENT_LIST="${AGENT_LIST//,/ }"
+      AGENT_TYPE=$(echo "$AGENT_LIST" | awk '{print $1}')
+      export AGENT_TYPE
+      _set_agent_paths "$AGENT_TYPE"
+      ;;
     *) ;;
   esac
   i=$((i + 1))
@@ -317,6 +344,15 @@ done
 # --global applies after --agent resolves paths
 if [ "$INSTALL_SCOPE" = "global" ]; then
   SKILL_DIR="$GLOBAL_SKILL_DIR"
+fi
+
+# Set AGENT_LIST: if --agents was used, it's already set;
+# if --agent was used (single), use that; otherwise auto-detect all
+if [ -z "$AGENT_LIST" ]; then
+  AGENT_LIST="$AGENT_TYPE"
+fi
+if [ -z "$AGENT_LIST" ]; then
+  AGENT_LIST=$(detect_all_agents)
 fi
 
 # Colors (defined early — used in install scope prompt below)
@@ -490,22 +526,25 @@ if [ "$TAVILY_CONFIGURED" != "true" ]; then
 fi
 
 # Install Tavily MCP immediately after API key is obtained.
-# This runs BEFORE git clone and all other steps, so Tavily is never
-# lost if later steps fail.
-#
-# IMPORTANT: Write directly to ~/.claude.json via Python. Using `claude mcp add`
-# inside spin() → bash -c "$cmd_str" loses shell quoting on the URL, causing
-# the API key to leak into stderr and get executed as a command.
-if [ -n "$TAVILY_API_KEY" ]; then
-  echo_info "Configuring Tavily MCP with your API key..."
+# Configure for all detected agents.
+_configure_tavily_for_agent() {
+  local _tavily_agent="$1"
+  local _mcp_config_file
 
-  # Determine MCP config file based on agent type
-  case "$AGENT_TYPE" in
+  case "$_tavily_agent" in
     claude)   _mcp_config_file="$HOME/.claude.json" ;;
     opencode) _mcp_config_file="$HOME/.config/opencode/opencode.json" ;;
     codex)    _mcp_config_file="$HOME/.codex/config.toml" ;;
     *)        _mcp_config_file="$HOME/.ai/mcp.json" ;;
   esac
+
+  # Skip if already configured
+  if [ -f "$_mcp_config_file" ] && grep -q 'tavily' "$_mcp_config_file" 2>/dev/null; then
+    echo_success "tavily MCP already configured for $_tavily_agent"
+    return 0
+  fi
+
+  echo_info "Configuring Tavily MCP for $_tavily_agent ($_mcp_config_file)..."
 
   # Remove old tavily entry if exists (JSON config)
   if [ -f "$_mcp_config_file" ] && [[ "$_mcp_config_file" == *.json ]]; then
@@ -525,7 +564,6 @@ except: pass
   fi
 
   # Write tavily config directly via env vars — avoids spin() bash -c quoting
-  # AND prevents shell injection from API keys containing quotes/backslashes
   CONFIG_PATH="$_mcp_config_file" TAVILY_KEY="$TAVILY_API_KEY" python3 -c "
 import json, os
 path = os.environ['CONFIG_PATH']
@@ -545,7 +583,6 @@ if path.endswith('.json'):
     with open(path, 'w') as f:
         json.dump(d, f, indent=2)
 elif path.endswith('.toml'):
-    # For Codex config.toml, append MCP section
     import tomllib
     try:
         with open(path, 'rb') as f:
@@ -558,7 +595,6 @@ elif path.endswith('.toml'):
         'url': f'https://mcp.tavily.com/mcp/?tavilyApiKey={key}'
     }
     d['mcp'] = mcp
-    # Write back as TOML
     with open(path, 'w') as f:
         for section, values in d.items():
             if isinstance(values, dict):
@@ -575,10 +611,17 @@ elif path.endswith('.toml'):
 " 2>/dev/null
 
   if [ -f "$_mcp_config_file" ] && grep -q 'tavily' "$_mcp_config_file" 2>/dev/null; then
-    echo_success "tavily MCP configured ($_mcp_config_file)"
+    echo_success "tavily MCP configured for $_tavily_agent ($_mcp_config_file)"
   else
-    echo_warn "Failed to write Tavily MCP config — configure manually for $AGENT_TYPE"
+    echo_warn "Failed to write Tavily MCP config for $_tavily_agent"
   fi
+}
+
+if [ -n "$TAVILY_API_KEY" ]; then
+  echo_info "Configuring Tavily MCP for all detected agents..."
+  for _tavily_agent in $AGENT_LIST; do
+    _configure_tavily_for_agent "$_tavily_agent"
+  done
 fi
 
 # Read headroom proxy config (used later in Step 3.7 for persistent deploy)
@@ -597,8 +640,11 @@ fi
 if [ "$DRY_RUN" = true ]; then
   echo_info "Dry run — showing what would be installed:"
   echo ""
-  echo "  Install location: $SKILL_DIR/"
-  echo "  Target agent:    $AGENT_TYPE"
+  if [ "$(echo "$AGENT_LIST" | wc -w)" -gt 1 ]; then
+    echo "  Target agents:   $AGENT_LIST"
+  else
+    echo "  Target agent:    $AGENT_TYPE"
+  fi
   echo "  Main config:     $MAIN_INSTRUCTIONS"
   echo "  Required skills:"
   echo "    • doit-skill (core)"
@@ -656,102 +702,19 @@ echo ""
 echo "=========================================="
 echo "  doit-skill Installer v$DOIT_VERSION"
 echo "  $(date)"
-echo "  Agent: $AGENT_TYPE"
-echo "=========================================="
-echo ""
-
-# Step 1: Install required skills
-echo "=========================================="
-echo "  Step 1: Installing required skills"
-echo "=========================================="
-echo ""
-
-# Install doit core skill — preserves symlinks (shared phases)
-# For updates: only copies new/changed files + fixes broken symlinks. No rm -rf.
-DOIT_DST="$SKILL_DIR/doit"
-
-if [ -d "$DOIT_DST" ]; then
-  echo_success "doit already installed at $DOIT_DST — updating..."
-
-  # Snapshot before update for change log
-  BEFORE_SNAP=$(mktemp)
-  make_snapshot "$DOIT_DST" "$BEFORE_SNAP"
-
-  # Incremental file update (preserves symlinks, copies only new/changed files)
-  if command -v rsync >/dev/null 2>&1; then
-    rsync -a --exclude='.git' --exclude='.tokensave' --exclude='.claude/skills' --exclude='skills' --exclude='.doit' "$DOIT_DIR/" "$DOIT_DST/"
-  else
-    # Copy all, then exclude dev-only dirs
-    cp -a "$DOIT_DIR/." "$DOIT_DST/"
-    rm -rf "$DOIT_DST/.doit"
-  fi
-
-  # Snapshot after update, compare
-  AFTER_SNAP=$(mktemp)
-  make_snapshot "$DOIT_DST" "$AFTER_SNAP"
-  collect_changes "$BEFORE_SNAP" "$AFTER_SNAP"
-  rm -f "$BEFORE_SNAP" "$AFTER_SNAP"
-
-  # Migration: fix stale symlinks from old layout (shared/ → core/shared/)
-  for lnk in review-simplify.md commit.md; do
-    target="core/shared/$lnk"
-    if [ -L "$DOIT_DST/$lnk" ]; then
-      old_target=$(readlink "$DOIT_DST/$lnk")
-      if [ "$old_target" = "shared/$lnk" ]; then
-        rm "$DOIT_DST/$lnk"
-        ln -s "$target" "$DOIT_DST/$lnk"
-        UPDATED_FILES+=("$lnk (symlink migrated)")
-        echo_success "$lnk -> migrated $old_target → $target"
-      fi
-    elif [ -f "$DOIT_DST/$lnk" ]; then
-      rm "$DOIT_DST/$lnk"
-      ln -s "$target" "$DOIT_DST/$lnk"
-      UPDATED_FILES+=("$lnk (symlink fixed)")
-      echo_success "$lnk -> fixed symlink (was regular file)"
-    fi
-  done
-
-  # Migration: remove deprecated root-level shared/ directory
-  if [ -d "$DOIT_DST/shared" ]; then
-    rm -rf "$DOIT_DST/shared"
-    echo_success "removed deprecated shared/ directory (use core/shared/)"
-  fi
-
-  # Ensure core/shared/ directory exists with all files
-  if [ ! -d "$DOIT_DST/core/shared" ] && [ -d "$DOIT_DIR/core/shared" ]; then
-    cp -a "$DOIT_DIR/core/shared" "$DOIT_DST/core/shared"
-    while IFS= read -r f; do
-      UPDATED_FILES+=("$f")
-    done < <(find "$DOIT_DST/core/shared" -type f | sed "s|$DOIT_DST/||")
-    echo_success "core/shared/ directory restored"
-  fi
-
-  # Clean excluded dirs
-  rm -rf "$DOIT_DST/.git" "$DOIT_DST/.tokensave" "$DOIT_DST/.claude/skills" "$DOIT_DST/skills" "$DOIT_DST/.doit"
+if [ "$(echo "$AGENT_LIST" | wc -w)" -gt 1 ]; then
+  echo "  Agents: $AGENT_LIST"
 else
-  mkdir -p "$SKILL_DIR"
-  cp -a "$DOIT_DIR" "$DOIT_DST"
-  rm -rf "$DOIT_DST/.git" "$DOIT_DST/.tokensave" "$DOIT_DST/.claude/skills" "$DOIT_DST/skills" "$DOIT_DST/.doit"
-  echo_success "doit installed"
+  echo "  Agent: $AGENT_TYPE"
 fi
+echo "=========================================="
+echo ""
 
-# No .claude-plugin/plugin.json needed — doit is a skill loaded from .claude/skills/doit/
-# SKILL.md stays at the root of the doit directory (not in a nested skills/ subdirectory)
-# The plugin.json + nested skills/ structure was causing /doit to not be recognized
-
-# Verify symlinks
-for lnk in review-simplify.md commit.md; do
-  if [ -L "$DOIT_DST/$lnk" ]; then
-    echo_success "$lnk -> $(readlink "$DOIT_DST/$lnk") (symlink OK)"
-  else
-    echo_warn "$lnk is not a symlink — running without shared phase symlinks"
-  fi
-done
-
-# Check and install each bundled skill
-install_skill() {
+# Check and install each bundled skill (skill_path is relative to _install_skill_dir)
+_install_skill() {
   local skill_name="$1"
-  local skill_path="$SKILL_DIR/$skill_name"
+  local skill_dir="$2"
+  local skill_path="$skill_dir/$skill_name"
 
   if [ -d "$skill_path" ]; then
     # Update existing: compare and record changes
@@ -789,15 +752,124 @@ install_skill() {
   return 0
 }
 
-# Install bundled skills
-install_skill "grill-me"
-install_skill "tdd"
-install_skill "diagnose"
-install_skill "prototype"
-install_skill "handoff"
-install_skill "improve-codebase-architecture"
+# Install skills for a single agent
+_install_skills_for_agent() {
+  local _agent="$1"
+  _set_agent_paths "$_agent"
 
+  # Determine target directory based on scope
+  local _install_skill_dir
+  if [ "$INSTALL_SCOPE" = "global" ]; then
+    _install_skill_dir="$GLOBAL_SKILL_DIR"
+  else
+    _install_skill_dir="$SKILL_DIR"
+  fi
+
+  local _doit_dst="$_install_skill_dir/doit"
+
+  echo "  [$_agent] Installing skills → $_install_skill_dir"
+
+  # Install doit core skill — preserves symlinks (shared phases)
+  # For updates: only copies new/changed files + fixes broken symlinks. No rm -rf.
+  if [ -d "$_doit_dst" ]; then
+    echo_success "doit already installed at $_doit_dst — updating..."
+
+    # Snapshot before update for change log
+    local _before_snap _after_snap
+    _before_snap=$(mktemp)
+    make_snapshot "$_doit_dst" "$_before_snap"
+
+    # Incremental file update (preserves symlinks, copies only new/changed files)
+    if command -v rsync >/dev/null 2>&1; then
+      rsync -a --exclude='.git' --exclude='.tokensave' --exclude='.claude/skills' --exclude='skills' --exclude='.doit' "$DOIT_DIR/" "$_doit_dst/"
+    else
+      # Copy all, then exclude dev-only dirs
+      cp -a "$DOIT_DIR/." "$_doit_dst/"
+      rm -rf "$_doit_dst/.doit"
+    fi
+
+    # Snapshot after update, compare
+    _after_snap=$(mktemp)
+    make_snapshot "$_doit_dst" "$_after_snap"
+    collect_changes "$_before_snap" "$_after_snap"
+    rm -f "$_before_snap" "$_after_snap"
+
+    # Migration: fix stale symlinks from old layout (shared/ → core/shared/)
+    for lnk in review-simplify.md commit.md; do
+      local target="core/shared/$lnk"
+      if [ -L "$_doit_dst/$lnk" ]; then
+        local old_target
+        old_target=$(readlink "$_doit_dst/$lnk")
+        if [ "$old_target" = "shared/$lnk" ]; then
+          rm "$_doit_dst/$lnk"
+          ln -s "$target" "$_doit_dst/$lnk"
+          UPDATED_FILES+=("$lnk (symlink migrated)")
+          echo_success "$lnk -> migrated $old_target → $target"
+        fi
+      elif [ -f "$_doit_dst/$lnk" ]; then
+        rm "$_doit_dst/$lnk"
+        ln -s "$target" "$_doit_dst/$lnk"
+        UPDATED_FILES+=("$lnk (symlink fixed)")
+        echo_success "$lnk -> fixed symlink (was regular file)"
+      fi
+    done
+
+    # Migration: remove deprecated root-level shared/ directory
+    if [ -d "$_doit_dst/shared" ]; then
+      rm -rf "$_doit_dst/shared"
+      echo_success "removed deprecated shared/ directory (use core/shared/)"
+    fi
+
+    # Ensure core/shared/ directory exists with all files
+    if [ ! -d "$_doit_dst/core/shared" ] && [ -d "$DOIT_DIR/core/shared" ]; then
+      cp -a "$DOIT_DIR/core/shared" "$_doit_dst/core/shared"
+      while IFS= read -r f; do
+        UPDATED_FILES+=("$f")
+      done < <(find "$_doit_dst/core/shared" -type f | sed "s|$_doit_dst/||")
+      echo_success "core/shared/ directory restored"
+    fi
+
+    # Clean excluded dirs
+    rm -rf "$_doit_dst/.git" "$_doit_dst/.tokensave" "$_doit_dst/.claude/skills" "$_doit_dst/skills" "$_doit_dst/.doit"
+  else
+    mkdir -p "$_install_skill_dir"
+    cp -a "$DOIT_DIR" "$_doit_dst"
+    rm -rf "$_doit_dst/.git" "$_doit_dst/.tokensave" "$_doit_dst/.claude/skills" "$_doit_dst/skills" "$_doit_dst/.doit"
+    echo_success "doit installed"
+  fi
+
+  # Verify symlinks
+  for lnk in review-simplify.md commit.md; do
+    if [ -L "$_doit_dst/$lnk" ]; then
+      echo_success "$lnk -> $(readlink "$_doit_dst/$lnk") (symlink OK)"
+    else
+      echo_warn "$lnk is not a symlink — running without shared phase symlinks"
+    fi
+  done
+
+  # Install bundled skills
+  _install_skill "grill-me" "$_install_skill_dir"
+  _install_skill "tdd" "$_install_skill_dir"
+  _install_skill "diagnose" "$_install_skill_dir"
+  _install_skill "prototype" "$_install_skill_dir"
+  _install_skill "handoff" "$_install_skill_dir"
+  _install_skill "improve-codebase-architecture" "$_install_skill_dir"
+
+  echo ""
+}
+
+# Step 1: Install required skills for all detected agents
+echo "=========================================="
+echo "  Step 1: Installing required skills"
+if [ "$(echo "$AGENT_LIST" | wc -w)" -gt 1 ]; then
+  echo "  Agents: $AGENT_LIST"
+fi
+echo "=========================================="
 echo ""
+
+for _agent in $AGENT_LIST; do
+  _install_skills_for_agent "$_agent"
+done
 
 # Step 2: Install optional skills
 if [ "$SKIP_OPTIONAL" = true ]; then
