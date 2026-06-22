@@ -456,10 +456,10 @@ fi
 
 # Show config summary so piped installs know what defaults were used
 echo ""
-echo "  [CONFIG] doc-capture: $DOC_CAPTURE | subagent: $SUBAGENT_ENABLED | auto-commit: $AUTO_COMMIT | headroom-proxy: $HEADROOM_PROXY"
+echo "  [CONFIG] install-scope: $INSTALL_SCOPE | doc-capture: $DOC_CAPTURE | subagent: $SUBAGENT_ENABLED | auto-commit: $AUTO_COMMIT | headroom-proxy: $HEADROOM_PROXY"
 if [ ! -t 0 ]; then
   echo "  💡 stdin is piped — defaults used above. Re-run interactively to customize."
-  echo "     Or edit ~/.doit/config.yaml after install."
+  echo "     Or pass --global for global install, or edit ~/.doit/config.yaml after install."
 fi
 
 # Write ~/.doit/config.yaml from user choices (idempotent — only create if not present)
