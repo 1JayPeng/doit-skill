@@ -103,7 +103,7 @@ DRY_RUN=false
 SKIP_OPTIONAL=false
 SKIP_UPDATES=false
 SKIP_INITS=false
-INSTALL_GLOBAL=false
+INSTALL_SCOPE=""  # ""=not set (will prompt), "project", "global"
 UPDATED_FILES=()
 INSTALL_CACHE="$HOME/.doit/install-cache.json"
 
@@ -301,7 +301,7 @@ while [ $i -le $# ]; do
     --skip-optional) SKIP_OPTIONAL=true ;;
     --skip-updates) SKIP_UPDATES=true ;;
     --skip-inits) SKIP_INITS=true ;;
-    --global) INSTALL_GLOBAL=true ;;
+    --global) INSTALL_SCOPE="global" ;;
     --agent)
       i=$((i + 1))
       AGENT_TYPE="${!i:-auto}"
@@ -315,11 +315,11 @@ while [ $i -le $# ]; do
 done
 
 # --global applies after --agent resolves paths
-if [ "$INSTALL_GLOBAL" = true ]; then
+if [ "$INSTALL_SCOPE" = "global" ]; then
   SKILL_DIR="$GLOBAL_SKILL_DIR"
 fi
 
-# Colors
+# Colors (defined early — used in install scope prompt below)
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
@@ -327,11 +327,51 @@ BLUE='\033[0;34m'
 CYAN='\033[0;36m'
 NC='\033[0m'
 
+# Ask about install scope (interactive, skip if piped/non-tty or --global set)
+if [ -z "$INSTALL_SCOPE" ] && [ -t 0 ] && [ -t 1 ]; then
+  echo ""
+  echo -e "  ${CYAN}Install scope:${NC}"
+  echo -e "  ${GREEN}(1) Project-local${NC}  — skills in .claude/skills/, plugins/MCP scoped to this project"
+  echo -e "  ${GREEN}(2) Global${NC}         — skills in ~/.claude/skills/, plugins/MCP available everywhere"
+  echo ""
+  read -r -p "  Install scope? [1/2] (default: 1) " answer
+  case "${answer:-1}" in
+    2) INSTALL_SCOPE="global" ;;
+    *) INSTALL_SCOPE="project" ;;
+  esac
+  # Apply scope to SKILL_DIR if not already set by --global
+  if [ "$INSTALL_SCOPE" = "global" ]; then
+    SKILL_DIR="$GLOBAL_SKILL_DIR"
+  fi
+elif [ -z "$INSTALL_SCOPE" ]; then
+  # Piped/non-interactive install defaults to project-local
+  INSTALL_SCOPE="project"
+fi
+
 echo_info()    { echo -e "${BLUE}[INFO]${NC} $1"; }
 echo_success() { echo -e "${GREEN}[✓]${NC} $1"; }
 echo_skip()    { echo -e "${CYAN}[~]${NC} $1"; }
 echo_warn()    { echo -e "${YELLOW}[!]${NC} $1"; }
 echo_error()   { echo -e "${RED}[✗]${NC} $1"; }
+
+# Scope-aware plugin install flags for Claude Code
+# project → --scope project, global → --scope user
+_plugin_scope() {
+  if [ "$INSTALL_SCOPE" = "global" ]; then
+    echo "--scope user"
+  else
+    echo "--scope project"
+  fi
+}
+
+# Scope-aware MCP add flags
+_mcp_scope() {
+  if [ "$INSTALL_SCOPE" = "global" ]; then
+    echo "--scope user"
+  else
+    echo "--scope local"
+  fi
+}
 
 # Show hint if re-installing (tools already present)
 if command -v rtk >/dev/null 2>&1; then
@@ -837,13 +877,13 @@ else
       echo_skip "context-mode already installed (skipping update)"
     else
       echo_info "Updating context-mode..."
-      spin 60 "context-mode update" claude plugin install context-mode@claude-context-mode/plugin --pty || echo_warn "context-mode update failed"
+      spin 60 "context-mode update" claude plugin install $(_plugin_scope) context-mode@claude-context-mode/plugin --pty || echo_warn "context-mode update failed"
       echo_success "context-mode updated"
     fi
   else
     echo_info "Installing context-mode..."
     spin 120 "context-mode marketplace add" claude plugin marketplace add mksglu/claude-context-mode/plugin --pty || echo_warn "Failed to add context-mode marketplace"
-    spin 180 "context-mode install" claude plugin install context-mode@claude-context-mode/plugin --pty || echo_warn "Failed to install context-mode"
+    spin 180 "context-mode install" claude plugin install $(_plugin_scope) context-mode@claude-context-mode/plugin --pty || echo_warn "Failed to install context-mode"
   fi
 
   # RTK
@@ -975,13 +1015,13 @@ CARGO_EOF
         echo_skip "caveman already installed (skipping update)"
       else
         echo_info "Updating caveman..."
-        spin 60 "caveman update" claude plugin install caveman@caveman --pty || echo_warn "caveman update failed"
+        spin 60 "caveman update" claude plugin install $(_plugin_scope) caveman@caveman --pty || echo_warn "caveman update failed"
         echo_success "caveman updated"
       fi
     else
       echo_info "Installing caveman (marketplace -> plugin -> npx fallback)..."
       if spin 120 "caveman marketplace add" claude plugin marketplace add JuliusBrussee/caveman --pty && \
-         spin 180 "caveman install" claude plugin install caveman@caveman --pty; then
+         spin 180 "caveman install" claude plugin install $(_plugin_scope) caveman@caveman --pty; then
         echo_success "caveman installed (claude plugin)"
       else
         echo_warn "claude plugin install failed, trying npx installer..."
@@ -1049,12 +1089,12 @@ with open('$_claude_settings', 'w') as f:
         echo_skip "code-review already installed (skipping update)"
       else
         echo_info "Updating code-review..."
-        spin 60 "code-review update" claude plugin install code-review --pty || echo_warn "code-review update failed"
+        spin 60 "code-review update" claude plugin install $(_plugin_scope) code-review --pty || echo_warn "code-review update failed"
         echo_success "code-review updated"
       fi
     else
       echo_info "Installing code-review..."
-      spin 180 "code-review install" claude plugin install code-review --pty || echo_warn "Failed to install code-review (install manually: claude plugin install code-review)"
+      spin 180 "code-review install" claude plugin install $(_plugin_scope) code-review --pty || echo_warn "Failed to install code-review (install manually: claude plugin install code-review)"
     fi
   else
     echo_info "code-review is a Claude Code plugin — skipping for $AGENT_TYPE"
@@ -1067,7 +1107,7 @@ with open('$_claude_settings', 'w') as f:
         echo_skip "mempalace already installed (skipping update)"
       else
         echo_info "Updating mempalace..."
-        spin 60 "mempalace update" claude plugin install --scope user mempalace --pty || echo_warn "mempalace update failed"
+        spin 60 "mempalace update" claude plugin install $(_plugin_scope) mempalace --pty || echo_warn "mempalace update failed"
         echo_success "mempalace updated"
       fi
     else
@@ -1326,7 +1366,8 @@ fi
 if [ "$SKIP_OPTIONAL" = false ] && [ "${_skip_step_3:-false}" = "false" ]; then
   if grep -rl "agentmemory" "$HOME/.claude/plugins/" > /dev/null 2>&1; then
     echo_info "agentmemory detected — uninstalling (replaced by mempalace)..."
-    spin 60 "agentmemory uninstall" "claude plugin uninstall --scope user agentmemory" || echo_warn "agentmemory uninstall failed (remove manually)"
+    # Use timeout directly, not spin — claude plugin uninstall may hang if plugin not found
+    timeout 30 claude plugin uninstall --scope user agentmemory 2>/dev/null || echo_warn "agentmemory uninstall failed (remove manually)"
     echo_success "agentmemory uninstalled"
   else
     echo_skip "agentmemory not installed (no uninstall needed)"

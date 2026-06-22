@@ -220,7 +220,7 @@ for tool in "${EXTERNAL_TOOLS[@]}"; do
                 echo "  ✅ lean-ctx rules configured (global)"
             else
                 echo "  ℹ️  lean-ctx rules not configured"
-                echo "  💡 Configure: ./scripts/setup.sh (includes lean-ctx)"
+                echo "  💡 Configure: lean-ctx onboard"
             fi
             ;;
     esac
