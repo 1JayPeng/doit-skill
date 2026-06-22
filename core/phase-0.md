@@ -56,7 +56,11 @@ If caveman not found, announce `[WARN] caveman not installed -> verbose mode` an
 流程: Phase 0 → [phases based on type]
 ```
 
-**Step 2.1 — Proxy Status Check:** If `ANTHROPIC_BASE_URL` contains `127.0.0.1:8787`, announce `[PROXY] headroom active`. If not set but config has `headroom.proxy.enabled: true`, offer to start proxy.
+**Step 2.1 — Proxy Status Check:**
+1. Check if `ANTHROPIC_BASE_URL` contains `127.0.0.1:8787` → `[PROXY] headroom active`
+2. If not, check proxy health: `curl -sf http://127.0.0.1:8787/health` (success → `[PROXY] headroom active`)
+3. If proxy not running but `headroom.proxy.enabled: true` in config → `[PROXY-FALLBACK] headroom proxy down, using upstream ($_hr_upstream)`
+4. If proxy not configured or disabled → announce nothing (MCP tools still available as fallback)
 
 **Step 2.25 — Context Orientation (MANDATORY, Type Q/S can skip):**
 ```
@@ -105,7 +109,7 @@ Read `.doit/config.yaml`. If `subagent.enabled: true`:
 3. **Prepare wave schedule** — after Phase 2, Architect produces the dependency graph and wave schedule
 4. **Announce** `[TEAM] subagent mode active (<team_size> roles)`
 
-If `subagent.enabled: false` or not set → continue with single-agent flow.
+If `subagent.enabled: false` → continue with single-agent flow. (Default is `true`.)
 
 See [core/subagent.md](core/subagent.md) for full team orchestration details.
 

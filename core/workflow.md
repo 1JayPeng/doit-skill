@@ -63,7 +63,7 @@ Key steps:
 
 ## Phase 3 — Execute
 
-**[LOAD] [execute.md](core/execute.md) — full Phase 3 TDD execution.**
+**[LOAD] [execute.md](execute.md) — full Phase 3 TDD execution.**
 
 Key steps:
 1. [LOAD:phase-3] tdd
@@ -82,15 +82,15 @@ When `subagent.enabled: true`: dispatch Developers per REQ via wave schedule. Se
 
 ## Phase 6 — Simplify
 
-**[LOAD] [shared/review-simplify.md](shared/review-simplify.md) — review + simplify.**
+**[LOAD] [../shared/review-simplify.md](../shared/review-simplify.md) — review + simplify.**
 
 ## Phase 7 — E2E Verify
 
-**[LOAD] [shared/e2e-verify.md](shared/e2e-verify.md) — E2E verification loop.**
+**[LOAD] [../shared/e2e-verify.md](../shared/e2e-verify.md) — E2E verification loop.**
 
 ## Phase 8 — Commit + Push
 
-**[LOAD] [shared/commit.md](shared/commit.md) — commit + push.**
+**[LOAD] [../shared/commit.md](../shared/commit.md) — commit + push.**
 
 ## Phase 9 — Cleanup
 
@@ -123,7 +123,7 @@ Extract knowledge per category (code, api, db, flow) → MemPalace + KG facts.
 1. RTK token report: `ctx_shell("rtk gain")`
 2. lean-ctx stats: `ctx_stats()`
 3. Context-Mode stats: `ctx stats`
-4. Headroom stats: `headroom_stats`
+4. Headroom stats: `headroom_stats` (MCP — works regardless of proxy status; proxy mode also supports `headroom proxy stats` for live traffic)
 5. MemPalace KG + diary: `mempalace_diary_write`, `mempalace_kg_stats`
 6. Session decision: `ctx_session(action="decision", ...)`
 7. Caveman compress CLAUDE.md

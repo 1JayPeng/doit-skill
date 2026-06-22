@@ -541,7 +541,7 @@ elif path.endswith('.toml'):
   fi
 fi
 
-# Start Headroom Proxy if enabled (before git clone so Tavily + Proxy are ready early)
+# Read headroom proxy config (used later in Step 3.7 for persistent deploy)
 if [ -f "$HOME/.doit/config.yaml" ]; then
   _hr_proxy=$(grep -A1 'proxy:' "$HOME/.doit/config.yaml" 2>/dev/null | grep 'enabled:' | awk '{print $2}')
   _hr_port=$(grep -A2 'proxy:' "$HOME/.doit/config.yaml" 2>/dev/null | grep 'port:' | awk '{print $2}')
@@ -549,15 +549,9 @@ else
   _hr_proxy="false"
   _hr_port="8787"
 fi
-if [ "$_hr_proxy" = "true" ] && command -v headroom >/dev/null 2>&1; then
-  echo_info "Starting headroom proxy on port ${_hr_port:-8787}..."
-  headroom proxy --port ${_hr_port:-8787} &
-  HEADROOM_PID=$!
-  export ANTHROPIC_BASE_URL=http://127.0.0.1:${_hr_port:-8787}
-  echo "HEADROOM_PID=$HEADROOM_PID" > /tmp/headroom-proxy.pid
-  echo_success "headroom proxy started (PID $HEADROOM_PID)"
-  echo_info "All tool outputs now auto-compressed (60-95% token savings)"
-fi
+# Note: Proxy is deployed persistently in Step 3.7 via `headroom install apply`.
+# Runtime fallback: if proxy health check fails at Phase 0, ANTHROPIC_BASE_URL
+# stays unchanged (points to original upstream like localhost:8000 for local models).
 
 # Handle dry-run
 if [ "$DRY_RUN" = true ]; then
@@ -1231,11 +1225,33 @@ if [ "$SKIP_OPTIONAL" = false ] && [ "${_skip_step_3:-false}" = "false" ]; then
 
     if command -v headroom >/dev/null 2>&1; then
       if [ "$AGENT_TYPE" = "claude" ]; then
+        # Configure MCP tools (compress/retrieve/stats — fallback when proxy is down)
         if spin 30 "headroom MCP verify" "claude mcp list" 2>/dev/null | grep -q headroom; then
           echo_success "headroom MCP already configured"
         else
           echo_info "Configuring headroom MCP..."
           spin 120 "headroom MCP install" headroom mcp install || echo_warn "headroom mcp install timed out"
+        fi
+
+        # Detect upstream (local model or cloud API) from settings.json
+        _hr_upstream=$(grep -o '"ANTHROPIC_BASE_URL"[[:space:]]*:[[:space:]]*"[^"]*"' "$HOME/.claude/settings.json" 2>/dev/null | grep -o 'http[^"]*')
+        _hr_upstream=${_hr_upstream:-https://api.anthropic.com}
+
+        if [ "$_hr_proxy" = "true" ]; then
+          echo_info "Deploying headroom persistent proxy (upstream: $_hr_upstream)..."
+          spin 180 "headroom install apply" \
+            ANTHROPIC_TARGET_API_URL="$_hr_upstream" \
+            headroom install apply \
+              --preset persistent-service \
+              --runtime python \
+              --scope user \
+              --target claude \
+              --port ${_hr_port:-8787} 2>&1 || \
+            echo_warn "headroom persistent deploy failed — proxy will use fallback mode"
+
+          echo_success "headroom proxy deployed (fallback to $_hr_upstream if proxy unavailable)"
+        else
+          echo_skip "headroom proxy disabled (MCP tools only)"
         fi
       else
         echo_info "headroom MCP — configure manually for $AGENT_TYPE"
