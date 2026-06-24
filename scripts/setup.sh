@@ -77,6 +77,8 @@ _set_agent_paths() {
     opencode)
       SKILL_DIR=".opencode/skills"
       GLOBAL_SKILL_DIR="$HOME/.config/opencode/skills"
+      COMMANDS_DIR=".opencode/commands"
+      GLOBAL_COMMANDS_DIR="$HOME/.config/opencode/commands"
       MAIN_INSTRUCTIONS="AGENTS.md"
       MCP_CONFIG_FILE="$HOME/.config/opencode/opencode.json"
       ;;
@@ -781,7 +783,7 @@ _install_skills_for_agent() {
 
     # Incremental file update (preserves symlinks, copies only new/changed files)
     if command -v rsync >/dev/null 2>&1; then
-      rsync -a --exclude='.git' --exclude='.tokensave' --exclude='.claude/skills' --exclude='skills' --exclude='.doit' "$DOIT_DIR/" "$_doit_dst/"
+      rsync -a --exclude='.git' --exclude='.tokensave' --exclude='.claude/skills' --exclude='skills' --exclude='commands' --exclude='.doit' "$DOIT_DIR/" "$_doit_dst/"
     else
       # Copy all, then exclude dev-only dirs
       cp -a "$DOIT_DIR/." "$_doit_dst/"
@@ -830,11 +832,11 @@ _install_skills_for_agent() {
     fi
 
     # Clean excluded dirs
-    rm -rf "$_doit_dst/.git" "$_doit_dst/.tokensave" "$_doit_dst/.claude/skills" "$_doit_dst/skills" "$_doit_dst/.doit"
+    rm -rf "$_doit_dst/.git" "$_doit_dst/.tokensave" "$_doit_dst/.claude/skills" "$_doit_dst/skills" "$_doit_dst/commands" "$_doit_dst/.doit"
   else
     mkdir -p "$_install_skill_dir"
     cp -a "$DOIT_DIR" "$_doit_dst"
-    rm -rf "$_doit_dst/.git" "$_doit_dst/.tokensave" "$_doit_dst/.claude/skills" "$_doit_dst/skills" "$_doit_dst/.doit"
+    rm -rf "$_doit_dst/.git" "$_doit_dst/.tokensave" "$_doit_dst/.claude/skills" "$_doit_dst/skills" "$_doit_dst/commands" "$_doit_dst/.doit"
     echo_success "doit installed"
   fi
 
@@ -854,6 +856,18 @@ _install_skills_for_agent() {
   _install_skill "prototype" "$_install_skill_dir"
   _install_skill "handoff" "$_install_skill_dir"
   _install_skill "improve-codebase-architecture" "$_install_skill_dir"
+
+  # Install agent-specific commands (e.g. /doit for opencode)
+  if [ -n "$COMMANDS_DIR" ] && [ -d "$DOIT_DIR/commands" ]; then
+    local _install_cmd_dir
+    if [ "$INSTALL_SCOPE" = "global" ]; then
+      _install_cmd_dir="$GLOBAL_COMMANDS_DIR"
+    else
+      _install_cmd_dir="$COMMANDS_DIR"
+    fi
+    mkdir -p "$_install_cmd_dir"
+    cp "$DOIT_DIR/commands/"*.md "$_install_cmd_dir/" 2>/dev/null && echo_success "commands installed to $_install_cmd_dir" || true
+  fi
 
   echo ""
 }
