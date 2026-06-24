@@ -220,7 +220,7 @@ for tool in "${EXTERNAL_TOOLS[@]}"; do
                 echo "  ✅ lean-ctx rules configured (global)"
             else
                 echo "  ℹ️  lean-ctx rules not configured"
-                echo "  💡 Run: cd doit-skill && ./scripts/setup.sh"
+                echo "  💡 Run: lean-ctx init --agent auto"
             fi
             ;;
     esac

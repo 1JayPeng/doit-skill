@@ -1594,6 +1594,23 @@ fi
 
 # Step 4: Run doctor before cleanup
 echo "=========================================="
+echo "  Step 3.11: Initializing lean-ctx for all agents"
+echo ""
+
+# Ensure lean-ctx initialized for all agents (runs even if Step 3 fast-tracked)
+if command -v lean-ctx >/dev/null 2>&1; then
+  _lc_supported="claude opencode codex pi"
+  for _agent in $AGENT_LIST; do
+    _lc_agent="$_agent"
+    [ "$_agent" = "oh-my-pi" ] && _lc_agent="pi"
+    if echo "$_lc_supported" | grep -qw "$_lc_agent"; then
+      lean-ctx init --agent "$_lc_agent" >/dev/null 2>&1 || true
+    fi
+  done
+fi
+
+echo ""
+echo "=========================================="
 echo "  Step 4: Running dependency check"
 echo "=========================================="
 echo ""
