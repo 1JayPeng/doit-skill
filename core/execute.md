@@ -4,7 +4,8 @@
 
 ## Rules
 
-- Per-REQ TDD loop: CONTEXT → IMPLEMENT → RED → GREEN → REFACTOR → REVIEW+SIMPLIFY
+- Per-REQ TDD loop: CONTEXT → IMPLEMENT → RED → GREEN → TEST GATE → REFACTOR → REVIEW+SIMPLIFY
+- Use native edit primitives for file changes (Edit, StrReplace, Write)
 - MCP tools (codegraph, context-mode, mempalace) remain unchanged — they are tool-agnostic
 - Fallback: If codegraph unavailable → `grep` + `find` + `[[FILE:read]]`
 
@@ -19,8 +20,8 @@
 
 **[CALL]** Before writing any code:
 ```
-[CALL] codegraph_context(task="<REQ description>")
-[CALL] codegraph_impact(symbol="...") — blast radius check
+[CALL] codegraph_context(task="<REQ description>") — understand feature flow, get relevant symbols + relationships
+[CALL] codegraph_impact(symbol="<symbol>") — blast radius check
 ```
 
 If codegraph unavailable → `grep` + `find` + `[[FILE:read]]` fallback.
@@ -34,12 +35,9 @@ Before writing code, check:
 
 ### IMPLEMENT (edit primitives for code changes)
 
-Use `[[FILE:edit]]` for file changes:
-- `[[FILE:edit]]` — search-and-replace (native tool, safe single-edit)
-
-**Fallback chain:**
+**Edit chain:**
 ```
-1. [[FILE:edit]] (native search-and-replace)
+1. [[FILE:edit]] (native search-and-replace, preferred)
 2. [[FILE:write]] (complete file rewrite, last resort)
 ```
 
@@ -52,9 +50,41 @@ Write test that fails. Use `[[SHELL:run]]` to run tests.
 [[SHELL:run command="pytest -xvs tests/test_file.py::test_name"]]
 ```
 
+**RED 验证：测试必须失败。** 如果测试写了就跑过，说明测试没验证任何东西。重写测试。
+
 ### GREEN
 
 Write minimal implementation. Run tests again — must pass.
+
+### TEST QUALITY GATE (MANDATORY after GREEN)
+
+Before moving to REFACTOR, verify the test actually tests the right thing. Run through each check — do NOT ask user:
+
+1. **Always-pass check**: Comment out the implementation. Does the test FAIL?
+   - NO → test is useless, rewrite it
+   - YES → proceed
+
+2. **Mock audit**: Does the test mock any internal collaborator?
+   - YES → is it a system boundary? If NO, replace mock with real instance
+   - Document each mock: why system boundary, what would happen without it
+
+3. **Impl-coupling check**: Would renaming an internal function break this test?
+   - YES → test is coupled to impl, rewrite through public interface
+   - NO → proceed
+
+4. **Assertion check**: Does the test assert OUTPUT or CALLS?
+   - Asserts calls (e.g., `toHaveBeenCalledWith`) → rewrite to assert output/behavior
+   - Asserts output → proceed
+
+5. **Coverage check**: Does the test cover at least happy path + one negative case?
+   - Missing negative case → add one (invalid input, missing field, wrong permission)
+   - Both present → proceed
+
+6. **Real-path check**: Does the test exercise the same code path that production would use?
+   - Test uses a mock where prod uses a real service (not a system boundary) → replace with real path
+   - Same path → proceed
+
+**Only proceed to REFACTOR after all gates pass.**
 
 ### REFACTOR
 
@@ -66,7 +96,7 @@ After each REQ implementation:
 ```
 [[SHELL:run command="git diff --stat"]]
 ```
-Remove dead code, flatten abstractions, eliminate duplicates. Manual review via `[[SHELL:run]]` git diff + `[[FILE:read]]`.
+Remove dead code, flatten abstractions, eliminate duplicates. Use `git diff` + manual review.
 
 ### Worklog Write (MANDATORY after each REQ)
 

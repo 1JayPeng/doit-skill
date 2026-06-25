@@ -8,9 +8,10 @@
 // GOOD: Tests observable behavior
 test("user can checkout with valid cart", async () => {
   const cart = createCart();
-  cart.add(product);
-  const result = await checkout(cart, paymentMethod);
+  cart.addItem({ id: "prod-1", qty: 2, price: 10 });
+  const result = await checkout(cart, createMockPayment());
   expect(result.status).toBe("confirmed");
+  expect(result.total).toBe(20);
 });
 ```
 
@@ -27,7 +28,7 @@ Characteristics:
 **Implementation-detail tests**: Coupled to internal structure.
 
 ```typescript
-// BAD: Tests implementation details
+// BAD: Tests implementation details — mocks internal collaborator
 test("checkout calls paymentService.process", async () => {
   const mockPayment = jest.mock(paymentService);
   await checkout(cart, payment);
@@ -59,3 +60,38 @@ test("createUser makes user retrievable", async () => {
   expect(retrieved.name).toBe("Alice");
 });
 ```
+
+## Required Test Categories
+
+Every REQ must cover at least:
+
+### 1. Happy Path
+The expected flow with valid input. One test per REQ is the minimum.
+
+### 2. Negative Cases
+At least ONE per REQ:
+- Invalid input → error response
+- Missing required field → validation error
+- Wrong permission → access denied
+
+### 3. Boundary Conditions
+When the logic has thresholds, ranges, or limits:
+- Empty collection, single item, max items
+- Zero, negative, overflow
+- Min/max string length
+
+### 4. Error Handling
+When the code handles external failures:
+- Network timeout → retry/fallback
+- DB connection lost → error message
+- Rate limited → backoff
+
+## Test Quality Self-Check
+
+After writing each test, verify:
+
+- [ ] If I remove the implementation, does this test FAIL? (not always-pass)
+- [ ] If I change an internal function name, does this test still PASS? (not impl-coupled)
+- [ ] Does the test assert the OUTPUT, not the CALLS? (not mock-verification)
+- [ ] Does the test name describe what a user/caller cares about? (behavior, not mechanics)
+- [ ] Does the test use real collaborators, not mocks? (except system boundaries)

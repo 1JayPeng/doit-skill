@@ -53,6 +53,7 @@ Before writing any code:
 - [ ] Identify opportunities for [deep modules](deep-modules.md) (small interface, deep implementation)
 - [ ] Design interfaces for [testability](interface-design.md)
 - [ ] List the behaviors to test (not implementation steps)
+- [ ] Identify system boundaries — only these should be mocked
 - [ ] Get user approval on the plan
 
 Ask: "What should the public interface look like? Which behaviors are most important to test?"
@@ -66,6 +67,7 @@ Write ONE test that confirms ONE thing about the system:
 ```
 RED:   Write test for first behavior → test fails
 GREEN: Write minimal code to pass → test passes
+GATE:  Verify test quality (see Checklist)
 ```
 
 This is your tracer bullet - proves the path works end-to-end.
@@ -77,6 +79,7 @@ For each remaining behavior:
 ```
 RED:   Write next test → fails
 GREEN: Minimal code to pass → passes
+GATE:  Verify test quality
 ```
 
 Rules:
@@ -104,6 +107,10 @@ After all tests pass, look for [refactor candidates](refactoring.md):
 [ ] Test describes behavior, not implementation
 [ ] Test uses public interface only
 [ ] Test would survive internal refactor
+[ ] If I remove the impl, does the test FAIL? (not always-pass)
+[ ] No internal mocks — only system boundaries
+[ ] Test asserts OUTPUT, not CALLS
+[ ] At least one negative case covered
 [ ] Code is minimal for this test
 [ ] No speculative features added
 ```
