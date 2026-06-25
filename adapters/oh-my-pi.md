@@ -20,18 +20,29 @@ Maps abstract `[[OPERATION]]` syntax to oh-my-pi (omp) native tools.
 
 | Abstract | oh-my-pi |
 |----------|---------|
-| `[[TASK:create subject="..." description="..."]]` | No native task API — maintain `.doit/tasks.md` file |
-| `[[TASK:update taskId="..." status="completed"]]` | Update `.doit/tasks.md` via `edit()` |
-| `[[TASK:list]]` | `read(".doit/tasks.md")` |
-| `[[TASK:get taskId="..."]]` | `read(".doit/tasks.md")` + parse |
+| `[[TASK:create subject="..." description="..."]]` | `todo({ op: "init", list: [{ phase: "PhaseName", items: ["task1", "task2"] }] })` |
+| `[[TASK:update taskId="..." status="in_progress"]]` | `todo({ op: "start", task: "..." })` |
+| `[[TASK:update taskId="..." status="completed"]]` | `todo({ op: "done", task: "..." })` |
+| `[[TASK:update taskId="..." status="deleted"]]` | `todo({ op: "drop", task: "..." })` or `todo({ op: "rm", task: "..." })` |
+| `[[TASK:list]]` | `todo({ op: "view" })` |
+| `[[TASK:get taskId="..."]]` | `todo({ op: "view" })` + parse result |
+| Append tasks to phase | `todo({ op: "append", phase: "PhaseName", items: ["task"] })` |
 
-**Note:** omp has no native task management. Tasks tracked in `.doit/tasks.md` via file edits:
-```markdown
-- [ ] Phase 0 - Classify: Classify request
-- [x] Phase 1 - Spec: Done
-```
+**Note:** OMP has a native `todo` tool (`TodoTool`, `name: "todo"`) with full CRUD support. Task identification uses the **task content string** (not a numeric ID). The `todo()` API maps 1:1 with doit's workflow operations.
 
-**Task Usage Frequency:** oh-my-pi lacks native task management, relying on `.doit/tasks.md`. **Edit this file after every sub-step** using `edit()` — change `[ ]` to `[x]` as tasks complete. Without native task tools, this file is the ONLY progress indicator. Stale task files confuse the user and waste context space.
+**Doit → OMP mapping:**
+| doit workflow | OMP `todo()` call |
+|---|---|
+| Phase 0: create task list | `todo({ op: "init", list: [{ phase: "OMP Adaptation", items: ["Phase 0 - Classify", "Phase 1 - Spec", ...] }] })` |
+| Phase boundary: start next | `todo({ op: "start", task: "Phase 1 - Spec" })` |
+| Phase boundary: complete | `todo({ op: "done", task: "Phase 0 - Classify" })` |
+| Cleanup stale tasks | `todo({ op: "rm" })` (clears all) or `todo({ op: "drop", task: "..." })` |
+
+**TUI rendering:** OMP renders the todo list in a sticky side panel. Completed tasks show with strikethrough. The panel auto-collapses phases not touched by the current operation to reduce visual noise.
+
+**Task Usage Frequency:** Call `todo({ op: "done" })` immediately after completing each sub-step. The sticky panel keeps progress visible. Mark `in_progress` → `completed` transitions in real time — do not batch updates to phase boundaries.
+
+**Storage:** Tasks persist in session memory by default (`storage: "session"`). Cross-session persistence requires `storage: "memory"`. The `todo` tool handles persistence automatically — no manual file management needed.
 
 ### Agent (Subagent)
 
