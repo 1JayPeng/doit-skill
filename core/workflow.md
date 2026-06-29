@@ -98,6 +98,19 @@ Remove `.spec/current.md`, `.spec/doc-capture.md`, empty `.scratch/`.
 
 ## Phase 9.5 — Completion Summary + Knowledge Extraction
 
+**Step 0 — Task Closure (MANDATORY, before generating any summary).**
+
+Before telling the user what was done, audit ALL tasks and close them. This prevents stale pending tasks from triggering system warnings and ensures the task list accurately reflects completion.
+
+1. Call `[[TASK:list]]` to get current task state
+2. For each task:
+   - If status is `in_progress` → `[[TASK:update taskId="..." status="completed"]]`
+   - If status is `pending` and the phase was intentionally skipped → `[[TASK:update taskId="..." status="deleted"]]`
+   - If status is `pending` and the phase was NOT executed (omission) → `[[TASK:update taskId="..." status="completed"]]` with note
+3. Verify all tasks are closed: call `[[TASK:list]]` again, confirm no `pending` or `in_progress` tasks remain
+
+**铁律：Phase 9.5 不先关任务就直接输出 Summary = 遗留 stale tasks = 系统警告。**
+
 **Before Phase 10, tell the user what was done.** Language: user's configured language (default: 中文).
 
 Must include: branch, commit hash, change summary, REQ delivery, actionable next steps.

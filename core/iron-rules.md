@@ -100,6 +100,8 @@ If MemPalace unavailable → skip silently. Filesystem remains primary.
 
 **Stale Task 清理：** 在 Phase 0 创建新任务列表前，必须先调用 `[[TASK:list]]` 清理旧工作流残留的任务。不清理 = 任务列表混乱 = 模型无法判断当前工作流进度。
 
+**Phase 9.5 Task Closure（任务收尾）：** 在 Phase 9.5 输出 Summary 之前，必须先调用 `[[TASK:list]]` 审计所有任务，将所有 `in_progress` 和 `pending` 任务标记为 `completed` 或 `deleted`。不收尾 = 遗留 stale tasks = 系统警告（"task tools haven't been used recently"）浪费上下文。这是铁律，不是建议。
+
 ## 铁律 — Phase -1 不可跳过
 
 **Phase -1 (环境检测) 是绝对强制入口，必须先于 Phase 0 (分类) 完成。**
