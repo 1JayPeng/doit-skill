@@ -131,7 +131,7 @@ Execute ALL `[[TASK:create]]` calls in parallel:
 ```
 # Type F (full feature workflow):
 [[TASK:create subject="Phase 0 - Classify" description="Classify request, announce type, create task list"]]
-[[TASK:create subject="Phase 1 - Spec" description="Grill 5+ questions, write spec, create branch"]]
+[[TASK:create subject="Phase 1 - Spec" description="Grill 4+ questions, write spec, create branch"]]
 [[TASK:create subject="Phase 2 - Plan" description="Impact analysis, codegraph context, order REQs"]]
 [[TASK:create subject="Phase 3 - Execute" description="TDD per REQ, per-REQ review+simplify"]]
 [[TASK:create subject="Phase 4 - E2E" description="End-to-end tests in real environment"]]

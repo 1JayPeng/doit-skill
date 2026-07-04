@@ -1,12 +1,12 @@
 ---
 name: grill-me
-description: Interview the user relentlessly about a plan or design. Ask 5+ questions (Type F) or 3+ (Type B), dynamically generated from uncertainty scan. Use when user wants to stress-test a plan, get grilled on their design, or mentions "grill me".
+description: Interview the user relentlessly about a plan or design. Ask 4+ questions (Type F) or 3+ (Type B), dynamically generated from uncertainty scan. Use when user wants to stress-test a plan, get grilled on their design, or mentions "grill me".
 ---
 
 # Grill Me — Uncertainty-Driven Questioning
 
-**Mandatory: 5 questions minimum for Type F (feature), 3 for Type B (bug).**
-Quality > quantity. 5 specific questions beat 12 generic ones. Each question must reference a specific detail from the user's request, explain why it matters, and provide concrete options.
+**Mandatory: 4 questions minimum for Type F (feature), 3 for Type B (bug).**
+Quality > quantity. 4 specific questions beat 12 generic ones. Each question must reference a specific detail from the user's request, explain why it matters, and provide concrete options.
 
 ## Core Assumption: User is Non-Technical
 
@@ -137,7 +137,7 @@ Every question must include:
 - **Warn about data implications:** "This will store [user data]. Should it be encrypted? Who else besides you should have access?"
 - **Scope protect:** "You've described [large scope]. Let's break it into V1 (core, 2 weeks) and V2 (nice-to-have, 1 month more). Does that make sense?"
 - **Prioritize with the user:** When requirements are vague, rank what matters most: speed, quality, flexibility, cost, security — help the user understand trade-offs
-- **Limit question count even for vague requests:** Vague requests from non-technical users might tempt you to ask 20 questions. Instead, batch related questions into single asks with clear options. 5 well-crafted questions > 20 scattered ones.
+- **Limit question count even for vague requests:** Vague requests from non-technical users might tempt you to ask 20 questions. Instead, batch related questions into single asks with clear options. 4 well-crafted questions > 20 scattered ones.
 
 ## Output
 
