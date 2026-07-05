@@ -837,8 +837,23 @@ _install_skills_for_agent() {
     mkdir -p "$_install_skill_dir"
     cp -a "$DOIT_DIR" "$_doit_dst"
     rm -rf "$_doit_dst/.git" "$_doit_dst/.tokensave" "$_doit_dst/.claude/skills" "$_doit_dst/skills" "$_doit_dst/commands" "$_doit_dst/.doit"
+    # Ensure root-level symlinks for core/shared/ files exist
+    for _lnk in review-simplify.md commit.md; do
+      if [ ! -e "$_doit_dst/$_lnk" ]; then
+        ln -s "core/shared/$_lnk" "$_doit_dst/$_lnk"
+        echo_success "created $_lnk -> core/shared/$_lnk"
+      fi
+    done
     echo_success "doit installed"
   fi
+
+  # Ensure symlinks exist after update or fresh install
+  for _lnk in review-simplify.md commit.md; do
+    if [ ! -e "$_doit_dst/$_lnk" ]; then
+      ln -s "core/shared/$_lnk" "$_doit_dst/$_lnk"
+      echo_success "created $_lnk -> core/shared/$_lnk"
+    fi
+  done
 
   # Verify symlinks
   for lnk in review-simplify.md commit.md; do

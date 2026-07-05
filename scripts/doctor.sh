@@ -17,8 +17,25 @@ GH_PROXY="https://v6.gh-proxy.org"
 BUNDLED_SKILLS=("grill-me" "tdd" "diagnose" "prototype" "handoff" "improve-codebase-architecture")
 BUILTIN_SKILLS=()
 EXTERNAL_TOOLS=("context-mode" "rtk" "uv" "rust" "tavily" "caveman" "code-review" "mempalace" "headroom" "lean-ctx")
-SHARED_FILES=("shared/review-simplify.md" "shared/e2e-verify.md" "shared/commit.md")
-SYMLINK_TARGETS=("review-simplify.md:shared/review-simplify.md" "commit.md:shared/commit.md")
+SHARED_FILES=("core/shared/review-simplify.md" "core/shared/e2e-verify.md" "core/shared/commit.md")
+SYMLINK_TARGETS=("review-simplify.md:core/shared/review-simplify.md" "commit.md:core/shared/commit.md")
+
+# Detect which CLI agent is in use (mirrors setup.sh detect_agent with auto resolution)
+_detect_agent() {
+  local agent="${1:-auto}"
+  if [ "$agent" = "auto" ]; then
+    if [ -d ".claude/skills" ] || [ -d "$HOME/.claude/skills" ] || command -v claude >/dev/null 2>&1; then
+      echo "claude" && return
+    fi
+    command -v opencode >/dev/null 2>&1 && echo "opencode" && return
+    command -v codex >/dev/null 2>&1 && echo "codex" && return
+    command -v omp >/dev/null 2>&1 && echo "oh-my-pi" && return
+    command -v mimo >/dev/null 2>&1 && echo "mimo" && return
+    command -v jcode >/dev/null 2>&1 && echo "jcode" && return
+    echo "claude" && return  # fallback
+  fi
+  echo "$agent"
+}
 
 echo "=========================================="
 echo "  doit-skill Doctor"
@@ -31,11 +48,17 @@ echo "[1/3] Checking doit skill installation..."
 if [ -d "$SKILL_DIR/doit" ]; then
     echo "  ✅ doit skill installed"
     # Check for core files
-    core_files=("SKILL.md" "rules.md" "phases.md" "classifier.md" "spec.md" "plan.md" "execute.md" "e2e.md" "review.md" "review-simplify.md" "commit.md" "errors.md" "setup.md")
+    core_files=("SKILL.md" "core/iron-rules.md" "core/workflow.md" "core/phase-0.md" "core/phase-1.md" "core/execute.md" "core/env-check.md" "classifier.md" "spec.md" "plan.md" "e2e.md" "review.md" "errors.md" "setup.md")
+    root_symlinks=("review-simplify.md" "commit.md")
     missing_core=""
     for file in "${core_files[@]}"; do
         if [ ! -f "$SKILL_DIR/doit/$file" ]; then
             missing_core="$missing_core $file"
+        fi
+    done
+    for lnk in "${root_symlinks[@]}"; do
+        if [ ! -e "$SKILL_DIR/doit/$lnk" ]; then
+            missing_core="$missing_core $lnk"
         fi
     done
     if [ -z "$missing_core" ]; then
@@ -220,7 +243,7 @@ for tool in "${EXTERNAL_TOOLS[@]}"; do
                 echo "  ✅ lean-ctx rules configured (global)"
             else
                 echo "  ℹ️  lean-ctx rules not configured"
-                echo "  💡 Run: lean-ctx init --agent auto"
+                echo "  💡 Run: lean-ctx init --agent $(_detect_agent)"
             fi
             ;;
     esac
