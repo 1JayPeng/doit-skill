@@ -150,7 +150,7 @@ for tool in "${EXTERNAL_TOOLS[@]}"; do
             fi
             ;;
         "tavily")
-            if claude mcp list 2>/dev/null | grep -q tavily; then
+            if timeout 10 claude mcp list 2>/dev/null | grep -q tavily; then
                 echo "  ✅ tavily configured (MCP)"
             elif grep -q "tavily" ~/.claude/settings.json 2>/dev/null; then
                 echo "  ✅ tavily configured (settings.json)"
@@ -209,25 +209,18 @@ for tool in "${EXTERNAL_TOOLS[@]}"; do
                 echo "  ℹ️  headroom not installed (recommended)"
                 echo "  💡 Install: uv tool install 'headroom-ai[mcp,proxy]'"
             fi
-            if claude mcp list 2>/dev/null | grep -q headroom; then
+            if timeout 10 claude mcp list 2>/dev/null | grep -q headroom; then
                 echo "  ✅ headroom MCP configured (fallback tools)"
             else
                 echo "  ℹ️  headroom MCP not configured"
                 echo "  💡 Configure: headroom mcp install"
             fi
             # Check persistent proxy deployment
-            if headroom install status 2>/dev/null | grep -q "running"; then
-                echo "  ✅ headroom proxy running (persistent)"
-            elif curl -sf http://127.0.0.1:8787/health >/dev/null 2>&1; then
+            if timeout 3 curl -sf http://127.0.0.1:8787/health >/dev/null 2>&1; then
                 echo "  ✅ headroom proxy running (health OK)"
             else
-                _hr_upstream=$(grep -o '"ANTHROPIC_BASE_URL"[[:space:]]*:[[:space:]]*"[^"]*"' "$HOME/.claude/settings.json" 2>/dev/null | grep -o 'http[^"]*')
-                if [ -n "$_hr_upstream" ]; then
-                    echo "  ℹ️  headroom proxy not running (fallback: $_hr_upstream)"
-                else
-                    echo "  ⚠️  headroom proxy not running (no fallback configured)"
-                    echo "  💡 Deploy: headroom install apply --preset persistent-service --runtime python --scope user --target claude"
-                fi
+                echo "  ℹ️  headroom proxy not running"
+                echo "  💡 Deploy: headroom install apply --preset persistent-service"
             fi
             ;;
         "lean-ctx")
