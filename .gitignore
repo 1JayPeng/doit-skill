@@ -47,3 +47,16 @@ package-lock.json
 mempalace.yaml
 entities.json
 .claude-plugin/
+# Local dev config (doit-skill dev repo only — never push)
+.agents/
+.claude/
+.local/
+AGENTS.md
+docs/
+headroom_memory.db
+skills-lock.json
+
+# Backup files
+*.bak
+*.old
+*.orig
