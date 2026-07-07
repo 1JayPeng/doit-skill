@@ -16,7 +16,7 @@ fi
 GH_PROXY="https://v6.gh-proxy.org"
 BUNDLED_SKILLS=("grill-me" "tdd" "diagnose" "prototype" "handoff" "improve-codebase-architecture")
 BUILTIN_SKILLS=()
-EXTERNAL_TOOLS=("context-mode" "rtk" "uv" "rust" "tavily" "caveman" "code-review" "mempalace" "headroom" "lean-ctx")
+EXTERNAL_TOOLS=("context-mode" "rtk" "uv" "rust" "tavily" "caveman" "code-review" "mempalace" "headroom" "lean-ctx" "codegraph")
 SHARED_FILES=("core/shared/review-simplify.md" "core/shared/e2e-verify.md" "core/shared/commit.md")
 SYMLINK_TARGETS=("review-simplify.md:core/shared/review-simplify.md" "commit.md:core/shared/commit.md")
 
@@ -186,8 +186,7 @@ for tool in "${EXTERNAL_TOOLS[@]}"; do
                 echo "  ✅ mempalace installed (plugin)"
             else
                 echo "  ℹ️  mempalace plugin not installed (recommended)"
-                echo "  💡 Install: claude plugin marketplace add MemPalace/mempalace"
-                echo "     claude plugin install --scope user mempalace"
+                echo "  💡 Install: claude plugin add mempalace@mempalace --marketplace github:milla-jovovich/mempalace"
             fi
             if command -v mempalace >/dev/null 2>&1; then
                 echo "  ✅ mempalace CLI installed"
@@ -228,7 +227,7 @@ for tool in "${EXTERNAL_TOOLS[@]}"; do
                 echo "  ✅ lean-ctx installed"
             else
                 echo "  ℹ️  lean-ctx not installed (recommended)"
-                echo "  💡 Install: curl -fsSL https://leanctx.com/install.sh | sh"
+                echo "  💡 Install: curl -fsSL https://leanctx.com/install.sh | sh && lean-ctx onboard"
             fi
             if [ -f ".claude/rules/lean-ctx.md" ]; then
                 echo "  ✅ lean-ctx rules configured (project-local)"
@@ -237,6 +236,26 @@ for tool in "${EXTERNAL_TOOLS[@]}"; do
             else
                 echo "  ℹ️  lean-ctx rules not configured"
                 echo "  💡 Run: lean-ctx init --agent $(_detect_agent)"
+            fi
+            ;;
+        "codegraph")
+            if command -v codegraph >/dev/null 2>&1; then
+                echo "  ✅ codegraph installed"
+            else
+                echo "  ℹ️  codegraph not installed (recommended)"
+                echo "  💡 Install: npm i -g @colbymchenry/codegraph"
+            fi
+            if timeout 10 claude mcp list 2>/dev/null | grep -qi codegraph; then
+                echo "  ✅ codegraph MCP configured"
+            else
+                echo "  ℹ️  codegraph MCP not configured"
+                echo "  💡 Configure: codegraph install --yes"
+            fi
+            if [ -d ".codegraph" ]; then
+                echo "  ✅ codegraph index initialized"
+            else
+                echo "  ℹ️  codegraph index not initialized"
+                echo "  💡 Run: codegraph init -i"
             fi
             ;;
     esac
