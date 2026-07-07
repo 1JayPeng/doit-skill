@@ -670,6 +670,7 @@ echo "    • code-review      (claude plugin install code-review)"
     echo "    • headroom         (uv tool install headroom-ai[mcp,proxy])"
     echo "    • lean-ctx         (curl install script)"
     echo "    • codegraph        (npm i -g @colbymchenry/codegraph)"
+    echo "    • ponytail         (claude plugin install ponytail@ponytail)"
   fi
 
   echo "  Options (configurable at install):"
@@ -963,7 +964,8 @@ else
     done
     grep -rl "context-mode" "$HOME/.claude/plugins/" >/dev/null 2>&1 && _installed_count=$(( _installed_count + 1 ))
     grep -rl "caveman" "$HOME/.claude/plugins/" >/dev/null 2>&1 && _installed_count=$(( _installed_count + 1 ))
-    [ "$_installed_count" -ge 9 ] && _skip_step_3=true
+    grep -rl "ponytail" "$HOME/.claude/plugins/" >/dev/null 2>&1 && _installed_count=$(( _installed_count + 1 ))
+    [ "$_installed_count" -ge 10 ] && _skip_step_3=true
   fi
 
   if [ "$_skip_step_3" = "true" ]; then
@@ -1584,7 +1586,33 @@ if [ "$SKIP_OPTIONAL" = false ] && [ "${_skip_step_3:-false}" = "false" ]; then
   fi  # end _skip_step_3 wrapper
 fi
 
-# Step 3.9: Uninstall tokensave (replaced by codegraph)
+# Step 3.9: Install Ponytail (lazy senior dev mode)
+if [ "$SKIP_OPTIONAL" = false ] && [ "${_skip_step_3:-false}" = "false" ]; then
+  echo "=========================================="
+  echo "  Step 3.9: Installing Ponytail"
+  echo "=========================================="
+  echo ""
+
+  if [ "$AGENT_TYPE" = "claude" ]; then
+    if grep -rl "ponytail" "$HOME/.claude/plugins/" > /dev/null 2>&1; then
+      if [ "$SKIP_UPDATES" = true ]; then
+        echo_skip "ponytail already installed (skipping update)"
+      else
+        echo_info "Updating ponytail..."
+        spin 60 "ponytail update" claude plugin install $(_plugin_scope) ponytail@ponytail --pty || echo_warn "ponytail update failed"
+        echo_success "ponytail updated"
+      fi
+    else
+      echo_info "Installing ponytail..."
+      spin 120 "ponytail add" claude plugin marketplace add DietrichGebert/ponytail --pty || echo_warn "Failed to add ponytail marketplace"
+      spin 60 "ponytail install" claude plugin install $(_plugin_scope) ponytail@ponytail --pty || echo_warn "Failed to install ponytail (install manually: claude plugin install ponytail@ponytail)"
+    fi
+  else
+    echo_info "ponytail is a Claude Code plugin — skipping for $AGENT_TYPE"
+  fi
+fi
+
+# Step 3.10: Uninstall tokensave (replaced by codegraph)
 if [ "$SKIP_OPTIONAL" = false ] && [ "${_skip_step_3:-false}" = "false" ]; then
   if command -v tokensave >/dev/null 2>&1; then
     echo_info "tokensave detected — uninstalling (replaced by codegraph)..."
@@ -1595,7 +1623,7 @@ if [ "$SKIP_OPTIONAL" = false ] && [ "${_skip_step_3:-false}" = "false" ]; then
   fi
 fi
 
-# Step 3.10: Uninstall agentmemory (replaced by mempalace)
+# Step 3.11: Uninstall agentmemory (replaced by mempalace)
 if [ "$SKIP_OPTIONAL" = false ] && [ "${_skip_step_3:-false}" = "false" ]; then
   if grep -rl "agentmemory" "$HOME/.claude/plugins/" > /dev/null 2>&1; then
     echo_info "agentmemory detected — uninstalling (replaced by mempalace)..."
@@ -1609,7 +1637,7 @@ fi
 
 # Step 4: Run doctor before cleanup
 echo "=========================================="
-echo "  Step 3.11: Initializing lean-ctx for all agents"
+echo "  Step 3.12: Initializing lean-ctx for all agents"
 echo ""
 
 # Ensure lean-ctx initialized for all agents (runs even if Step 3 fast-tracked)

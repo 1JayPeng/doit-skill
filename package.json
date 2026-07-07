@@ -44,7 +44,8 @@
       "headroom": "uv tool install 'headroom-ai[mcp,proxy]' && headroom mcp install",
       "lean-ctx": "curl -fsSL https://leanctx.com/install.sh | sh && lean-ctx onboard",
       "tavily": "claude mcp add --transport http tavily https://mcp.tavily.com/mcp/?tavilyApiKey=<your-key>",
-      "codegraph": "npm i -g @colbymchenry/codegraph && codegraph install --yes && codegraph init -i"
+      "codegraph": "npm i -g @colbymchenry/codegraph && codegraph install --yes && codegraph init -i",
+      "ponytail": "claude plugin marketplace add DietrichGebert/ponytail && claude plugin install ponytail@ponytail"
     }
   }
 }

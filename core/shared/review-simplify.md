@@ -10,6 +10,8 @@ Review all changes since Phase 3:
 
 ## Phase 6 — Simplify (MANDATORY — cannot skip)
 
+0. **Ponytail review (optional, recommended):** If ponytail plugin available, run `/ponytail-review` to apply the 7-rung lazy ladder and identify over-engineered code for deletion.
+
 1. **Remove dead code:**
    Fallback: `[[SHELL:run]]` grep for unused imports + `[[FILE:edit]]`
 

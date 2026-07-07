@@ -16,7 +16,7 @@ fi
 GH_PROXY="https://v6.gh-proxy.org"
 BUNDLED_SKILLS=("grill-me" "tdd" "diagnose" "prototype" "handoff" "improve-codebase-architecture")
 BUILTIN_SKILLS=()
-EXTERNAL_TOOLS=("context-mode" "rtk" "uv" "rust" "tavily" "caveman" "code-review" "mempalace" "headroom" "lean-ctx" "codegraph")
+EXTERNAL_TOOLS=("context-mode" "rtk" "uv" "rust" "tavily" "caveman" "code-review" "mempalace" "headroom" "lean-ctx" "codegraph" "ponytail")
 SHARED_FILES=("core/shared/review-simplify.md" "core/shared/e2e-verify.md" "core/shared/commit.md")
 SYMLINK_TARGETS=("review-simplify.md:core/shared/review-simplify.md" "commit.md:core/shared/commit.md")
 
@@ -256,6 +256,15 @@ for tool in "${EXTERNAL_TOOLS[@]}"; do
             else
                 echo "  ℹ️  codegraph index not initialized"
                 echo "  💡 Run: codegraph init -i"
+            fi
+            ;;
+        "ponytail")
+            if grep -rl "ponytail" "$HOME/.claude/plugins/" > /dev/null 2>&1; then
+                echo "  ✅ ponytail installed (plugin)"
+            else
+                echo "  ℹ️  ponytail not installed (recommended)"
+                echo "  💡 Install: claude plugin marketplace add DietrichGebert/ponytail"
+                echo "     claude plugin install ponytail@ponytail"
             fi
             ;;
     esac
