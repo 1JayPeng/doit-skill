@@ -13,11 +13,11 @@
 **lean-ctx architecture tools** — fast, compressed overview before deep code graph scan:
 ```
 [CALL] ctx_architecture(action="overview") — architecture overview, clusters, layers
-[CALL] ctx_repomap(max_tokens=2048) — PageRank importance map of symbols
+[CALL] ctx_overview(path=".", task="<user request>") — project relevance map
 ```
 **Web projects:** additionally `[CALL] ctx_routes` — extract HTTP routes from Express, Flask, FastAPI, Actix, Spring, Rails, Next.js.
 
-**Why:** `ctx_architecture` gives cluster/layer/cycle analysis in ~1K tokens, replacing 3-5 manual file reads. `ctx_repomap` shows which symbols are most important by PageRank — focuses the code graph scan.
+**Why:** `ctx_architecture` gives cluster/layer/cycle analysis in ~1K tokens, replacing 3-5 manual file reads. `ctx_overview` shows which files are most relevant to the task — focuses the code graph scan.
 
 ### Step 1: Code Graph Scan
 
@@ -50,23 +50,7 @@
 - `mempalace_check_duplicate content="<ADR: decision, rationale, tradeoff>" threshold=0.87`
 - `mempalace_add_drawer wing="<project>" room="decisions" content="<ADR: decision, rationale, tradeoff>"`
 
-**Fallback (requires tokensave) — 高级分析工具（按需使用）：**
-- `tokensave_diagnostics(scope="workspace")` — run type checker
-- `tokensave_dead_code()` — find potentially unreachable code
-- `tokensave_complexity()` — functions ranked by complexity
-- `tokensave_test_map(node_id)` — test coverage per symbol
-- `tokensave_test_risk(path="...")` — high-risk untested symbols
-- `tokensave_unsafe_patterns(kinds=[...])` — find panic/unsafe sites
-- `tokensave_todos(kinds=["HACK", "TODO"])` — find TODO/FIXME markers
-- `tokensave_type_hierarchy(node_id="<id>")` — full type hierarchy tree
-- `tokensave_impls(trait="<name>")` — list all impl blocks for a trait
-- `tokensave_derives(qualified_name="<type>")` — list #[derive(...)] macros
-- `tokensave_dsm(path="<src_dir>", format="clusters")` — design structure matrix
-- `tokensave_coupling(direction="fan_in")` — most depended-on files
-- `tokensave_hotspots()` — highest connectivity symbols
-- `tokensave_signature_search(returns="Result<", params=["&mut self"])` — search by signature shape
-
-**Rule:** `codegraph_context` first, then narrow with `codegraph_search`/`codegraph_impact`. Use fallback tools above for advanced static analysis when tokensave is installed.
+**Rule:** `codegraph_context` first, then narrow with `codegraph_search`/`codegraph_impact`.
 
 #### Subagent Parallel Code Analysis (Optional, when 2+ independent modules)
 

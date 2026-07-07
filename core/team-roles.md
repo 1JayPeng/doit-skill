@@ -103,15 +103,14 @@ Notes: <上下文补充>
 | 数量 | 1 |
 
 **职责:**
-- 代码图谱分析：`codegraph_context`, `tokensave_context`
-- 影响范围评估：`codegraph_impact`, `tokensave_impact`
+- 代码图谱分析：`codegraph_context`
+- 影响范围评估：`codegraph_impact`
 - REQ 依赖图构建：拓扑排序，导出波次
 - 执行顺序制定：文件分配表，避免同文件并行写入
 - 执行计划输出：`.spec/plan.md`
 
 **工具:**
 - `codegraph_*`: 代码图谱查询
-- `tokensave_*`: 代码图谱备用查询
 - `ctx_*`: lean-ctx 工具链
 
 **产出:**
@@ -151,7 +150,7 @@ Notes: <波次调度表 + 文件分配>
 - 完成后 git commit + push 到独立分支
 
 **工具:**
-- `codegraph_*`, `tokensave_*`: 代码理解
+- `codegraph_*`: 代码理解
 - `ctx_*`: 命令执行、搜索
 - `[[FILE:edit]]`, `[[FILE:write]]`: 文件修改
 - `[[SHELL:run]]`: 测试命令（仅限短输出）
@@ -253,7 +252,6 @@ Notes: <L0 全通过, L1 3/4 通过, L2 待确认>
 
 **工具:**
 - `codegraph_*`: 结构分析
-- `tokensave_*`: 代码查询
 - `ctx_search`: 模式搜索
 - `ctx_read`: 文件内容
 

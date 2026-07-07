@@ -64,7 +64,7 @@ If caveman not found, announce `[WARN] caveman not installed -> verbose mode` an
 
 **Step 2.25 — Context Orientation (MANDATORY, Type Q/S can skip):**
 ```
-[CALL] ctx_repomap(max_tokens=2048) — PageRank repo map
+[CALL] ctx_overview(path=".", task="<user request>") — project map
 [CALL] ctx_session(action="status") — session memory status
 [CALL] ctx_knowledge(action="wakeup") — surface prior findings
 ```

@@ -122,11 +122,7 @@ ctx_execute(language="shell", code="uv run python -m pytest tests/e2e/ -v --tb=s
 ```
 - **Context-Mode unavailable:** native Bash tool (output not indexed).
 
-**Fallback (requires tokensave) — only affected tests:**
-```
-tokensave_affected_tests(files=[<changed_files>])
-tokensave_run_affected_tests(changed_paths=[<changed_files>])
-```
+**Fallback — only affected tests:** `grep -rn "<changed_symbol>" tests/` to find tests referencing changed code.
 
 ### Detect Test Framework (before generating tests)
 
@@ -147,11 +143,7 @@ ctx_batch_execute(
 1. `codegraph_search(query="<entry_point_name>")` — find the entry point function
 2. `codegraph_node(symbol="<name>")` — get function signature for test generation
 
-**Fallback (requires tokensave):**
-- `tokensave_signature(qualified_name="<entry_point>")` — get function signature without body
-- `tokensave_test_map(file="<source_file>")` — check existing test coverage
-- `tokensave_config(key="dependencies", path="Cargo.toml")` — read project config (TOML/JSON)
-- `tokensave_outline(file="<entry_point_file>")` — flat list of top-level symbols
+**Fallback:** `codegraph_node` + `codegraph_search` + native file reads.
 
 ### Spec Alignment Check Tools
 

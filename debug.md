@@ -20,11 +20,6 @@
 5. `codegraph_callees(symbol)` — what does this call (downstream call chain)
 6. `ctx_execute(language="shell", code="<reproduce command>")` — reproduce the bug, auto-index output
 
-**Fallback (requires tokensave):**
-- `tokensave_diagnostics(scope="workspace")` — run cargo check / tsc / pyright for type errors
-- `tokensave_diagnose(cargo_output="<stderr>")` — parse compiler/linter diagnostics mapped to graph nodes
-- `tokensave_test_map(file="<bug_file>")` — find existing tests covering this code
-- `tokensave_affected_tests(files=[<bug_file>], depth=2)` — find affected tests via dependency graph
 - **Fallback for codegraph:** `grep -rn "<keyword>" src/` + `find` + `Read`.
 - **Fallback for ctx_execute:** native Bash tool.
 
@@ -86,8 +81,7 @@ PASS: test_xxx_regression
 **Tool Calling:**
 - `ctx_execute(language="shell", code="<original bug trigger command>")` — reproduce original failure, now should pass
 - `ctx_execute(language="shell", code="<run all e2e tests>")` — full regression suite
-- **Fallback (requires tokensave):** `tokensave_affected_tests(files=[<changed_files>], depth=3)` — find affected tests by dependency graph
-  - **Fallback:** `grep -rn "<changed_symbol>" tests/` to find tests referencing changed code.
+- **Fallback:** `grep -rn "<changed_symbol>" tests/` to find tests referencing changed code.
 - **Fallback for ctx_execute:** native Bash tool.
 
 1. **Run the original bug trigger in real env** — same command/input that caused the crash

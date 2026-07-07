@@ -337,7 +337,7 @@ cd doit-skill
 - 铁律总数：3 -> 6
 
 **2026-06-04** - MemPalace 读写对称集成：
-- 铁律："MemPalace 读写对称" - MP 调用与 tokensave 同级别，可用则必做
+- 铁律："MemPalace 读写对称" - MP 调用与 codegraph 同级别，可用则必做
 - Phase 0：内嵌 4 个并行 MP sweep 调用
 - 各 phase 文档新增 `[MP-READ]` / `[MP-WRITE]` 标记
 
