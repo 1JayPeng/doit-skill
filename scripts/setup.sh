@@ -1215,7 +1215,8 @@ with open('$_claude_settings', 'w') as f:
       fi
     else
       echo_info "Installing mempalace..."
-      spin 120 "mempalace add" claude plugin add mempalace@mempalace --marketplace github:milla-jovovich/mempalace --pty || echo_warn "Failed to add mempalace"
+      spin 120 "mempalace marketplace add" claude plugin marketplace add github:milla-jovovich/mempalace || echo_warn "Failed to add mempalace marketplace"
+      spin 60 "mempalace install" claude plugin install $(_plugin_scope) mempalace@mempalace --pty || echo_warn "Failed to install mempalace"
     fi
   else
     echo_info "mempalace Claude Code plugin — skipping for $AGENT_TYPE (MCP server configured separately)"
@@ -1627,8 +1628,8 @@ fi
 if [ "$SKIP_OPTIONAL" = false ] && [ "${_skip_step_3:-false}" = "false" ]; then
   if grep -rl "agentmemory" "$HOME/.claude/plugins/" > /dev/null 2>&1; then
     echo_info "agentmemory detected — uninstalling (replaced by mempalace)..."
-    # claude CLI reads stdin → hangs even after success. </dev/null to prevent.
-    timeout 15 claude plugin uninstall --scope user agentmemory </dev/null 2>/dev/null || echo_warn "agentmemory uninstall failed (remove manually)"
+    # Use -y to skip confirmation prompt, -s for scope, </dev/null for stdin safety
+    timeout 15 claude plugin uninstall -s user agentmemory -y </dev/null 2>/dev/null || echo_warn "agentmemory uninstall failed (remove manually)"
     echo_success "agentmemory uninstalled"
   else
     echo_skip "agentmemory not installed (no uninstall needed)"
