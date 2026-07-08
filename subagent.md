@@ -341,9 +341,9 @@ Notes:
 - Deliver Review + Simplify coordination
 
 **Main agent (Conductor) DON'T:**
-- Write implementation code (Developer's job)
-- Modify business logic files
-- Do TDD loops instead of subagents
+- Write implementation code (Developer's job) — **Exception: Level 4 takeover**
+- Modify business logic files — **Exception: Level 4 takeover**
+- Do TDD loops instead of subagents — **Exception: Level 4 takeover**
 - Write commits for subagents
 - Skip supervision checklist
 
@@ -427,7 +427,7 @@ Notes: <optional>
 
 ### Whip Mechanism — 鞭子机制
 
-**三级升级:**
+**四级升级:**
 
 ```
 Level 1 — Progress check:
@@ -445,6 +445,24 @@ Level 3 — Kill and restart:
     2. Analyze failure cause
     3. Fix prompt
     4. [[AGENT:spawn ...]] with corrected prompt
+
+Level 4 — 主线接管 / 最终审计:
+  Trigger: Level 3 restart 仍无报告，或同一 REQ 累计失败 2+ 次
+  Action:
+    1. [[AGENT:stop task_id=agent_id]] — 不再重启
+    2. 收集主线已有证据：codegraph_context, git diff, 已提交记录, 文件状态
+    3. 主代理直接完成 REQ 实现，不走子代理
+    4. 生成最终审计报告：
+       [Final Audit]
+       REQ: REQ-XXX
+       Reason: Subagent failed N times, conductor takeover
+       Evidence: [codegraph results, partial commits, file state]
+       Action: Conductor implemented directly
+       Files: [modified files]
+       Tests: [pass/fail]
+       Verdict: PASS | FAIL | PARTIAL
+    5. 标记该 REQ 完成，继续下一波次
+  铁律：主线接管不等于跳过质量门。E2E + Review + Simplify 仍需执行。
 ```
 
 ### Rule Injection — 规则注入机制
@@ -549,4 +567,5 @@ build_conductor_prompt(req, spec, context, role):
 4. Worktree cleanup -> auto-clean after agent completes (if no changes)
 5. Role agent fails -> re-spawn same role with corrected prompt (preserve context via handoff)
 6. All agents in wave fail -> abort wave, analyze common cause, fix plan before retry
+7. Agent fails 2+ times on same REQ -> Level 4: Conductor takeover with final audit
 ```
