@@ -1627,8 +1627,8 @@ fi
 if [ "$SKIP_OPTIONAL" = false ] && [ "${_skip_step_3:-false}" = "false" ]; then
   if grep -rl "agentmemory" "$HOME/.claude/plugins/" > /dev/null 2>&1; then
     echo_info "agentmemory detected — uninstalling (replaced by mempalace)..."
-    # Use timeout directly, not spin — claude plugin uninstall may hang if plugin not found
-    timeout 30 claude plugin uninstall --scope user agentmemory 2>/dev/null || echo_warn "agentmemory uninstall failed (remove manually)"
+    # claude CLI reads stdin → hangs even after success. </dev/null to prevent.
+    timeout 15 claude plugin uninstall --scope user agentmemory </dev/null 2>/dev/null || echo_warn "agentmemory uninstall failed (remove manually)"
     echo_success "agentmemory uninstalled"
   else
     echo_skip "agentmemory not installed (no uninstall needed)"
