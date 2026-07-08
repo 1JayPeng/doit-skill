@@ -259,7 +259,7 @@ for tool in "${EXTERNAL_TOOLS[@]}"; do
             fi
             ;;
         "ponytail")
-            if grep -rl "ponytail" "$HOME/.claude/plugins/" > /dev/null 2>&1; then
+            if claude plugin list 2>/dev/null | grep -q "ponytail"; then
                 echo "  ✅ ponytail installed (plugin)"
             else
                 echo "  ℹ️  ponytail not installed (recommended)"

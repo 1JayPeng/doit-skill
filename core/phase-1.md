@@ -30,6 +30,13 @@ Read `.doit/config.yaml` and announce effective settings:
 - MP search for prior specs — `mempalace_search wing="<project>"`
 - Write grill summary to `.doit/grill-summary.json`
 - **Do NOT write any REQs until grill is complete.**
+**Step 1.5: YAGNI Check (before spec) — /ponytail:**
+
+If ponytail plugin available, run `/ponytail` to activate the decision ladder before writing spec. Forces spec design to prefer minimal viable solutions — native features, stdlib, standard patterns before custom code. This prevents over-engineering from the spec stage, not after.
+
+```
+/ponytail
+```
 
 **Step 2: Write spec** — Split grill output into REQ-N items, save to `.spec/current.md`. See [../spec.md](../spec.md).
 

@@ -964,7 +964,7 @@ else
     done
     grep -rl "context-mode" "$HOME/.claude/plugins/" >/dev/null 2>&1 && _installed_count=$(( _installed_count + 1 ))
     grep -rl "caveman" "$HOME/.claude/plugins/" >/dev/null 2>&1 && _installed_count=$(( _installed_count + 1 ))
-    grep -rl "ponytail" "$HOME/.claude/plugins/" >/dev/null 2>&1 && _installed_count=$(( _installed_count + 1 ))
+    claude plugin list 2>/dev/null | grep -q "ponytail" && _installed_count=$(( _installed_count + 1 ))
     [ "$_installed_count" -ge 10 ] && _skip_step_3=true
   fi
 
@@ -1595,7 +1595,7 @@ if [ "$SKIP_OPTIONAL" = false ] && [ "${_skip_step_3:-false}" = "false" ]; then
   echo ""
 
   if [ "$AGENT_TYPE" = "claude" ]; then
-    if grep -rl "ponytail" "$HOME/.claude/plugins/" > /dev/null 2>&1; then
+    if claude plugin list 2>/dev/null | grep -q "ponytail"; then
       if [ "$SKIP_UPDATES" = true ]; then
         echo_skip "ponytail already installed (skipping update)"
       else

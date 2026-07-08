@@ -16,7 +16,7 @@ Use findings to avoid repeating already-identified issues.
 
 ### 2. Code Review
 
-**Ponytail review (optional, recommended):** If ponytail plugin available, run `/ponytail-review` to check for over-engineering. This applies the 7-rung ladder (YAGNI → reuse → stdlib → native → dependency → one-line → minimum).
+**Ponytail review (optional, fallback only):** If ponytail plugin available, run `/ponytail-review` as a final check. The main YAGNI prevention happens in Phase 1-3 via `/ponytail` (decision ladder activated before spec/plan/implementation). This catches what was missed earlier.
 
 **Caveman review (optional, recommended):** If caveman skill available, run `/caveman-review` for caveman-style code review. This provides terse, direct feedback on code quality.
 

@@ -26,6 +26,10 @@
 
 If codegraph unavailable → `grep` + `find` + `[[FILE:read]]` fallback.
 
+### YAGNI Check — /ponytail
+
+Before implementing each REQ, run `/ponytail` to activate the decision ladder. Prefer native platform features and standard library solutions before writing custom code. This is the real-time prevention layer — stop over-engineering before it starts, not after the code is written.
+
 ### IMPLEMENT — Reuse Gate (MANDATORY before writing any code)
 
 Before writing code, check:

@@ -8,7 +8,11 @@
 
 ## Process
 
-### Step 0.5: Architecture Orientation (before code graph scan)
+### Step 0.5: YAGNI Check — /ponytail
+
+Before architecture decisions, run `/ponytail` to activate the decision ladder. Evaluate each design choice against the 7-rung ladder: YAGNI → reuse → stdlib → native → dependency → one-line → minimum. Reject over-engineered solutions before they enter the plan.
+
+### Step 0.5b: Architecture Orientation (before code graph scan)
 
 **lean-ctx architecture tools** — fast, compressed overview before deep code graph scan:
 ```
