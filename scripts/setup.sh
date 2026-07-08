@@ -962,8 +962,8 @@ else
     for _t in rtk uv cargo lean-ctx codegraph headroom; do
       command -v "$_t" >/dev/null 2>&1 && _installed_count=$(( _installed_count + 1 ))
     done
-    grep -rl "context-mode" "$HOME/.claude/plugins/" >/dev/null 2>&1 && _installed_count=$(( _installed_count + 1 ))
-    grep -rl "caveman" "$HOME/.claude/plugins/" >/dev/null 2>&1 && _installed_count=$(( _installed_count + 1 ))
+    claude plugin list 2>/dev/null | grep -q "context-mode" && _installed_count=$(( _installed_count + 1 ))
+    claude plugin list 2>/dev/null | grep -q "caveman" && _installed_count=$(( _installed_count + 1 ))
     claude plugin list 2>/dev/null | grep -q "ponytail" && _installed_count=$(( _installed_count + 1 ))
     [ "$_installed_count" -ge 10 ] && _skip_step_3=true
   fi
@@ -975,7 +975,7 @@ else
 
 # Context-Mode (Claude Code plugin)
   if [ "$_skip_step_3" = "false" ]; then
-  if grep -rl "context-mode" "$HOME/.claude/plugins/" > /dev/null 2>&1; then
+  if claude plugin list 2>/dev/null | grep -q "context-mode"; then
     if [ "$SKIP_UPDATES" = true ]; then
       echo_skip "context-mode already installed (skipping update)"
     else
@@ -1113,7 +1113,7 @@ CARGO_EOF
 
 # Caveman (token-compact mode + statusline) — Claude Code only
   if [ "$AGENT_TYPE" = "claude" ]; then
-    if grep -rl "caveman" "$HOME/.claude/plugins/" > /dev/null 2>&1; then
+    if claude plugin list 2>/dev/null | grep -q "caveman"; then
       if [ "$SKIP_UPDATES" = true ]; then
         echo_skip "caveman already installed (skipping update)"
       else
@@ -1137,7 +1137,7 @@ CARGO_EOF
     fi
 
     # Caveman statusline hook — install hooks + configure settings.json
-    if grep -rl "caveman-statusline" "$HOME/.claude/hooks/" > /dev/null 2>&1; then
+    if [ -f "$HOME/.claude/hooks/caveman-statusline.sh" ]; then
       echo_success "caveman statusline hooks already installed"
     else
       echo_info "Installing caveman hooks (statusline)..."
@@ -1187,7 +1187,7 @@ with open('$_claude_settings', 'w') as f:
 
   # Code Review — Claude Code only
   if [ "$AGENT_TYPE" = "claude" ]; then
-    if grep -rl "code-review" "$HOME/.claude/plugins/" > /dev/null 2>&1; then
+    if claude plugin list 2>/dev/null | grep -q "code-review"; then
       if [ "$SKIP_UPDATES" = true ]; then
         echo_skip "code-review already installed (skipping update)"
       else
@@ -1205,7 +1205,7 @@ with open('$_claude_settings', 'w') as f:
 
   # MemPalace — primary memory layer (Claude Code plugin)
   if [ "$AGENT_TYPE" = "claude" ]; then
-    if grep -rl "mempalace" "$HOME/.claude/plugins/" > /dev/null 2>&1; then
+    if claude plugin list 2>/dev/null | grep -q "mempalace"; then
       if [ "$SKIP_UPDATES" = true ]; then
         echo_skip "mempalace already installed (skipping update)"
       else
