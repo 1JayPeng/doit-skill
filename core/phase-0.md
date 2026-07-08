@@ -39,12 +39,18 @@ If caveman not found, announce `[WARN] caveman not installed -> verbose mode` an
 - Type B → now [LOAD:phase-0] diagnose → `[[SKILL:route target="diagnose"]]`
 - Type Q/R/S → no extra skills
 
-**Step 2 — Auto-classify.** Read [classifier.md](../classifier.md). Five types:
-- **R (resume)** — `/doit` called with no args. Resume in-progress workflow.
-- **Q (query)** — pure query/research, no code changes. Skip phases 1-9.5.
-- **S (simple)** — single file, rename, quick fix. Skip phases 1-6.
-- **F (feature)** — new functionality, cross-module, user-facing. Run phases 1-8.
-- **B (bug)** — something broken. Run debug workflow D0-D6.
+**Step 2 — Auto-classify (with codegraph orientation).** Read [classifier.md](../classifier.md). Five types:
+
+Before classifying, build a quick code map to understand the codebase structure. This informs classification accuracy:
+
+```
+[CALL] codegraph_context(task="quick overview of project structure and main modules for request classification")
+```
+
+**Why:** A request that touches 1 file vs 10 modules changes classification (S vs F). Codegraph gives the map in one call — no grep+read loops.
+**Rule:** If codegraph unavailable → fall back to `ctx_overview` + `[[FILE:read]]` of project entry points.
+
+For Type F, the `codegraph_context` result becomes Phase 2's starting point — don't re-query, just narrow with `codegraph_impact`/`codegraph_search`.
 
 **铁律: 分类结果必须 announce 给用户，格式为 `## Phase 0: 分类 → Type X`。**
 
