@@ -1626,7 +1626,7 @@ fi
 
 # Step 3.11: Uninstall agentmemory (replaced by mempalace)
 if [ "$SKIP_OPTIONAL" = false ] && [ "${_skip_step_3:-false}" = "false" ]; then
-  if grep -rl "agentmemory" "$HOME/.claude/plugins/" > /dev/null 2>&1; then
+  if claude plugin list 2>/dev/null | grep -q "agentmemory"; then
     echo_info "agentmemory detected — uninstalling (replaced by mempalace)..."
     # Use -y to skip confirmation prompt, -s for scope, </dev/null for stdin safety
     timeout 15 claude plugin uninstall -s user agentmemory -y </dev/null 2>/dev/null || echo_warn "agentmemory uninstall failed (remove manually)"
