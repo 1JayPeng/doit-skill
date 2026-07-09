@@ -173,6 +173,22 @@ mempalace_status → check total_drawers, wings
 mempalace_kg_stats → check entities, triples
 ```
 
+### 11c. MemPalace Context Read (if available, before Announce)
+
+After health check, if MemPalace MCP is available and env cache is a MISS (full detection), read prior context to inform environment understanding. **This is the only Phase -1 step that actually reads MemPalace content.**
+
+```
+mempalace_reconnect
+mempalace_diary_read agent_name="doit" last_n=3
+mempalace_kg_query entity="<project>"
+```
+
+**Why here:** Phase -1 Step 2.4 says "Detect context (session memory, MemPalace, prior findings)" but currently only does health check. Reading MemPalace now means the agent has prior project context when announcing the environment — e.g., "last session worked on X, found issue Y." This informs Phase 0 classification accuracy.
+
+**For cache hit (Type S fast path):** Skip 11c. The cached environment is sufficient; MemPalace sweep is deferred to Phase 0 Step 2.5.
+
+**If MemPalace unavailable:** Skip silently. Continue with filesystem-only context.
+
 ### 12. Announce Detected Environment
 
 Announce tool availability and any warnings.
