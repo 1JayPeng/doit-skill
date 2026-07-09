@@ -68,14 +68,14 @@ For Type F, the `codegraph_context` result becomes Phase 2's starting point — 
 3. If proxy not running but `headroom.proxy.enabled: true` in config → `[PROXY-FALLBACK] headroom proxy down, using upstream ($_hr_upstream)`
 4. If proxy not configured or disabled → announce nothing (MCP tools still available as fallback)
 
-**Step 2.25 — Context Orientation (MANDATORY, Type Q/S can skip):**
+**Step 2.5 — Memory Context Sweep (MANDATORY).** Type Q and Type S can skip.
+
+**Step 2.25 — Context Orientation (MANDATORY, Type Q/S can skip).**
 ```
 [CALL] ctx_overview(path=".", task="<user request>") — project map
 [CALL] ctx_session(action="status") — session memory status
 [CALL] ctx_knowledge(action="wakeup") — surface prior findings
 ```
-
-**Step 2.5 — Memory Context Sweep (MANDATORY).** Type Q and Type S can skip.
 
 **Step A — Refresh index:**
 ```
