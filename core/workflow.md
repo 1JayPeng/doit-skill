@@ -3,7 +3,6 @@
 **This file contains phase execution steps using `[[OPERATION]]` abstract syntax.**
 **See [adapters/](../adapters/) for tool-specific mappings.**
 
-**指令集:** **[LOAD]** = must-read file. **[LOAD:phase-N]** = load phase-N skill. **[RELEASE:phase-N]** = release skill + `[[MEMORY:compress]]`. **[CALL]** = MCP tool call (MCP is tool-agnostic).
 
 ## 指令集 — Progressive Disclosure
 
@@ -21,13 +20,6 @@
 | `[LOAD:session] caveman` | Load at Phase 0, keep for session | No release |
 | `[LOAD:on-demand]` | handoff/prototype/improve-codebase-architecture | User triggers directly |
 
-**Skill 加载策略:**
-- caveman: Phase 0 [LOAD:session] 不释放
-- grill-me: Phase 1 [LOAD:phase-1] 开始 → [RELEASE:phase-1] 结束释放
-- tdd: Phase 3 [LOAD:phase-3] 开始 → [RELEASE:phase-3] 结束后释放
-- diagnose: Phase 0 Type B [LOAD:phase-0] → [RELEASE:phase-0] D6 完成后释放
-- handoff/prototype/improve-codebase-architecture: 按需加载，完成后立即释放
-- **Subagent team mode:** See [core/team-roles.md](core/team-roles.md) for Architect/Developer/Reviewer/Tester roles.
 
 ## Phase 0 — Classify Request
 
@@ -157,69 +149,6 @@ Extract knowledge per category (code, api, db, flow) → MemPalace + KG facts.
 7. Caveman compress CLAUDE.md
 
 **Phase 10 hard gate — `[[MEMORY:compress]]` is last step, cannot skip.**
-
-## Phase 0 Task List Creation
-
-**铁律: 不创建 task list = Phase 0 未完成 = 工作流未开始。**
-
-Execute ALL `[[TASK:create]]` calls in parallel:
-
-```
-# Type F (full feature workflow):
-[[TASK:create subject="Phase 0 - Classify" description="Classify request, announce type, create task list"]]
-[[TASK:create subject="Phase 1 - Spec" description="Grill 4+ questions, write spec, create branch"]]
-[[TASK:create subject="Phase 2 - Plan" description="Impact analysis, codegraph context, order REQs"]]
-[[TASK:create subject="Phase 3 - Execute" description="TDD per REQ, per-REQ review+simplify"]]
-[[TASK:create subject="Phase 4 - E2E" description="End-to-end tests in real environment"]]
-[[TASK:create subject="Phase 5 - Review" description="Feature review, merge duplicates"]]
-[[TASK:create subject="Phase 6 - Simplify" description="Remove dead code, flatten abstractions"]]
-[[TASK:create subject="Phase 7 - E2E Verify" description="Re-run E2E vs spec REQs"]]
-[[TASK:create subject="Phase 8 - Commit+Push" description="Pre-commit gate, commit, push to remote"]]
-[[TASK:create subject="Phase 9 - Cleanup" description="Remove intermediate files, keep archive"]]
-[[TASK:create subject="Phase 9.5 - Summary" description="Completion summary, knowledge extraction"]]
-[[TASK:create subject="Phase 10 - Session End" description="Stats, MP diary, [[MEMORY:compress]]"]]
-```
-
-```
-# Type Q (query workflow):
-[[TASK:create subject="Phase 0 - Classify" description="Classify request, announce Type Q"]]
-[[TASK:create subject="Query" description="Use tools to research and answer directly"]]
-[[TASK:create subject="Phase 10 - Compact" description="[[MEMORY:compress]]"]]
-```
-
-```
-# Type S (simple workflow):
-[[TASK:create subject="Phase 0 - Classify" description="Classify request, announce type"]]
-[[TASK:create subject="Execute" description="Execute the simple change directly"]]
-[[TASK:create subject="Phase 9.5 - Summary" description="Completion summary"]]
-[[TASK:create subject="Phase 10 - Session End" description="Stats, [[MEMORY:compress]]"]]
-```
-
-```
-# Type B (bug workflow):
-[[TASK:create subject="Phase 0 - Classify" description="Classify request, announce type"]]
-[[TASK:create subject="D0-D6 Debug" description="Debug workflow per debug.md"]]
-[[TASK:create subject="Phase 8 - Commit+Push" description="Commit fix, push to remote"]]
-[[TASK:create subject="Phase 9.5 - Summary" description="Completion summary"]]
-[[TASK:create subject="Phase 10 - Session End" description="Stats, [[MEMORY:compress]]"]]
-```
-
-```
-# Type R (resume): Create tasks for remaining phases from detected phase.
-```
-
-**After creating tasks, mark Phase 0 as done:**
-```
-[[TASK:update taskId="<phase0_task_id>" status="completed"]]
-```
-
-**At each phase boundary:**
-```
-[[TASK:update taskId="<phase_task_id>" status="in_progress"]]  # at phase start
-[[TASK:update taskId="<phase_task_id>" status="completed"]]   # at phase end
-```
-
-**[CALL] After creating tasks, verify with [[TASK:list]].** The task list should show all phases as `pending`.
 
 ## Resume — Cross-Session Recovery
 

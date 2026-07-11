@@ -17,11 +17,15 @@ Spec-driven TDD. 10 phases. Nothing ships without spec. Review + Simplify + E2E 
 
 ## Load Order
 
-1. **[core/workflow.md](core/workflow.md)** — Phase 0-10 workflow definition (tool-agnostic)
-2. **[core/iron-rules.md](core/iron-rules.md)** — Iron rules (tool-agnostic)
-3. **[adapters/[AGENT_TYPE].md](adapters/claude-code.md)** — Tool adapter (selected at install)
-4. **[core/env-check.md](core/env-check.md)** — Environment detection
-5. Phase files on-demand via [LOAD:phase-N] directives
+**披露式加载：不 upfront load。** 所有核心文件按 phase 边界按需加载。
+
+- **Phase -1 触发时**: [core/env-check.md](core/env-check.md) — 环境检测
+- **Phase 0 触发时**: [core/phase-0.md](core/phase-0.md) — 分类
+- **Phase N 触发时**: [core/phase-N.md](core/phase-N.md) — 对应 phase
+- **铁律**: [core/iron-rules.md](core/iron-rules.md) — 仅在 subagent 规则注入时引用
+- **工作流**: [core/workflow.md](core/workflow.md) — 仅在 Phase 9.5/10 阶段引用
+
+**子 skill** (on-demand): [core/subagent.md](core/subagent.md), [core/team-roles.md](core/team-roles.md), [core/execute.md](core/execute.md), [e2e.md](e2e.md), [review.md](review.md), [plan.md](plan.md), [learn/inject.md](learn/inject.md), [learn/extract.md](learn/extract.md), [core/shared/review-simplify.md](core/shared/review-simplify.md), [core/shared/e2e-verify.md](core/shared/e2e-verify.md), [core/shared/commit.md](core/shared/commit.md), [stop-slop/SKILL.md](../stop-slop/SKILL.md)
 
 ## Skill Router
 
@@ -43,7 +47,7 @@ Non-Interruptive Q | Background >10s | Commit+Push | MP 读写对称 | 工作流
 | **-1** | [core/env-check.md](core/env-check.md) | 环境检测 → `[[CONFIG:main-instructions]]` + config |
 | **0** | [core/phase-0.md](core/phase-0.md) | Sync → [LOAD:session] caveman → 分类(R/S/F/B) → MP sweep → **`[[TASK:create]]` task list** |
 | **1** | [core/phase-1.md](core/phase-1.md), [learn/inject.md](learn/inject.md) | [LOAD:phase-1] grill-me → Grill(4+/3+) via `[[USER:ask]]` → Spec → Branch → Gate → [RELEASE:phase-1] |
-| **2** | [learn/inject.md](learn/inject.md), [plan.md](plan.md) | codegraph_context → Impact → Order |
+| **2** | [learn/inject.md](learn/inject.md), [plan.md](plan.md) | [LOAD:phase-2] codegraph_context → Impact → Order |
 | **3** | [core/execute.md](core/execute.md) | [LOAD:phase-3] tdd → TDD per REQ → per-REQ review+simplify |
 | **4** | [e2e.md](e2e.md) | E2E real env, L0+L1 auto, L2+L3 HITL |
 | **5** | [review.md](review.md) | Feature review, merge duplicates |
@@ -51,9 +55,9 @@ Non-Interruptive Q | Background >10s | Commit+Push | MP 读写对称 | 工作流
 | **7** | [core/shared/e2e-verify.md](core/shared/e2e-verify.md) | Re-run E2E vs spec REQs |
 | **8** | [core/shared/commit.md](core/shared/commit.md) | Stage → commit → push |
 | **9** | — | 清理 `.spec/current.md`, `.spec/doc-capture.md`, empty `.scratch/` |
-| **9.5** | [core/workflow.md](core/workflow.md)#phase-9.5 | Summary → Knowledge extraction |
+| **9.5** | [core/phase-9.5.md](core/phase-9.5.md) | Summary → Knowledge extraction |
 | **9.5.5** | [learn/extract.md](learn/extract.md) | 结构化知识 → 用户确认 → 多层存储 |
-| **10** | [core/workflow.md](core/workflow.md)#phase-10 | Stats → MP → **`[[MEMORY:compress]]`** |
+| **10** | [core/phase-10.md](core/phase-10.md) | Stats → MP → **`[[MEMORY:compress]]`** |
 
 **Phase Gate:** -1→0→1→2→3→4→5→6→7→8→9→9.5→9.5.5→10。**唯一合法结束 = Phase 10。**
 **Type Q 流程:** Phase -1 → Phase 0 → 直接用工具回答 → Phase 10 (仅 `[[MEMORY:compress]]`)。不创建分支、不写 spec、不 commit。
@@ -61,7 +65,7 @@ Non-Interruptive Q | Background >10s | Commit+Push | MP 读写对称 | 工作流
 ## 辅助
 
 文档 → `.doit/docs/` + codegraph。[doc-capture.md](doc-capture.md), [errors.md](errors.md)。Spec in git + MemPalace。Logs: `.scratch/logs/`。
-**[LOAD] [core/workflow.md](core/workflow.md)#resume。Blank `/doit` = always resume。**
+**[LOAD] [core/phase-9.5.md](core/phase-9.5.md)。Blank `/doit` = always resume。**
 
 ## Abstract Operations Reference
 
