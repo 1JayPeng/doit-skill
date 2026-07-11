@@ -123,9 +123,16 @@ Break grill output into REQ-N items. Each REQ:
 
 ### Step 4: Write Spec File
 
-Save to `.spec/current.md`:
+Save to `.spec/current.md`. Spec 文件带 YAML frontmatter，含版本号和元数据：
 
 ```md
+---
+version: v1
+feature: [name]
+created: YYYY-MM-DDTHH:MM:SSZ
+updated: YYYY-MM-DDTHH:MM:SSZ
+---
+
 # Feature: [name]
 
 ## Branch
@@ -143,6 +150,15 @@ Save to `.spec/current.md`:
 ## E2E Scenario
 [Full user journey from start to finish]
 ```
+
+**版本递增规则：**
+- **初始创建**: `version: v1`
+- **每次修改** `.spec/current.md`（加 REQ、改描述、改状态等），版本号递增 `v1 → v2 → v3`
+- **格式**: 纯递增数字 `vN`（如 `v1`, `v2`, `v3`），非 semver
+- **历史**: 不保存历史，旧版本被覆盖（git 提供历史追踪）
+- **更新时**: 递增 `version` 字段，更新 `updated` 时间戳
+
+**递增时机**: Phase 2 创建 spec 时写 v1；后续任何阶段修改 `.spec/current.md` 时递增版本号并更新 `updated` 字段。
 
 ### Step 5: Create Branch
 
