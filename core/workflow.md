@@ -54,12 +54,14 @@ Key steps:
 
 ## Phase 2 — Plan
 
-**[LOAD] [../plan.md](../plan.md) — full Phase 2 execution.**
+**[LOAD] [plan.md](plan.md) — impact analysis, REQ ordering, wave schedule.**
 
 Key steps:
 1. codegraph_context for impact analysis
 2. MemPalace proactive query
-3. Build execution order
+3. Build dependency graph
+4. Wave schedule (if subagent enabled)
+5. Write plan to .doit/plan.md
 
 ## Phase 3 — Execute
 
@@ -74,23 +76,36 @@ When `subagent.enabled: true`: dispatch Developers per REQ via wave schedule. Se
 
 ## Phase 4 — E2E
 
-**[LOAD] [../e2e.md](../e2e.md) — full Phase 4 execution.**
+**[LOAD] [e2e.md](e2e.md) — end-to-end tests in real environment.**
+
+Key steps:
+1. L0: Re-run unit tests (auto)
+2. L1: Integration tests (auto)
+3. L2: System tests (HITL)
+4. L3: Acceptance tests (HITL)
+5. E2E report to .doit/e2e-report.md**
 
 ## Phase 5 — Review
 
-**[LOAD] [../review.md](../review.md) — full Phase 5 execution.**
+**[LOAD] [review.md](review.md) — feature review against spec.**
+
+Key steps:
+1. Diff review (all changes)
+2. REQ-by-REQ verification against spec
+3. Cross-REQ consistency check
+4. Code quality scan (issues feed Phase 6)**
 
 ## Phase 6 — Simplify
 
-**[LOAD] [../shared/review-simplify.md](../shared/review-simplify.md) — review + simplify.**
+**[LOAD] [shared/review-simplify.md](shared/review-simplify.md) — review + simplify.**
 
 ## Phase 7 — E2E Verify
 
-**[LOAD] [../shared/e2e-verify.md](../shared/e2e-verify.md) — E2E verification loop.**
+**[LOAD] [shared/e2e-verify.md](shared/e2e-verify.md) — E2E verification loop.**
 
 ## Phase 8 — Commit + Push
 
-**[LOAD] [../shared/commit.md](../shared/commit.md) — commit + push.**
+**[LOAD] [shared/commit.md](shared/commit.md) — commit + push.**
 
 ## Phase 9 — Cleanup
 
@@ -127,7 +142,7 @@ Extract knowledge per category (code, api, db, flow) → MemPalace + KG facts.
 
 ## Phase 9.5.5 — Knowledge Distillation
 
-**[LOAD] [../learn/extract.md](../learn/extract.md) — full extraction + multi-layer storage.**
+**[LOAD] [learn/extract.md](learn/extract.md) — full extraction + multi-layer storage.**
 
 ## Phase 10 — Session Summary
 
