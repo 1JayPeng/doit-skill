@@ -1215,7 +1215,7 @@ with open('$_claude_settings', 'w') as f:
       fi
     else
       echo_info "Installing mempalace..."
-      spin 120 "mempalace marketplace add" claude plugin marketplace add github:milla-jovovich/mempalace || echo_warn "Failed to add mempalace marketplace"
+      spin 120 "mempalace marketplace add" claude plugin marketplace add milla-jovovich/mempalace || echo_warn "Failed to add mempalace marketplace"
       spin 60 "mempalace install" claude plugin install $(_plugin_scope) mempalace@mempalace --pty || echo_warn "Failed to install mempalace"
     fi
   else

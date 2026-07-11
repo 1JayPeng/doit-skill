@@ -200,3 +200,14 @@ doit uses a **bundled dependency model**. Core skills ship inside `skills/` and 
 ### Project (~/.claude/settings.json in repo)
 
 CodeGraph file watcher auto-syncs (~500ms debounce) — no PostToolUse hook needed.
+
+## Tools Catalog
+
+A complete inventory of all tools in the doit ecosystem is available in
+[docs/tools-catalog.md](docs/tools-catalog.md). It covers MCP servers,
+lean-ctx context engine tools (ctx_*), doit skills, communication/style
+tools (caveman, ponytail), code review tools, utility skills, and the
+lean-ctx addon ecosystem.
+
+See [docs/lean-ctx-addons-complete.md](docs/lean-ctx-addons-complete.md) for
+the full lean-ctx addons documentation, including all known addon candidates.
