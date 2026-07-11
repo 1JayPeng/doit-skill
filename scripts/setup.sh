@@ -1448,6 +1448,17 @@ LEANCTX_PROJECT_EOF
     fi
 
     source "$HOME/.bashrc" 2>/dev/null || true
+
+    # Configure lean-ctx allowlist for common commands (prevents shell block)
+    echo_info "Configuring lean-ctx allowlist..."
+    _lean_ctx_common_cmds="bash python3 git curl wget cat head tail ls find echo sed awk chmod chown mkdir rm cp mv test timeout rtk uv cargo"
+    for _cmd in $_lean_ctx_common_cmds; do
+      if command -v "$_cmd" >/dev/null 2>&1; then
+        lean-ctx allow "$_cmd" >/dev/null 2>&1 || true
+      fi
+    done
+    echo_success "lean-ctx allowlist configured for common commands"
+
     echo_success "lean-ctx installed and configured"
   fi
 fi

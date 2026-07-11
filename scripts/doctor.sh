@@ -117,7 +117,7 @@ for tool in "${EXTERNAL_TOOLS[@]}"; do
 "context-mode")
             if command -v ctx >/dev/null 2>&1; then
                 echo "  ✅ context-mode installed (CLI)"
-            elif grep -rl "context-mode" "$HOME/.claude/plugins/" > /dev/null 2>&1; then
+            elif timeout 30 grep -rl --include="*.json" --include="*.md" --max-count=1 "context-mode" "$HOME/.claude/plugins/" > /dev/null 2>&1; then
                 echo "  ✅ context-mode installed (plugin)"
             else
                 echo "  ℹ️ context-mode not installed (recommended)"
@@ -162,7 +162,7 @@ for tool in "${EXTERNAL_TOOLS[@]}"; do
         "caveman")
             if [ -d "$SKILL_DIR/caveman" ]; then
                 echo "  ✅ caveman installed (skill)"
-            elif grep -rl "caveman" "$HOME/.claude/plugins/" > /dev/null 2>&1; then
+            elif timeout 30 grep -rl --include="*.json" --include="*.md" --max-count=1 "caveman" "$HOME/.claude/plugins/" > /dev/null 2>&1; then
                 echo "  ✅ caveman installed (plugin)"
             elif [ -f "$HOME/.claude/hooks/caveman.sh" ] || [ -f "$HOME/.claude/hooks/caveman-hook.sh" ]; then
                 echo "  ✅ caveman installed (hooks)"
@@ -174,7 +174,7 @@ for tool in "${EXTERNAL_TOOLS[@]}"; do
         "code-review")
             if [ -d "$SKILL_DIR/code-review" ]; then
                 echo "  ✅ code-review installed (skill)"
-            elif grep -rl "code-review" "$HOME/.claude/plugins/" > /dev/null 2>&1; then
+            elif timeout 30 grep -rl --include="*.json" --include="*.md" --max-count=1 "code-review" "$HOME/.claude/plugins/" > /dev/null 2>&1; then
                 echo "  ✅ code-review installed (plugin)"
             else
                 echo "  ℹ️  code-review not installed (recommended)"
@@ -182,7 +182,7 @@ for tool in "${EXTERNAL_TOOLS[@]}"; do
             fi
             ;;
         "mempalace")
-            if grep -rl "mempalace" "$HOME/.claude/plugins/" > /dev/null 2>&1; then
+            if timeout 30 grep -rl --include="*.json" --include="*.md" --max-count=1 "mempalace" "$HOME/.claude/plugins/" > /dev/null 2>&1; then
                 echo "  ✅ mempalace installed (plugin)"
             else
                 echo "  ℹ️  mempalace plugin not installed (recommended)"
@@ -259,7 +259,7 @@ for tool in "${EXTERNAL_TOOLS[@]}"; do
             fi
             ;;
         "ponytail")
-            if claude plugin list 2>/dev/null | grep -q "ponytail"; then
+            if timeout 15 claude plugin list 2>/dev/null | grep -q "ponytail"; then
                 echo "  ✅ ponytail installed (plugin)"
             else
                 echo "  ℹ️  ponytail not installed (recommended)"
