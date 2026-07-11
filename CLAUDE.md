@@ -86,3 +86,7 @@ Before pushing changes:
 1. `./scripts/setup.sh --dry-run`
 2. `./scripts/setup.sh` (installs to skill dir per `--agent`)
 3. `./scripts/doctor.sh`
+
+## 开发仓库一致性规则
+
+**`/home/alice/myskill/` 是 doit skill 的唯一源码仓库。** 所有对 doit skill 的修改（优化或 debug）必须在源码端进行，不能只改已安装的副本。修改后必须：1) `./scripts/setup.sh` 同步到 `~/.claude/skills/doit/`；2) `git push origin master` 推送到远程。主分支是 `master`。
