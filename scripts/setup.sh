@@ -550,19 +550,7 @@ _configure_tavily_for_agent() {
 
   # Remove old tavily entry if exists (JSON config)
   if [ -f "$_mcp_config_file" ] && [[ "$_mcp_config_file" == *.json ]]; then
-    PATH_FILE="$_mcp_config_file" python3 -c "
-import json, os
-path = os.environ['PATH_FILE']
-try:
-    with open(path) as f:
-        d = json.load(f)
-    mcp = d.get('mcp', {})
-    if 'tavily' in mcp:
-        del mcp['tavily']
-        with open(path, 'w') as f:
-            json.dump(d, f, indent=2)
-except: pass
-" 2>/dev/null || true
+    CONFIG_PATH="$_mcp_config_file" python3 scripts/config-tavily.py remove 2>/dev/null || true
   fi
 
   # Write tavily config directly via env vars — avoids spin() bash -c quoting
@@ -940,6 +928,14 @@ else
   else
     echo_warn "npx not found — skill-creator requires Node.js. Install manually:"
     echo "     npx skills add anthropics/skills@skill-creator"
+  fi
+
+  # Install bump-spec-version helper script
+  if [ -f "$DOIT_DIR/scripts/bump-spec-version.sh" ]; then
+    mkdir -p "$_install_skill_dir/doit/scripts"
+    cp "$DOIT_DIR/scripts/bump-spec-version.sh" "$_install_skill_dir/doit/scripts/bump-spec-version.sh"
+    chmod +x "$_install_skill_dir/doit/scripts/bump-spec-version.sh"
+    echo_success "bump-spec-version.sh installed"
   fi
 fi
 

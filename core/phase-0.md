@@ -39,7 +39,7 @@ If caveman not found, announce `[WARN] caveman not installed -> verbose mode` an
 - Type B → now [LOAD:phase-0] diagnose → `[[SKILL:route target="diagnose"]]`
 - Type Q/R/S → no extra skills
 
-**Step 2 — Auto-classify (with codegraph orientation).** Read [classifier.md](../classifier.md). Five types:
+**Step 2 — Auto-classify (with codegraph orientation).** Read [classifier.md](../classifier.md) for full Type definitions.
 
 Before classifying, build a quick code map to understand the codebase structure. This informs classification accuracy:
 

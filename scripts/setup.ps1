@@ -806,50 +806,6 @@ if ($SkipOptional) {
   Write-Host "  Step 2: Skipping optional skills (-SkipOptional)"
   Write-Host "=========================================="
   Write-Host ""
-} else {
-  Write-Host "=========================================="
-  Write-Host "  Step 2: Installing optional skills"
-  Write-Host "=========================================="
-  Write-Host ""
-
-  # Skill-Creator (requires npx)
-  if (Test-Command npx) {
-    $scInstalled = $false
-    try {
-      $listOutput = npx skills list 2>&1
-      if ($listOutput -match 'skill-creator') { $scInstalled = $true }
-    } catch { }
-
-    # Fallback: check common paths
-    if (-not $scInstalled) {
-      if ((Test-Path "$HOME/.agents/skills/skill-creator") -or
-          (Test-Path ".agents/skills/skill-creator")) {
-        $scInstalled = $true
-      }
-    }
-
-    if ($scInstalled) {
-      if ($SkipUpdates) {
-        Write-Skip "skill-creator already installed (skipping update)"
-      } else {
-        Write-Info "Updating skill-creator..."
-        npx skills add anthropics/skills@skill-creator -y --non-interactive 2>$null
-        if ($LASTEXITCODE -ne 0) {
-          Write-Warn "Failed to update skill-creator (non-blocking)"
-        }
-      }
-    } else {
-      Write-Info "Installing skill-creator..."
-      npx skills add anthropics/skills@skill-creator -y --non-interactive 2>$null
-      if ($LASTEXITCODE -ne 0) {
-        Write-Warn "Failed to install skill-creator (non-blocking)"
-      }
-    }
-  } else {
-    Write-Warn "npx not found — skill-creator requires Node.js. Install manually:"
-    Write-Host "     npx skills add anthropics/skills@skill-creator"
-  }
-}
 
 # ============================================================================
 # Helper: Install external tool via package manager

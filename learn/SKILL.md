@@ -167,6 +167,3 @@ learn/
 - MemPalace: Primary semantic search + knowledge graph
 - Tokensave: Code pattern references
 
-**With skill-creator:**
-- Eval framework for testing extraction/injection quality
-- Iterative improvement based on user feedback
