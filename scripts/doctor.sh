@@ -194,8 +194,19 @@ for tool in "${EXTERNAL_TOOLS[@]}"; do
                 echo "  ℹ️  mempalace CLI not installed"
                 echo "  💡 Install: uv tool install mempalace"
             fi
-            if [ -d ".mempalace" ]; then
-                echo "  ✅ mempalace initialized"
+            # Check initialized in CWD or walking up to 3 parent dirs
+            _mp_found=""
+            _mp_check_dir="$PWD"
+            for _i in 1 2 3 4; do
+                if [ -d "$_mp_check_dir/.mempalace" ] || [ -f "$_mp_check_dir/mempalace.yaml" ]; then
+                    _mp_found="$_mp_check_dir"
+                    break
+                fi
+                _mp_check_dir="$(dirname "$_mp_check_dir")"
+                [ "$_mp_check_dir" = "/" ] && break
+            done
+            if [ -n "$_mp_found" ]; then
+                echo "  ✅ mempalace initialized ($_mp_found)"
             else
                 echo "  ℹ️  mempalace not initialized"
                 echo "  💡 Run: mempalace init ."
@@ -205,9 +216,10 @@ for tool in "${EXTERNAL_TOOLS[@]}"; do
             if command -v headroom >/dev/null 2>&1; then
                 echo "  ✅ headroom installed"
             else
-                echo "  ℹ️  headroom not installed (recommended)"
+                echo "  ℹ️  headroom not installed (recommended — MCP only is OK)"
                 echo "  💡 Install: uv tool install 'headroom-ai[mcp,proxy]'"
             fi
+            # MCP check independent of CLI presence
             if timeout 10 claude mcp list 2>/dev/null | grep -q headroom; then
                 echo "  ✅ headroom MCP configured (fallback tools)"
             else
@@ -233,6 +245,8 @@ for tool in "${EXTERNAL_TOOLS[@]}"; do
                 echo "  ✅ lean-ctx rules configured (project-local)"
             elif [ -f "$HOME/.claude/rules/lean-ctx.md" ]; then
                 echo "  ✅ lean-ctx rules configured (global)"
+            elif [ -f "../.claude/rules/lean-ctx.md" ]; then
+                echo "  ✅ lean-ctx rules configured (project parent)"
             else
                 echo "  ℹ️  lean-ctx rules not configured"
                 echo "  💡 Run: lean-ctx init --agent $(_detect_agent)"
