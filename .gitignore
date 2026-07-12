@@ -49,7 +49,6 @@ entities.json
 .claude-plugin/
 # Local dev config (doit-skill dev repo only — never push)
 .agents/
-.claude/
 .local/
 AGENTS.md
 docs/
