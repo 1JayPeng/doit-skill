@@ -901,33 +901,6 @@ else
   echo "=========================================="
   echo ""
 
-# Skill-Creator (from anthropics/skills) — detect via npx skills list
-  if command -v npx >/dev/null 2>&1; then
-    _sc_installed=false
-    if npx skills list 2>/dev/null | grep -q 'skill-creator'; then
-      _sc_installed=true
-    fi
-    # Fallback: check common install paths
-    if [ "$_sc_installed" = false ] && ([ -d "$HOME/.agents/skills/skill-creator" ] || [ -d ".agents/skills/skill-creator" ]); then
-      _sc_installed=true
-    fi
-
-    if [ "$_sc_installed" = true ]; then
-      if [ "$SKIP_UPDATES" = true ]; then
-        echo_skip "skill-creator already installed (skipping update)"
-      else
-        echo_info "Updating skill-creator..."
-        npx skills add anthropics/skills@skill-creator -y --non-interactive </dev/null 2>&1 || \
-          echo_warn "Failed to update skill-creator (some agents may not support installation — this is non-blocking)"
-      fi
-    else
-      echo_info "Installing skill-creator..."
-      npx skills add anthropics/skills@skill-creator -y --non-interactive </dev/null 2>&1 || \
-        echo_warn "Failed to install skill-creator (some agents may not support installation — this is non-blocking)"
-    fi
-  else
-    echo_warn "npx not found — skill-creator requires Node.js. Install manually:"
-    echo "     npx skills add anthropics/skills@skill-creator"
   fi
 
   # Install bump-spec-version helper script
