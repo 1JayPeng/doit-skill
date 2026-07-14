@@ -1,0 +1,19 @@
+[addon]
+name = "context-mode"
+version = "1.0.0"
+description = "Context mode sandbox for raw output compression"
+
+[server]
+type = "stdio"
+command = "context-mode"
+args = ['--mcp']
+
+[tools]
+exposed_tools = [
+  "context_mode_compress",
+  "context_mode_expand",
+]
+
+[sandbox]
+network = false
+env_readonly = true

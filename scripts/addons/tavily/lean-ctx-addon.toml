@@ -1,0 +1,21 @@
+[addon]
+name = "tavily"
+version = "1.0.0"
+description = "Web search and research tools"
+
+[server]
+type = "stdio"
+command = "tavily"
+args = ['mcp']
+
+[tools]
+exposed_tools = [
+  "tavily_search",
+  "tavily_crawl",
+  "tavily_extract",
+  "tavily_research",
+]
+
+[sandbox]
+network = false
+env_readonly = true

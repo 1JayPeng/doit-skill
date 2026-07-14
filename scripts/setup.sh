@@ -1338,6 +1338,20 @@ if os.path.exists(cfg_path):
     print('permissions.allow updated')
 " 2>/dev/null || true
 
+    echo_info "Installing doit-skill addons to lean-ctx..."
+    # Auto-install all addons from scripts/addons/ directory
+    _addon_dir="$DOIT_DIR/scripts/addons"
+    if [ -d "$_addon_dir" ]; then
+      for _addon_manifest in "$_addon_dir"/*/lean-ctx-addon.toml; do
+        if [ -f "$_addon_manifest" ]; then
+          _addon_name=$(basename "$(dirname "$_addon_manifest")")
+          echo_info "  Adding addon: $_addon_name"
+          lean-ctx addon add "$_addon_manifest" 2>/dev/null || echo_warn "  Failed to add addon: $_addon_name"
+        fi
+      done
+      echo_success "doit-skill addons installed ($(ls -d "$_addon_dir"/*/ 2>/dev/null | wc -l) addons)"
+    fi
+
     echo_info "Configuring lean-ctx shell hook..."
     # Add shell hook to .bashrc if not present
     if ! grep -q 'lean-ctx shell hook' "$HOME/.bashrc" 2>/dev/null; then

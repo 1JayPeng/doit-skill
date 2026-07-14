@@ -1,0 +1,21 @@
+[addon]
+name = "caveman"
+version = "1.0.0"
+description = "Ultra-compressed communication mode"
+
+[server]
+type = "stdio"
+command = "caveman"
+args = ['mcp']
+
+[tools]
+exposed_tools = [
+  "caveman_compress",
+  "caveman_review",
+  "caveman_commit",
+  "caveman_stats",
+]
+
+[sandbox]
+network = false
+env_readonly = true
