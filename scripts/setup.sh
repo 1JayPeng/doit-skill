@@ -1313,6 +1313,31 @@ LEANCTX_RULES_EOF
       echo_success "lean-ctx global rules already exist ($_lean_ctx_global_rules)"
     fi
 
+    echo_info "Configuring lean-ctx permissions..."
+    # Ensure ctx_* tools are in permissions.allow
+    python3 -c "
+import json, os
+cfg_path = os.path.expanduser('~/.claude/settings.json')
+if os.path.exists(cfg_path):
+    with open(cfg_path) as f:
+        cfg = json.load(f)
+    required = [
+        'mcp__lean-ctx__ctx_compose',
+        'mcp__lean-ctx__ctx_shell',
+        'mcp__lean-ctx__ctx_glob',
+        'mcp__lean-ctx__ctx_callgraph',
+        'mcp__lean-ctx__ctx_expand',
+        'mcp__lean-ctx__ctx_delta',
+        'mcp__lean-ctx__ctx_overview',
+    ]
+    cfg.setdefault('permissions', {}).setdefault('allow', []).extend([
+        t for t in required if t not in cfg['permissions']['allow']
+    ])
+    with open(cfg_path, 'w') as f:
+        json.dump(cfg, f, indent=2)
+    print('permissions.allow updated')
+" 2>/dev/null || true
+
     echo_info "Configuring lean-ctx shell hook..."
     # Add shell hook to .bashrc if not present
     if ! grep -q 'lean-ctx shell hook' "$HOME/.bashrc" 2>/dev/null; then
