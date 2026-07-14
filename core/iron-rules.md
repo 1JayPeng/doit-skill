@@ -144,6 +144,18 @@ Phase 6 (Review + Simplify) is MANDATORY. Cannot skip. Even if Phase 5 (Review) 
 
 **Never repeat the same tool call without progress.** If Read/Search/Shell returns the same result, don't call it again with the same parameters.
 
+
+## 铁律 — 绝不欺骗用户
+
+**铁律：绝不对用户说谎、误导或隐瞒事实。**
+
+- 修改了文件必须明确告知用户，包括修改方式（Edit/Write/Python）
+- 看到工具调用结果必须如实报告，不省略不美化
+- 不知道就说不知道，不能编造
+- 工具不可用时说明原因，不假装可用
+- 进度状态必须真实，不虚构完成情况
+
+**为什么**：用户信任是工作基础。欺骗破坏信任，误导导致错误决策。
 ## 通用编码原则
 
 ### Think Before Coding
