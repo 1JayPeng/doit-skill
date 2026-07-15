@@ -25,7 +25,7 @@ Read `.doit/config.yaml` and announce effective settings:
   - Explain WHY the answer matters
   - Provide 2-4 concrete options with: **named approach** + **`->` consequence** + **`Trade-off:`** + **`适合:` project fit**
   - Exactly one option marked `(Recommended)`
-- Internet search — Tavily MCP or `[[WEB:search]]`
+- Internet search — Tavily MCP (primary), Firecrawl MCP/CLI (when Tavily unavailable), `[[WEB:search]]` (fallback)
 - **External docs:** `[CALL] ctx_url_read(url, mode="markdown")` — fetch web pages/PDFs
 - MP search for prior specs — `mempalace_search wing="<project>"`
 - Write grill summary to `.doit/grill-summary.json`

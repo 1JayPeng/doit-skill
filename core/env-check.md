@@ -161,7 +161,8 @@ done
 |------|----------------------|-----------------|
 | codegraph | `grep` + `find` | 2, 3, 5, 6, 7, 8 |
 | context-mode | native shell (no auto-index) | 2, 3, 4, 7, 8 |
-| tavily MCP | `[[WEB:search]]` | 1 |
+| tavily MCP | Firecrawl MCP/CLI → `[[WEB:search]]` | 1 |
+| firecrawl MCP/CLI | `[[WEB:search]]` | 1 |
 | rtk | shell (no token opt) | all |
 | mempalace | filesystem only (.doit/docs/) | -1, 1, 2, 3, 8 |
 

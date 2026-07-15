@@ -99,7 +99,7 @@ Notes: [注意事项，可选]
 - 读多写少，专注信息收集和分析
 - 使用 `codegraph_context`, `codegraph_impact`, `codegraph_search` 做代码图谱分析
 - 使用 `mempalace_search` 检索历史知识和决策
-- 使用 Tavily MCP 或 WebSearch 搜索现有解决方案
+- 使用 Tavily MCP（优先）或 Firecrawl MCP/CLI（Tavily 未配置时）或 WebSearch（兜底）搜索现有解决方案
 - 产出结构化文档（`.spec/current.md`, plan, wave schedule）
 - **不写业务代码，不做 TDD 循环**
 

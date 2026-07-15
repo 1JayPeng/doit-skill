@@ -68,7 +68,8 @@
 - 用户需求分析：从模糊需求中提取可执行 REQ
 
 **工具:**
-- `tavily_search`, `tavily_research`: 联网搜索 (MCP)
+- `tavily_search`, `tavily_research`: 联网搜索 (MCP, primary)
+- `firecrawl_search`, `firecrawl_scrape`: 联网搜索/网页抓取 (MCP, when Tavily unavailable)
 - `ctx_fetch_and_index`: 网页内容索引
 - `[[WEB:fetch]]`: 单页抓取
 
