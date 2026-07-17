@@ -347,7 +347,16 @@ for tool in "${EXTERNAL_TOOLS[@]}"; do
             ;;
     esac
 done
+# Check session state (OMP integration)
+if [ -f "$DOIT_DIR/scripts/session-state.sh" ]; then
+  if bash "$DOIT_DIR/scripts/session-state.sh" status 2>/dev/null | grep -q "active session"; then
+    echo "  ✅ Active session found — can continue with 'omp --continue'"
+  else
+    echo "  ℹ️  No active session — start a new one with '/doit'"
+  fi
+fi
 echo ""
 echo "=========================================="
 echo "  ✅ doit-skill Doctor complete!"
 echo "=========================================="
+

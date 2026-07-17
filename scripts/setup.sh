@@ -1745,6 +1745,10 @@ if [ -f "$DOIT_DIR/scripts/doctor.sh" ]; then
 else
   echo_warn "doctor.sh not found, skipping dependency check"
 fi
+# Multi-model configuration check (OMP)
+if [ -f "$DOIT_DIR/scripts/multi-model.sh" ]; then
+  bash "$DOIT_DIR/scripts/multi-model.sh" --check 2>/dev/null || true
+fi
 
 # Cleanup
 rm -rf "$TEMP_DIR"
