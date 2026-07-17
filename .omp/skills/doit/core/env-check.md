@@ -166,6 +166,113 @@ done
 | rtk | shell (no token opt) | all |
 | mempalace | filesystem only (.doit/docs/) | -1, 1, 2, 3, 8 |
 
+### 11.5. E2E Environment Probes (MANDATORY for Type F)
+
+**Purpose:** Before committing to a full spec + implementation, verify that the E2E test environment is actually reachable and functional. Prevents Phase 4 E2E failures caused by environment issues that should have been caught here.
+
+**Probe each dependency the E2E tests will need.** Only probe dependencies that are actually required by the request. Skip probes that are not relevant (e.g. don't probe database if the feature is CLI-only).
+
+```bash
+# Probe network services (APIs, databases, external services)
+echo "=== E2E Environment Probes ==="
+
+# For each external service the feature depends on:
+# (replace with actual service info from the user's request)
+probe_service() {
+  local name="$1"
+  local host="$2"
+  local port="$3"
+  local timeout="${4:-3}"
+  
+  if command -v curl >/dev/null 2>&1; then
+    if curl -sf --connect-timeout "$timeout" "http://${host}:${port}/" >/dev/null 2>&1; then
+      echo "  [OK]   ${name} (${host}:${port}) -- reachable"
+    elif curl -sf --connect-timeout "$timeout" "https://${host}:${port}/" >/dev/null 2>&1; then
+      echo "  [OK]   ${name} (${host}:${port}) -- reachable via HTTPS"
+    else
+      echo "  [FAIL] ${name} (${host}:${port}) -- NOT reachable"
+    fi
+  else
+    echo "  [SKIP] ${name} (${host}:${port}) -- curl unavailable, cannot probe"
+  fi
+}
+
+# Probe database (if feature needs DB)
+# probe_service "PostgreSQL" "localhost" "5432"
+# probe_service "Redis" "localhost" "6379"
+# probe_service "MySQL" "localhost" "3306"
+
+# Probe local API (if feature is an API)
+# probe_service "Local API" "localhost" "3000"
+
+# Probe browser (for web E2E)
+if command -v playwright >/dev/null 2>&1; then
+  echo "  [OK]   Playwright -- installed"
+elif command -v npx >/dev/null 2>&1; then
+  if npx playwright --version >/dev/null 2>&1; then
+    echo "  [OK]   Playwright -- available via npx"
+  else
+    echo "  [FAIL] Playwright -- NOT available (need: npx playwright install)"
+  fi
+else
+  echo "  [SKIP] Playwright -- npx unavailable"
+fi
+
+# Probe headless browser (for web E2E)
+if command -v chromium-browser >/dev/null 2>&1 || command -v google-chrome >/dev/null 2>&1; then
+  echo "  [OK]   Headless browser -- available"
+else
+  echo "  [WARN] Headless browser -- NOT found (browser E2E will need manual launch or skip)"
+fi
+
+# Probe uv/venv (for Python E2E)
+if command -v uv >/dev/null 2>&1; then
+  echo "  [OK]   uv -- available"
+else
+  echo "  [SKIP] uv -- not available, using system python"
+fi
+
+# Probe Docker (for containerized E2E)
+if command -v docker >/dev/null 2>&1; then
+  echo "  [OK]   Docker -- available"
+else
+  echo "  [SKIP] Docker -- not available"
+fi
+```
+
+**Announcement format:**
+
+```
+## E2E Environment Probes
+- [OK] Service A (host:port) -- reachable
+- [FAIL] Service B (host:port) -- NOT reachable
+- [SKIP] Playwright -- npx unavailable
+```
+
+**Critical decision gate:** If ANY critical probe fails:
+1. Announce `[WARN] E2E probe failed: <service>` 
+2. Mark affected REQs as **HITL-only** in the spec (cannot automate E2E without this service)
+3. **Do NOT proceed to Phase 2 with a spec that claims automated E2E for a failed probe**
+4. Ask user via `[[USER:ask]]`: "Service X is not reachable. Should we: (a) Skip automated E2E for this REQ (HITL only), (b) Use a different approach, (c) Wait for you to fix the service?"
+
+**Why here (Phase -1):** Catching E2E environment issues in Phase 4 is expensive -- weeks of implementation have already been done. Catching them in Phase -1 costs 30 seconds and a few probe commands. Phase 1's grill can also probe, but Phase -1 is the earliest gate.
+
+**When to skip:** Type S and Type Q don't need E2E probes. Only Type F and Type B (bug with reproduction env) need probes.
+
+**Probe database connection (Python):**
+```python
+# Probe database connectivity -- more accurate than port check
+def probe_db(host, port, user, password, dbname, driver="psycopg2"):
+    try:
+        if driver == "psycopg2":
+            import psycopg2
+            conn = psycopg2.connect(host=host, port=port, user=user, password=password, dbname=dbname, connect_timeout=3)
+            conn.close()
+            return True
+    except Exception:
+        pass
+    return False
+```
 ### 11b. MemPalace Health Check (if available)
 
 If MemPalace MCP is available:

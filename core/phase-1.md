@@ -17,6 +17,23 @@ Read `.doit/config.yaml` and announce effective settings:
 3. Inject top-3 into context as `[LEARN] Related past sessions:`
 4. Use injected knowledge to pre-fill grill options and warn about known pitfalls
 
+**Step 0.75: MemPalace Knowledge Pre-fill (before grill, if available):**
+
+Before running grill, search MemPalace for relevant past knowledge about this project:
+
+```
+mempalace_search wing="<project>" query="<user request keywords>" max_distance=0.6
+mempalace_kg_query entity="<project>"
+```
+
+If results found, synthesize them as `[LEARN] MemPalace prior knowledge:` and use to:
+1. **Pre-fill grill options** — if past sessions made design decisions (e.g., "used JWT auth"), include those as grill options so the user can confirm or override instead of re-explaining
+2. **Warn about known pitfalls** — if past sessions recorded gotchas/errors, surface them before grill questions
+3. **Reduce redundant grill questions** — if the answer is already known from KG, skip that question and just confirm: "Last time we used X. Still correct?"
+
+This step complements Step 0.5 (Knowledge Injection) which uses lean-ctx's semantic search. MemPalace provides structured KG facts that lean-ctx doesn't index.
+
+**If MemPalace unavailable or no results:** Skip silently. Grill proceeds without pre-fill.
 **Step 1: [LOAD:phase-1] grill-me → Grill FIRST (before writing any REQs):**
 - `[[SKILL:route target="grill-me"]]` — load grill protocol
 - **Uncertainty scan:** List 3-5 things you're uncertain about. Rate 1-5. Focus questions on items >= 3.

@@ -201,3 +201,15 @@ When `InputValidationError` occurs:
 3. 如果 `omp compact` 不可用 → fallback 到 `headroom_compress`
 
 **优先级：** `omp compact` > `headroom_compress` > 手动压缩
+## 铁律 — E2E 环境探测前置
+
+**铁律：E2E 测试失败不能留到 Phase 4，必须在 Phase -1 和 Phase 1 发现环境障碍。**
+
+Phase -1 执行 E2E 环境探测（Step 11.5），验证 E2E 测试所需的每个外部依赖是否可达。Phase 1 的 grill 必须询问用户该功能依赖哪些 E2E 服务。
+
+**如果 Phase -1 探测失败：**
+1. 标记受影响 REQ 为 HITL-only（无法自动化 E2E）
+2. **禁止在 Phase 2 中写入声称可以自动 E2E 的 REQ**
+3. 让用户选择：跳过自动化 / 换方案 / 等待服务恢复
+
+**如果在 Phase 4 才暴露环境不可用：** 几周的实现工作已经做了，修复成本最高。这是可预防的失败。

@@ -70,6 +70,39 @@ Resolve per adapter:
 - **Other:** `headroom_compress(...)` via MCP
 
 If compact fails → Phase 10 proceeds without it. All memory layers are already safe from Steps 1-3.
+### Step 6: Write Cross-Session Continuation Hint
+
+After Steps 1-5, write a next-session recovery file that Phase -1 can read to continue work:
+
+```bash
+cat > .doit/next-session-hint.md << 'EOF'
+# Next Session Recovery Hint
+
+## Last Session Summary
+**Completed phases:** Phase 1-9.5.5
+**Key decisions:** <summarize top 3 decisions>
+**Open items:** <any in-progress items not yet completed>
+
+## Quick Resume
+If you want to continue this work, run:
+```
+/doit "Continue work on <project topic>"
+```
+Phase -1 will auto-detect the next-session-hint.md and recover the work state.
+
+## Environment Snapshot
+**Project type:** <type>
+**Runtime:** <runtime>
+**Key tools:** <codegraph, mempalace, lean-ctx>
+**E2E status:** <automated or HITL>
+EOF
+```
+
+This file is read by Phase -1 Step 11c.5 (lean-ctx session recovery) and Step 11c.6 (MemPalace diary context). It's a lightweight handoff mechanism between sessions.
+
+**If .doit/ already has next-session-hint.md:** Append to it (don't overwrite). Mark with `## Session <timestamp>:` header to preserve history.
+
+**Skip if:** User explicitly requested a "clean start" (no continuation hint).
 
 ## Compact Mode Detection (from Phase -1)
 
