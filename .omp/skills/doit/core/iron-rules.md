@@ -190,3 +190,14 @@ When `InputValidationError` occurs:
 1. Check [errors.md](../errors.md) for known fixes
 2. If tool params wrong → re-read tool docs
 3. Don't retry same call that just failed
+
+## 铁律 — OMP Context Compact
+
+**铁律：OMP 下上下文超限时自动 compact。**
+
+当检测到 `COMPACT_MODE=omp` 时：
+1. Phase 10 使用 `omp compact`（原生命令，最快）
+2. Phase 9.5 可触发 mid-workflow compact（如果上下文增长过大）
+3. 如果 `omp compact` 不可用 → fallback 到 `headroom_compress`
+
+**优先级：** `omp compact` > `headroom_compress` > 手动压缩
