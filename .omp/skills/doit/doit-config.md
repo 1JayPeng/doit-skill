@@ -1,0 +1,79 @@
+# Doit Config
+
+Configuration via `.doit/config.yaml` in the project root. Controls workflow behavior.
+
+## Default config.yaml
+
+When doit first runs (Phase -1 env check), create `.doit/config.yaml` if not present:
+
+```yaml
+doc-capture:
+  enabled: true
+  mode: auto
+  path: .doit/docs
+
+subagent:
+  enabled: false
+
+auto_commit:
+  enabled: false
+
+commit:
+  branch: branch
+  feat_prefix: feat
+  fix_prefix: fix
+  refactor_prefix: refactor
+```
+
+**Values for `doc-capture.mode`:**
+- `auto` — save doc silently, no confirmation
+- `ask` — confirm each doc before saving
+- `off` — same as `enabled: false`
+
+**Values for `subagent.enabled`:**
+- `true` — enable subagent orchestration (Conductor mode, parallel waves). Parallel execution saves 50-70% time. Token-intensive.
+- `false` — disable subagents. All REQs executed sequentially by main agent. Token-efficient. **Default.**
+
+**Values for `auto_commit.enabled`:**
+- `true` — automatically commit and push after each phase completes (Phase 8 runs without user confirmation). Saves interaction time.
+- `false` — require user confirmation before each commit/push (Phase 8 asks for approval). Safer, more control. **Default.**
+
+**Values for `commit.branch`:**
+- `branch` — create `feat/...` or `fix/...` branch before push (default)
+- `current` — push current branch directly, no new branch
+- `none` — only commit, skip push
+
+## When to Read
+
+Every doit phase that modifies project state reads config first:
+- **Phase 1** — read full config, announce effective settings (subagent, auto_commit)
+- Doc Capture — check `doc-capture.enabled` and `doc-capture.mode`
+- Subagent — check `subagent.enabled` before launching any Agent tool calls
+- Auto Commit — check `auto_commit.enabled` before Phase 8 commit/push
+- Commit — check `commit.branch` and branch prefix names
+
+## Install Interaction
+
+During `./scripts/setup.sh`, ask user:
+
+```
+Enable doc-capture (persist reference docs in .doit/docs/)? [Y/n]
+Enable subagent orchestration (parallel, token-intensive)? [y/N]
+Enable auto commit (skip confirmation before commit/push)? [y/N]
+```
+
+- `doc-capture`: Y → `doc-capture.enabled: true`, n → `false`
+- `subagent`: y → `subagent.enabled: true`, N → `false` (default)
+- `auto_commit`: y → `auto_commit.enabled: true`, N → `false` (default)
+
+These defaults get written to user projects on first doit run.
+
+After install/update, display current configuration:
+
+```
+[CONFIG] Current doit configuration:
+  doc-capture.enabled: true
+  subagent.enabled: false
+  auto_commit.enabled: false
+  commit.branch: branch
+```

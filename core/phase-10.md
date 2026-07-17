@@ -10,4 +10,16 @@
 6. Session decision: `ctx_session(action="decision", ...)`
 7. Caveman compress CLAUDE.md
 
-**Phase 10 hard gate — `[[MEMORY:compress]]` is last step, cannot skip.**
+**Phase 10 hard gate — `[[MEMORY:compact]]` (OMP) or `[[MEMORY:compress]]` (fallback) is last step, cannot skip.**
+
+**OMP native path (preferred):**
+```
+[SHELL:run command="omp compact"]
+```
+
+**Fallback path (non-OMP or OMP compact unavailable):**
+```
+[CALL] headroom_compress(content="...")
+```
+
+When `COMPACT_MODE=omp` detected in Phase -1 → use `omp compact`. Otherwise → `headroom_compress`.

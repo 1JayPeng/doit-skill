@@ -1,0 +1,20 @@
+[addon]
+name = "headroom"
+version = "1.0.0"
+description = "Reversible context compression for tool outputs"
+
+[server]
+type = "stdio"
+command = "headroom"
+args = ['mcp']
+
+[tools]
+exposed_tools = [
+  "headroom_compress",
+  "headroom_retrieve",
+  "headroom_stats",
+]
+
+[sandbox]
+network = false
+env_readonly = true

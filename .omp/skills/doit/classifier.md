@@ -1,0 +1,96 @@
+# Request Classifier
+
+## Pre-Step — Sync with Remote (MANDATORY, before any type)
+
+Before doing anything else, check if the project has a git remote and sync:
+
+```bash
+# Check if current directory is a git repo with remote
+if git remote 2>/dev/null | grep -q .; then
+  git pull --rebase 2>/dev/null || git pull 2>/dev/null || true
+fi
+```
+
+**Why:** avoids working on stale code, prevents conflicts with parallel sessions or manual pushes.
+**Safety:** `--rebase` first (cleaner history), falls back to merge rebase fails. `|| true` so missing remote or network error doesn't block the workflow.
+
+**Apply to ALL classification types (R/Q/S/F/B).** This runs before type detection.
+
+## Type R — Resume (blank /doit)
+
+**Signs:**
+- User types `/doit` with no arguments or whitespace-only arguments
+- User types `/doit 继续` or `/doit resume`
+
+**例外 — 前序提问确认：** 如果上一条助手消息以确认性问题结尾（"要实现吗", "要改吗", "要这个行为吗", "OK?", "可以吗", "好吗", "要吗", "需要吗", "继续吗", "要加吗", "要删吗", "要优化吗", "Do it?", "Should I?", "Want this?", 以及任何"要...吗"模式的问句），用户的 `/doit` 视为"是的" → **直接走 Type F（Feature），不走 Resume。** 此时从对话上下文提取用户确认的需求，正常走完整工作流。
+
+**Action:** Do NOT start a new workflow. Check for in-progress work and resume from current phase:
+
+1. **Check feature branch**: `git branch --show-current` — if on `feat/xxx` or `fix/xxx`, work in progress
+2. **Check spec**: `.spec/current.md` exists → has spec, check REQ statuses for progress
+3. **Check archive**: `.spec/archive/` has files → Phase 5+ completed
+4. **Check git diff**: `git diff --stat` shows uncommitted changes → middle of a phase
+5. **Check git log**: `git log --oneline -3` — recent commits may indicate last completed phase
+6. **Check MemPalace** (if available): `mempalace_diary_read agent_name="doit" last_n=3`
+
+**Report to user:** what phase you detected, what was last done, and ask "Resume from Phase N?"
+
+If no in-progress work found → tell user "No in-progress workflow found. Type `/doit <your request>` to start a new one."
+
+## Type S — Simple
+
+**Signs:**
+- **Single file change (maximum 1 file)** — **changing 2+ files = Type F**
+- Rename, typo fix, reformat
+- Run a command, install a package
+- Change config value
+
+**铁律：Type S = 最多修改 1 个文件。任何涉及 2+ 文件的变更（包括文档批量修改、多文件重命名）强制升级为 Type F。**
+
+**Action:** Execute directly. Skip Phase -1 (use `.doit/env-cache.json` if exists, skip if not). Skip phases 1-5. Log to `.scratch/doit-log.jsonl`.
+
+**Phase -1 skip for Type S:** Type S tasks do NOT run Phase -1 environment detection. If `.doit/env-cache.json` exists and is <24h old, read it for runtime info. If not, just execute — don't scan the environment.
+
+## Type Q — Query (纯查询/研究，无代码变更)
+
+**Signs:**
+- 查询信息（"X 怎么工作的", "找一下 Y 的实现"）
+- 代码研究（"这个功能的架构是怎样的"）
+- 解释代码（"这段代码做什么"）
+- 回答问题（基于代码库的事实查询）
+- 环境排查（"为什么这个命令不工作"）
+- 任何不需要修改代码的请求
+
+**Action:** **不执行完整工作流。** 仅使用工具直接回答：
+
+1. **Phase 0 分类** → announce Type Q
+2. **直接使用工具** — codegraph、ctx_search、ctx_read 等查找信息
+3. **用中文直接回答** — 给出清晰、准确的答案
+4. **跳过 Phase 1-9.5** — 无 spec、无 branch、无 commit、无知识提取
+5. **Phase 10** — 仅运行 headroom_compress，跳过其他统计
+
+**铁律：Type Q 不创建分支、不写 spec、不 commit、不提取知识。** 纯查询 = 纯回答。Type Q 排除在 Commit+Push 铁律之外。
+
+## Type F — Feature
+
+**Signs:**
+- New user-facing functionality
+- **Cross-module changes (2+ files)** — **any change affecting 2+ files**
+- Behavioral change (not just cosmetic)
+- Requires tests
+
+**铁律：涉及 2+ 文件的变更 = 强制 Type F。不判断"是否复杂"，只看文件数量。**
+
+**Action:** Full phases 1-8.
+
+## Type B — Bug
+
+**Signs:**
+- "something is broken/wrong"
+- Error messages, stack traces
+- "not working as expected"
+- Performance regression
+
+**Action:** Run debug workflow D0-D6. See [debug.md](debug.md).
+
+**Can use `diagnose` skill** for root cause analysis within D0, but must go through the full debug workflow (regression test → fix → e2e verify) before committing.

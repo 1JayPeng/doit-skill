@@ -1,0 +1,117 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Knowledge Record",
+  "description": "Structured knowledge extracted from doit sessions for future reuse",
+  "type": "object",
+  "required": ["id", "timestamp", "project", "type", "status", "summary"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Unique identifier for this knowledge record"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When this record was created (ISO-8601)"
+    },
+    "project": {
+      "type": "string",
+      "description": "Project root directory name"
+    },
+    "branch": {
+      "type": "string",
+      "description": "Git branch name"
+    },
+    "commit": {
+      "type": "string",
+      "description": "Final commit hash"
+    },
+    "type": {
+      "type": "string",
+      "enum": ["F", "B", "S"],
+      "description": "Session type: Feature, Bug, Simple"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["success", "failed", "partial"],
+      "description": "Session outcome"
+    },
+    "duration_seconds": {
+      "type": "integer",
+      "description": "Session duration in seconds"
+    },
+    "summary": {
+      "type": "string",
+      "description": "One-line description of what was accomplished"
+    },
+    "reqs": {
+      "type": "array",
+      "items": {"type": "string"},
+      "description": "REQ-001, REQ-002, ... completed in this session"
+    },
+    "decisions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "question": {"type": "string"},
+          "choice": {"type": "string"},
+          "rationale": {"type": "string"}
+        },
+        "required": ["question", "choice"]
+      },
+      "description": "Key decisions made with rationale"
+    },
+    "errors": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "error": {"type": "string"},
+          "root_cause": {"type": "string"},
+          "resolution": {"type": "string"}
+        },
+        "required": ["error", "resolution"]
+      },
+      "description": "Errors encountered and how they were resolved"
+    },
+    "code_patterns": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "pattern": {"type": "string"},
+          "files": {"type": "array", "items": {"type": "string"}},
+          "context": {"type": "string"}
+        },
+        "required": ["pattern"]
+      },
+      "description": "Reusable code patterns written in this session"
+    },
+    "files_changed": {
+      "type": "array",
+      "items": {"type": "string"},
+      "description": "File paths modified in this session"
+    },
+    "lines_added": {
+      "type": "integer",
+      "description": "Lines of code added"
+    },
+    "lines_removed": {
+      "type": "integer",
+      "description": "Lines of code removed"
+    },
+    "confidence": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1,
+      "description": "Extraction confidence score (0.0 - 1.0)"
+    },
+    "tags": {
+      "type": "array",
+      "items": {"type": "string"},
+      "description": "Keywords for categorization"
+    }
+  }
+}

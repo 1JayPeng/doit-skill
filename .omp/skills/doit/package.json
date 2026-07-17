@@ -1,0 +1,51 @@
+{
+  "name": "doit-skill",
+  "version": "1.0.0",
+  "description": "Spec-driven TDD workflow \u2014 a composable AI agent skill",
+  "main": "SKILL.md",
+  "keywords": [
+    "skill",
+    "claude-code",
+    "opencode",
+    "codex-cli",
+    "tdd",
+    "workflow",
+    "spec-driven",
+    "agentic",
+    "multi-cli",
+    "mcp"
+  ],
+  "author": "alice",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/1JayPeng/doit-skill"
+  },
+  "bugs": {
+    "url": "https://github.com/1JayPeng/doit-skill/issues"
+  },
+  "homepage": "https://github.com/1JayPeng/doit-skill#readme",
+  "dependencies": {
+    "skills": {
+      "grill-me": "bundled",
+      "tdd": "bundled",
+      "diagnose": "bundled",
+      "prototype": "bundled",
+      "handoff": "bundled",
+      "improve-codebase-architecture": "bundled"
+    },
+    "optionalSkills": {},
+    "tools": {
+      "rtk": "curl -fsSL https://v6.gh-proxy.org/https://raw.githubusercontent.com/rtk-ai/rtk/refs/heads/master/install.sh | sh",
+      "uv": "pip install uv",
+      "context-mode": "claude plugin marketplace add mksglu/claude-context-mode/plugin && claude plugin install context-mode@claude-context-mode/plugin",
+      "caveman": "curl -fsSL https://v6.gh-proxy.org/https://raw.githubusercontent.com/JuliusBrussee/caveman/main/install.sh | bash",
+      "mempalace": "claude plugin marketplace add github:milla-jovovich/mempalace && claude plugin install mempalace@mempalace",
+      "headroom": "uv tool install 'headroom-ai[mcp,proxy]' && headroom mcp install",
+      "lean-ctx": "curl -fsSL https://leanctx.com/install.sh | sh && lean-ctx onboard",
+      "tavily": "claude mcp add --transport http tavily https://mcp.tavily.com/mcp/?tavilyApiKey=<your-key>",
+      "codegraph": "npm i -g @colbymchenry/codegraph && codegraph install --yes && codegraph init -i",
+      "ponytail": "claude plugin marketplace add DietrichGebert/ponytail && claude plugin install ponytail@ponytail"
+    }
+  }
+}

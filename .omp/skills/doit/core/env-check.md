@@ -176,35 +176,7 @@ mempalace_kg_stats → check entities, triples
 
 ### 11c. MemPalace Context Read (if available, before Announce)
 
-### 7.5. OMP Compact Detection
-
-Check if running under oh-my-pi and configure auto-compact:
-
-```bash
-# Detect OMP environment
-if [ -d ".omp/skills" ] || [ -f ".omp/config.json" ] || echo "$OMP_VERSION" | grep -q .; then
-  echo "CLI=oh-my-pi"
-  echo "COMPACT_MODE=omp"
-# Fallback detection: check config.json for omp skills
-elif [ -f ".omp/config.json" ]; then
-  echo "CLI=oh-my-pi"
-  echo "COMPACT_MODE=omp"
-fi
-```
-
-**Write to `[[CONFIG:main-instructions]]`:**
-```markdown
-## OMP Auto-Compact
-
-**Context compaction strategy:** `[[MEMORY:compact]]` (native OMP command)
-
-When running under oh-my-pi (OMP):
-- Phase 10 uses `omp compact` directly (native, fastest, preserves OMP state)
-- Phase 9.5 triggers `omp compact` mid-workflow if context grows too large
-- Fallback: if `omp compact` unavailable → `headroom_compress` (MCP)
-
-This is the preferred compaction method. It is faster than MCP-based compression and preserves OMP session state better.
-```
+After health check, if MemPalace MCP is available and env cache is a MISS (full detection), read prior context to inform environment understanding. **This is the only Phase -1 step that actually reads MemPalace content.**
 
 ```
 mempalace_reconnect

@@ -16,15 +16,4 @@ Extract knowledge per category (code, api, db, flow) → MemPalace + KG facts.
 
 ### Knowledge Distillation
 
-
-### Context Compact (OMP, if context grew large)
-
-If running under OMP and context has grown significantly during the workflow:
-
-```
-[SHELL:run command="omp compact"]
-```
-
-This is a mid-workflow compact — not the final one. It happens before Phase 10 to give a clean state for the summary output.
-
-**Fallback:** If `omp compact` is not available → use `[[MEMORY:compress]]` (headroom_compress).
+**[LOAD] [../learn/extract.md](../learn/extract.md) — full extraction + multi-layer storage.**

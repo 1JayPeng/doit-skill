@@ -200,7 +200,7 @@ Maps abstract `[[OPERATION]]` syntax to oh-my-pi (omp) native tools.
 
 | Abstract | oh-my-pi |
 |----------|---------|
-| `[[MEMORY:compact]]` | Compact context (native OMP) | `omp compact` (preferred) → `headroom_compress(...)` (fallback) |
+| `[[MEMORY:compress]]` | `headroom_compress(...)` via MCP if configured |
 
 ### Web
 

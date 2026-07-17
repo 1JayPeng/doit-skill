@@ -1,0 +1,21 @@
+[addon]
+name = "ponytail"
+version = "1.0.0"
+description = "Lazy senior developer mode"
+
+[server]
+type = "stdio"
+command = "ponytail"
+args = ['mcp']
+
+[tools]
+exposed_tools = [
+  "ponytail_audit",
+  "ponytail_debt",
+  "ponytail_review",
+  "ponytail_gain",
+]
+
+[sandbox]
+network = false
+env_readonly = true

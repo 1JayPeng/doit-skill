@@ -29,14 +29,14 @@ Spec-driven TDD. 10 phases. Nothing ships without spec. Review + Simplify + E2E 
 
 ## Skill Router
 
-On-demand load. **[RELEASE]** after phase + `[[MEMORY:compact]]` (OMP) / `[[MEMORY:compress]]` (fallback)。
+On-demand load. **[RELEASE]** after phase + `[[MEMORY:compress]]`。
 caveman: Phase 0 [LOAD:session] 不释放 | grill-me: Phase 1 [LOAD:phase-1] 结束释放 | tdd: Phase 3 [LOAD:phase-3] 结束释放 | diagnose: Phase 0 Type B | handoff/prototype: 按需 | improve-codebase-architecture: 按需
 
 ## 铁律 + 指令 + 工具
 
 [core/iron-rules.md](core/iron-rules.md)。Worklog: 每 phase 记录 (mempalace > `.doit/worklog.json`)。[worklog.md](worklog.md)
 Non-Interruptive Q | Background >10s | Commit+Push | MP 读写对称 | 工作流不可跳过 | 减少暂停 | Grill 4+/3+ | 危险操作确认 | Review+Simplify
-**[CALL]** = MCP。**[LOAD]** = 读文件。**[LOAD:phase-N]** = 加载 skill。**[RELEASE:phase-N]** = 释放 + `[[MEMORY:compact]]` (OMP) / `[[MEMORY:compress]]` (fallback)。
+**[CALL]** = MCP。**[LOAD]** = 读文件。**[LOAD:phase-N]** = 加载 skill。**[RELEASE:phase-N]** = 释放 + `[[MEMORY:compress]]`。
 5 层: codegraph, lean-ctx, context-mode, headroom (Proxy 60-95% 节省), mempalace。MCP 工具链在所有支持的 CLI 中保持一致。
 **Subagent: 默认启用** (`subagent.enabled: true`)。三级团队 [core/subagent.md](core/subagent.md)。[core/team-roles.md](core/team-roles.md)
 
@@ -57,10 +57,10 @@ Non-Interruptive Q | Background >10s | Commit+Push | MP 读写对称 | 工作流
 | **9** | — | 清理 `.spec/current.md`, `.spec/doc-capture.md`, empty `.scratch/` |
 | **9.5** | [core/phase-9.5.md](core/phase-9.5.md) | Summary → Knowledge extraction |
 | **9.5.5** | [learn/extract.md](learn/extract.md) | 结构化知识 → 用户确认 → 多层存储 |
-| **10** | [core/phase-10.md](core/phase-10.md) | Stats → MP → **`[[MEMORY:compact]]`** (OMP) / **`[[MEMORY:compress]]`** (fallback) |
+| **10** | [core/phase-10.md](core/phase-10.md) | Stats → MP → **`[[MEMORY:compress]]`** |
 
 **Phase Gate:** -1→0→1→2→3→4→5→6→7→8→9→9.5→9.5.5→10。**唯一合法结束 = Phase 10。**
-**Type Q 流程:** Phase -1 → Phase 0 → 直接用工具回答 → Phase 10 (仅 `[[MEMORY:compact]]` / `[[MEMORY:compress]]`)。不创建分支、不写 spec、不 commit。
+**Type Q 流程:** Phase -1 → Phase 0 → 直接用工具回答 → Phase 10 (仅 `[[MEMORY:compress]]`)。不创建分支、不写 spec、不 commit。
 
 ## 辅助
 
@@ -85,7 +85,7 @@ Non-Interruptive Q | Background >10s | Commit+Push | MP 读写对称 | 工作流
 | `[[SHELL:run]]` | Run command | Adapter → Bash / bash / shell |
 | `[[SCHEDULE:wakeup]]` | Schedule wakeup | Adapter → ScheduleWakeup / sleep |
 | `[[SKILL:route]]` | Route to skill | Adapter → Skill({}) / load markdown |
-| `[[MEMORY:compact]]` | Compact context (OMP-native) | OMP → `omp compact`; Fallback → headroom_compress |
+| `[[MEMORY:compress]]` | Compress context | MCP → headroom_compress |
 | `[[WEB:fetch]]` | Fetch URL | Adapter → WebFetch / webfetch / curl |
 | `[[WEB:search]]` | Search web | Adapter → WebSearch / websearch |
 

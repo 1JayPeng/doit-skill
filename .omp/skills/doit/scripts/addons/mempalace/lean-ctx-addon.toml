@@ -1,0 +1,23 @@
+[addon]
+name = "mempalace"
+version = "1.0.0"
+description = "Palace memory system for persistent knowledge"
+
+[server]
+type = "stdio"
+command = "mempalace"
+args = ['mcp']
+
+[tools]
+exposed_tools = [
+  "mempalace_status",
+  "mempalace_search",
+  "mempalace_kg_query",
+  "mempalace_kg_add",
+  "mempalace_diary_read",
+  "mempalace_diary_write",
+]
+
+[sandbox]
+network = false
+env_readonly = true
