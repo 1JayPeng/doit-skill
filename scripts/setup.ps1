@@ -200,7 +200,7 @@ function Get-DetectedAgent {
   if ($Agent -ne "auto") { return $Agent }
 
   # Check for running agents in PATH
-  $agents = @("claude", "opencode", "codex", "jcode", "mimo")
+  $agents = @("oh-my-pi", "claude", "opencode", "codex", "jcode", "mimo")
   foreach ($name in $agents) {
     if (Test-Command $name) { return $name }
   }
@@ -1137,7 +1137,9 @@ registry = "sparse+https://mirrors.ustc.edu.cn/crates.io-index/"
   # =========================================================================
   # Caveman (Claude Code plugin)
   # =========================================================================
-  if ($script:AgentType -eq "claude") {
+  if ($script:AgentType -eq "oh-my-pi") {
+    Write-Info "caveman is a Claude Code plugin — skipping for OMP"
+  } elseif ($script:AgentType -eq "claude") {
     $hasCaveman = $false
     if (Test-Path $pluginsDir) {
       $hasCaveman = (Get-ChildItem -Path $pluginsDir -Recurse -Filter "*caveman*" -ErrorAction SilentlyContinue).Count -gt 0
@@ -1171,55 +1173,7 @@ registry = "sparse+https://mirrors.ustc.edu.cn/crates.io-index/"
     # Caveman hooks + statusline
     $hooksDir = "$HOME/.claude/hooks"
     $hasStatuslineHook = $false
-    if (Test-Path $hooksDir) {
-      $hasStatuslineHook = (Get-ChildItem -Path $hooksDir -Filter "*caveman-statusline*" -ErrorAction SilentlyContinue).Count -gt 0
-    }
 
-    if (-not $hasStatuslineHook) {
-      Write-Info "Installing caveman hooks (statusline)..."
-      $installScript = "${script:GH_PROXY}/https://raw.githubusercontent.com/JuliusBrussee/caveman/main/install.sh"
-      try {
-        # Download and run with --with-hooks --skip-skills
-        Write-Warn "caveman hooks require bash — run in Git Bash or WSL: bash install.sh --with-hooks --skip-skills"
-      } catch {
-        Write-Warn "caveman hook install failed — statusline not configured"
-      }
-    } else {
-      Write-Success "caveman statusline hooks already installed"
-    }
-
-    # Configure caveman statusline in settings.json
-    $claudeSettings = "$HOME/.claude/settings.json"
-    if (Test-Path $claudeSettings) {
-      try {
-        $settings = Get-Content $claudeSettings -Raw | ConvertFrom-Json
-        $slCommand = $null
-        if ($settings.statusLine -and $settings.statusLine.command) {
-          $slCommand = $settings.statusLine.command
-        }
-
-        if ($slCommand -notmatch 'caveman-statusline') {
-          $hooksDirAbs = "$HOME/.claude/hooks"
-          $slScript = Join-Path $hooksDirAbs "caveman-statusline.sh"
-          if (Test-Path $slScript) {
-            $settings.statusLine = @{
-              type = "command"
-              command = "bash `"$slScript`""
-            }
-            $settings | ConvertTo-Json -Depth 5 | Set-Content -Path $claudeSettings -Encoding UTF8
-            Write-Success "caveman statusline configured"
-          } else {
-            Write-Warn "caveman-statusline.sh not found — install hooks first"
-          }
-        } else {
-          Write-Success "caveman statusline already configured"
-        }
-      } catch {
-        Write-Warn "Failed to configure caveman statusline: $_"
-      }
-    }
-  } else {
-    Write-Info "caveman is a Claude Code plugin — skipping for $($script:AgentType)"
   }
 
   # =========================================================================
@@ -1250,7 +1204,21 @@ registry = "sparse+https://mirrors.ustc.edu.cn/crates.io-index/"
   # =========================================================================
   # MemPalace (Claude Code plugin + CLI)
   # =========================================================================
-  if ($script:AgentType -eq "claude") {
+  if ($script:AgentType -eq "oh-my-pi") {
+    $hasMemPalace = omp plugin list | Select-String -Pattern "mempalace"
+    if ($hasMemPalace) {
+      if ($SkipUpdates) {
+        Write-Skip "mempalace already installed (OMP) (skipping update)"
+      } else {
+        Write-Info "Updating mempalace (OMP)..."
+        omp plugin install mempalace --pty 2>&1
+        Write-Success "mempalace updated (OMP)"
+      }
+    } else {
+      Write-Info "Installing mempalace (OMP)..."
+      omp plugin install mempalace --pty 2>&1
+    }
+  } elseif ($script:AgentType -eq "claude") {
     $hasMemPalace = $false
     if (Test-Path $pluginsDir) {
       $hasMemPalace = (Get-ChildItem -Path $pluginsDir -Recurse -Filter "*mempalace*" -ErrorAction SilentlyContinue).Count -gt 0
@@ -1452,17 +1420,24 @@ registry = "sparse+https://mirrors.ustc.edu.cn/crates.io-index/"
     }
 
     if (Test-Command headroom) {
-      if ($script:AgentType -eq "claude") {
-        $mcpList = claude mcp list 2>$null
-        if ($mcpList -match 'headroom') {
-          Write-Success "headroom MCP already configured"
-        } else {
-          Write-Info "Configuring headroom MCP..."
-          headroom mcp install 2>&1
-        }
+    if ($script:AgentType -eq "oh-my-pi") {
+      if (omp plugin list | Select-String -Pattern "headroom") {
+        Write-Success "headroom MCP already configured (OMP)"
       } else {
-        Write-Info "headroom MCP — configure manually for $($script:AgentType)"
+        Write-Info "Configuring headroom MCP (OMP)..."
+        omp plugin install headroom --pty 2>&1
       }
+    } elseif ($script:AgentType -eq "claude") {
+      $mcpList = claude mcp list 2>$null
+      if ($mcpList -match 'headroom') {
+        Write-Success "headroom MCP already configured"
+      } else {
+        Write-Info "Configuring headroom MCP..."
+        headroom mcp install 2>&1
+      }
+    } else {
+      Write-Info "headroom MCP — configure manually for $($script:AgentType)"
+    }
     }
   }
 
@@ -1488,7 +1463,14 @@ registry = "sparse+https://mirrors.ustc.edu.cn/crates.io-index/"
 
   if (Test-Command codegraph) {
     # Install MCP server
-    if ($script:AgentType -eq "claude") {
+    if ($script:AgentType -eq "oh-my-pi") {
+      if (omp plugin list | Select-String -Pattern "codegraph") {
+        Write-Success "codegraph MCP already configured (OMP)"
+      } else {
+        Write-Info "Configuring codegraph MCP server (OMP)..."
+        omp plugin install codegraph --pty 2>&1
+      }
+    } elseif ($script:AgentType -eq "claude") {
       $mcpList = claude mcp list 2>$null
       if ($mcpList -match 'codegraph') {
         Write-Success "codegraph MCP already configured"
@@ -1504,17 +1486,6 @@ registry = "sparse+https://mirrors.ustc.edu.cn/crates.io-index/"
       }
     } else {
       Write-Info "codegraph MCP — configure manually for $($script:AgentType)"
-    }
-
-    # Initialize project index
-    if (Test-Path ".codegraph") {
-      Write-Success "codegraph index already exists"
-    } else {
-      Write-Info "Initializing codegraph index..."
-      codegraph init -i 2>&1
-      if (Test-Path ".codegraph") {
-        Write-Success "codegraph index initialized"
-      }
     }
   }
 

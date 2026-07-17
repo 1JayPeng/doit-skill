@@ -24,6 +24,8 @@ SYMLINK_TARGETS=("review-simplify.md:core/shared/review-simplify.md" "commit.md:
 _detect_agent() {
   local agent="${1:-auto}"
   if [ "$agent" = "auto" ]; then
+    # OMP takes priority when installed alongside Claude
+    command -v omp >/dev/null 2>&1 && echo "oh-my-pi" && return
     if [ -d ".claude/skills" ] || [ -d "$HOME/.claude/skills" ] || command -v claude >/dev/null 2>&1; then
       echo "claude" && return
     fi
@@ -35,6 +37,37 @@ _detect_agent() {
     echo "claude" && return  # fallback
   fi
   echo "$agent"
+}
+
+# Resolved agent type for tool checks
+_agent_type=$(_detect_agent "auto")
+
+# Helper: check plugin installed (supports both Claude and OMP)
+_check_plugin() {
+    local plugin_name="$1"
+    if [ "$_agent_type" = "oh-my-pi" ]; then
+        omp plugin list 2>/dev/null | grep -q "$plugin_name" && return 0
+        grep -rl --include="*.json" --include="*.md" --max-count=1 "$plugin_name" "$HOME/.omp/plugins/" > /dev/null 2>&1 && return 0
+        return 1
+    else
+        claude plugin list 2>/dev/null | grep -q "$plugin_name" && return 0
+        grep -rl --include="*.json" --include="*.md" --max-count=1 "$plugin_name" "$HOME/.claude/plugins/" > /dev/null 2>&1 && return 0
+        return 1
+    fi
+}
+
+# Helper: check MCP configured (supports both Claude and OMP)
+_check_mcp() {
+    local mcp_name="$1"
+    if [ "$_agent_type" = "oh-my-pi" ]; then
+        timeout 3 omp mcp list 2>/dev/null | grep -qi "$mcp_name" && return 0
+        grep -qi "$mcp_name" "$HOME/.config/omp/mcp.json" 2>/dev/null && return 0
+        return 1
+    else
+        claude mcp list 2>/dev/null | grep -qi "$mcp_name" && return 0
+        grep -qi "$mcp_name" "$HOME/.claude.json" 2>/dev/null && return 0
+        return 1
+    fi
 }
 
 echo "=========================================="
@@ -113,34 +146,38 @@ echo ""
 # Step 3: Check external tools
 echo "[3/3] Checking external tools..."
 for tool in "${EXTERNAL_TOOLS[@]}"; do
-    case $tool in
-"context-mode")
-            if command -v ctx >/dev/null 2>&1; then
-                echo "  ✅ context-mode installed (CLI)"
-            elif timeout 30 grep -rl --include="*.json" --include="*.md" --max-count=1 "context-mode" "$HOME/.claude/plugins/" > /dev/null 2>&1; then
-                echo "  ✅ context-mode installed (plugin)"
-            else
-                echo "  ℹ️ context-mode not installed (recommended)"
-                echo "  💡 Install: claude plugin marketplace add mksglu/claude-context-mode/plugin"
-                echo "     claude plugin install context-mode@claude-context-mode/plugin"
-            fi
-            ;;
-        "rtk")
-            if command -v rtk >/dev/null 2>&1; then
-                echo "  ✅ rtk installed"
-            else
-                echo "  ℹ️  rtk not installed (recommended)"
-                echo "  💡 Install: curl -fsSL ${GH_PROXY}/https://raw.githubusercontent.com/rtk-ai/rtk/refs/heads/master/install.sh | sh"
-            fi
-            ;;
-        "uv")
-            if command -v uv >/dev/null 2>&1; then
-                echo "  ✅ uv installed"
-            else
-                echo "  ℹ️  uv not installed (recommended)"
-                echo "  💡 Install: pip install uv"
-            fi
-            ;;
+    case "$tool" in
+        "context-mode")
+                if command -v ctx >/dev/null 2>&1; then
+                    echo "  ✅ context-mode installed (CLI)"
+                elif _check_plugin "context-mode"; then
+                    echo "  ✅ context-mode installed (plugin)"
+                else
+                    echo "  ℹ️ context-mode not installed (recommended)"
+                    if [ "$_agent_type" = "oh-my-pi" ]; then
+                        echo "  💡 Install: omp plugin install context-mode"
+                    else
+                        echo "  💡 Install: claude plugin marketplace add mksglu/claude-context-mode/plugin"
+                        echo "     claude plugin install context-mode@claude-context-mode/plugin"
+                    fi
+                fi
+                ;;
+            "rtk")
+                if command -v rtk >/dev/null 2>&1; then
+                    echo "  ✅ rtk installed"
+                else
+                    echo "  ℹ️  rtk not installed (recommended)"
+                    echo "  💡 Install: curl -fsSL ${GH_PROXY}/https://raw.githubusercontent.com/rtk-ai/rtk/refs/heads/master/install.sh | sh"
+                fi
+                ;;
+            "uv")
+                if command -v uv >/dev/null 2>&1; then
+                    echo "  ✅ uv installed"
+                else
+                    echo "  ℹ️  uv not installed (recommended)"
+                    echo "  💡 Install: pip install uv"
+                fi
+                ;;
         "rust")
             if command -v cargo >/dev/null 2>&1; then
                 echo "  ✅ rust/cargo installed"
@@ -150,19 +187,25 @@ for tool in "${EXTERNAL_TOOLS[@]}"; do
             fi
             ;;
         "tavily")
-            if timeout 10 claude mcp list 2>/dev/null | grep -q tavily; then
+            if _check_mcp "tavily"; then
                 echo "  ✅ tavily configured (MCP)"
             elif grep -q "tavily" ~/.claude/settings.json 2>/dev/null; then
                 echo "  ✅ tavily configured (settings.json)"
             else
                 echo "  ℹ️  tavily not configured (optional)"
-                echo "  💡 Configure: claude mcp add --transport http tavily https://mcp.tavily.com/mcp/?tavilyApiKey=<your-key>"
+                if [ "$_agent_type" = "oh-my-pi" ]; then
+                    echo "  💡 Configure: add to $HOME/.config/omp/mcp.json"
+                else
+                    echo "  💡 Configure: claude mcp add --transport http tavily https://mcp.tavily.com/mcp/?tavilyApiKey=<your-key>"
+                fi
             fi
             ;;
         "caveman")
             if [ -d "$SKILL_DIR/caveman" ]; then
                 echo "  ✅ caveman installed (skill)"
-            elif timeout 30 grep -rl --include="*.json" --include="*.md" --max-count=1 "caveman" "$HOME/.claude/plugins/" > /dev/null 2>&1; then
+            elif [ "$_agent_type" = "oh-my-pi" ]; then
+                echo "  ❌ caveman is Claude-only, not available for OMP"
+            elif _check_plugin "caveman"; then
                 echo "  ✅ caveman installed (plugin)"
             elif [ -f "$HOME/.claude/hooks/caveman.sh" ] || [ -f "$HOME/.claude/hooks/caveman-hook.sh" ]; then
                 echo "  ✅ caveman installed (hooks)"
@@ -174,7 +217,9 @@ for tool in "${EXTERNAL_TOOLS[@]}"; do
         "code-review")
             if [ -d "$SKILL_DIR/code-review" ]; then
                 echo "  ✅ code-review installed (skill)"
-            elif timeout 30 grep -rl --include="*.json" --include="*.md" --max-count=1 "code-review" "$HOME/.claude/plugins/" > /dev/null 2>&1; then
+            elif [ "$_agent_type" = "oh-my-pi" ]; then
+                echo "  ❌ code-review is Claude-only, not available for OMP"
+            elif _check_plugin "code-review"; then
                 echo "  ✅ code-review installed (plugin)"
             else
                 echo "  ℹ️  code-review not installed (recommended)"
@@ -182,11 +227,15 @@ for tool in "${EXTERNAL_TOOLS[@]}"; do
             fi
             ;;
         "mempalace")
-            if timeout 30 grep -rl --include="*.json" --include="*.md" --max-count=1 "mempalace" "$HOME/.claude/plugins/" > /dev/null 2>&1; then
+            if _check_plugin "mempalace"; then
                 echo "  ✅ mempalace installed (plugin)"
             else
                 echo "  ℹ️  mempalace plugin not installed (recommended)"
-                echo "  💡 Install: claude plugin add mempalace@mempalace --marketplace github:milla-jovovich/mempalace"
+                if [ "$_agent_type" = "oh-my-pi" ]; then
+                    echo "  💡 Install: omp plugin install mempalace"
+                else
+                    echo "  💡 Install: claude plugin add mempalace@mempalace --marketplace github:milla-jovovich/mempalace"
+                fi
             fi
             if command -v mempalace >/dev/null 2>&1; then
                 echo "  ✅ mempalace CLI installed"
@@ -220,7 +269,7 @@ for tool in "${EXTERNAL_TOOLS[@]}"; do
                 echo "  💡 Install: uv tool install 'headroom-ai[mcp,proxy]'"
             fi
             # MCP check independent of CLI presence
-            if timeout 10 claude mcp list 2>/dev/null | grep -q headroom; then
+            if _check_mcp "headroom"; then
                 echo "  ✅ headroom MCP configured (fallback tools)"
             else
                 echo "  ℹ️  headroom MCP not configured"
@@ -241,15 +290,26 @@ for tool in "${EXTERNAL_TOOLS[@]}"; do
                 echo "  ℹ️  lean-ctx not installed (recommended)"
                 echo "  💡 Install: curl -fsSL https://leanctx.com/install.sh | sh && lean-ctx onboard"
             fi
-            if [ -f ".claude/rules/lean-ctx.md" ]; then
-                echo "  ✅ lean-ctx rules configured (project-local)"
-            elif [ -f "$HOME/.claude/rules/lean-ctx.md" ]; then
-                echo "  ✅ lean-ctx rules configured (global)"
-            elif [ -f "../.claude/rules/lean-ctx.md" ]; then
-                echo "  ✅ lean-ctx rules configured (project parent)"
+            if [ "$_agent_type" = "oh-my-pi" ]; then
+                if [ -f "$HOME/.config/omp/rules/lean-ctx.md" ]; then
+                    echo "  ✅ lean-ctx rules configured (project-local)"
+                elif [ -f "$HOME/.config/omp/rules/lean-ctx.md" ]; then
+                    echo "  ✅ lean-ctx rules configured (global)"
+                else
+                    echo "  ℹ️  lean-ctx rules not configured"
+                    echo "  💡 Run: lean-ctx init --agent oh-my-pi"
+                fi
             else
-                echo "  ℹ️  lean-ctx rules not configured"
-                echo "  💡 Run: lean-ctx init --agent $(_detect_agent)"
+                if [ -f ".claude/rules/lean-ctx.md" ]; then
+                    echo "  ✅ lean-ctx rules configured (project-local)"
+                elif [ -f "$HOME/.claude/rules/lean-ctx.md" ]; then
+                    echo "  ✅ lean-ctx rules configured (global)"
+                elif [ -f "../.claude/rules/lean-ctx.md" ]; then
+                    echo "  ✅ lean-ctx rules configured (project parent)"
+                else
+                    echo "  ℹ️  lean-ctx rules not configured"
+                    echo "  💡 Run: lean-ctx init --agent $(_detect_agent)"
+                fi
             fi
             ;;
         "codegraph")
@@ -259,7 +319,7 @@ for tool in "${EXTERNAL_TOOLS[@]}"; do
                 echo "  ℹ️  codegraph not installed (recommended)"
                 echo "  💡 Install: npm i -g @colbymchenry/codegraph"
             fi
-            if timeout 10 claude mcp list 2>/dev/null | grep -qi codegraph; then
+            if _check_mcp "codegraph"; then
                 echo "  ✅ codegraph MCP configured"
             else
                 echo "  ℹ️  codegraph MCP not configured"
@@ -273,12 +333,16 @@ for tool in "${EXTERNAL_TOOLS[@]}"; do
             fi
             ;;
         "ponytail")
-            if timeout 15 claude plugin list 2>/dev/null | grep -q "ponytail"; then
+            if _check_plugin "ponytail"; then
                 echo "  ✅ ponytail installed (plugin)"
             else
                 echo "  ℹ️  ponytail not installed (recommended)"
-                echo "  💡 Install: claude plugin marketplace add DietrichGebert/ponytail"
-                echo "     claude plugin install ponytail@ponytail"
+                if [ "$_agent_type" = "oh-my-pi" ]; then
+                    echo "  💡 Install: omp plugin install ponytail"
+                else
+                    echo "  💡 Install: claude plugin marketplace add DietrichGebert/ponytail"
+                    echo "     claude plugin install ponytail@ponytail"
+                fi
             fi
             ;;
     esac

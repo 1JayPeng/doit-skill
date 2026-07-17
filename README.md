@@ -6,6 +6,8 @@ Type `/doit <what you want>` in any supported AI coding CLI. doit handles the re
 
 **Multi-CLI Support:** Claude Code, OpenCode, OpenAI Codex CLI, oh-my-pi, MiMo Code, and any MCP-supporting agent. Tool adapter auto-selected at install time via `--agent` flag.
 
+> **OMP (oh-my-pi) Compatibility:** doit is fully compatible with OMP. Auto-detection prioritizes OMP when both CLIs are installed. OMP plugins (mempalace, ponytail, context-mode) use `omp plugin install`. Claude-only tools (caveman, code-review) show skip messages. Doctor.sh shows OMP-specific install instructions.
+
 ```
 > /doit I need a user authentication system
 
@@ -376,15 +378,17 @@ A single `/doit` invocation may not complete the entire workflow. To continue fr
 
 ## Recent Changes
 
+**2026-07-16** — OMP (oh-my-pi) compatibility improvements:
+- Auto-detection priority: OMP checked before Claude when both installed
+- OMP plugin installation: context-mode, mempalace, ponytail use `omp plugin install`
+- OMP MCP fallback: headroom/codegraph use native CLI commands (not MCP config)
+- Doctor awareness: tool checks parameterized by agent type
+- Claude-only tools (caveman, code-review) show skip messages for OMP
+- Fixed doctor.sh hang: added timeout to `omp mcp list`
+- Fixed setup.sh error handling: proper exit code propagation for `omp plugin install`
+
 **2026-06-18** — Multi-CLI support with tool adapters:
 - Decoupled doit-skill from Claude Code — works with Claude Code, OpenCode, Codex CLI, oh-my-pi, MiMo Code
-- New `adapters/` directory: one adapter per CLI maps abstract operations to native tools
-- Abstract `[[OPERATION]]` syntax in core files (`[[TASK:create]]`, `[[USER:ask]]`, `[[SKILL:route]]`, etc.)
-- `core/` directory: tool-agnostic workflow definitions
-- `setup.sh --agent` flag: auto-detects or targets specific CLI
-- Enforced `[[USER:ask]]` as mandatory tool call, not text output
-
-**2026-06-07** — Knowledge distillation module (Phase 9.5.5):
 - New `learn/` module: structured knowledge extraction at Phase 9.5.5
 - Knowledge injection at Phase 1/2 — injects relevant past sessions before grill
 - Historical data migration from git, mempalace, worklog

@@ -33,11 +33,12 @@ fi
 detect_agent() {
   local agent="$1"
   if [ "$agent" = "auto" ]; then
+    # OMP takes priority when installed alongside Claude
+    command -v omp >/dev/null 2>&1 && echo "oh-my-pi" && return
     command -v claude >/dev/null 2>&1 && echo "claude" && return
     command -v opencode >/dev/null 2>&1 && echo "opencode" && return
     command -v codex >/dev/null 2>&1 && echo "codex" && return
     command -v jcode >/dev/null 2>&1 && echo "jcode" && return
-    # Default to claude if no specific agent detected
     echo "claude"
     return
   fi
@@ -901,7 +902,6 @@ else
   echo "=========================================="
   echo ""
 
-  fi
 
   # Install bump-spec-version helper script
   if [ -f "$DOIT_DIR/scripts/bump-spec-version.sh" ]; then
@@ -931,9 +931,14 @@ else
     for _t in rtk uv cargo lean-ctx codegraph headroom; do
       command -v "$_t" >/dev/null 2>&1 && _installed_count=$(( _installed_count + 1 ))
     done
-    claude plugin list 2>/dev/null | grep -q "context-mode" && _installed_count=$(( _installed_count + 1 ))
-    claude plugin list 2>/dev/null | grep -q "caveman" && _installed_count=$(( _installed_count + 1 ))
-    claude plugin list 2>/dev/null | grep -q "ponytail" && _installed_count=$(( _installed_count + 1 ))
+    if [ "$AGENT_TYPE" = "oh-my-pi" ]; then
+      omp plugin list 2>/dev/null | grep -q "context-mode" && _installed_count=$(( _installed_count + 1 ))
+      omp plugin list 2>/dev/null | grep -q "ponytail" && _installed_count=$(( _installed_count + 1 ))
+    else
+      claude plugin list 2>/dev/null | grep -q "context-mode" && _installed_count=$(( _installed_count + 1 ))
+      claude plugin list 2>/dev/null | grep -q "caveman" && _installed_count=$(( _installed_count + 1 ))
+      claude plugin list 2>/dev/null | grep -q "ponytail" && _installed_count=$(( _installed_count + 1 ))
+    fi
     [ "$_installed_count" -ge 10 ] && _skip_step_3=true
   fi
 
@@ -943,19 +948,33 @@ else
   fi
 
 # Context-Mode (Claude Code plugin)
-  if [ "$_skip_step_3" = "false" ]; then
-  if claude plugin list 2>/dev/null | grep -q "context-mode"; then
-    if [ "$SKIP_UPDATES" = true ]; then
-      echo_skip "context-mode already installed (skipping update)"
+  if [ "$AGENT_TYPE" = "oh-my-pi" ]; then
+    if omp plugin list 2>/dev/null | grep -q "context-mode"; then
+      if [ "$SKIP_UPDATES" = true ]; then
+        echo_skip "context-mode already installed (OMP) (skipping update)"
+      else
+        echo_info "Updating context-mode (OMP)..."
+        spin 60 "context-mode update (OMP)" omp plugin install context-mode --pty || echo_warn "context-mode update failed"
+        echo_success "context-mode updated (OMP)"
+      fi
     else
-      echo_info "Updating context-mode..."
-      spin 60 "context-mode update" claude plugin install $(_plugin_scope) context-mode@claude-context-mode/plugin --pty || echo_warn "context-mode update failed"
-      echo_success "context-mode updated"
+      echo_info "Installing context-mode (OMP)..."
+      spin 180 "context-mode install (OMP)" omp plugin install context-mode --pty || echo_warn "Failed to install context-mode"
     fi
   else
-    echo_info "Installing context-mode..."
-    spin 120 "context-mode marketplace add" claude plugin marketplace add mksglu/claude-context-mode/plugin --pty || echo_warn "Failed to add context-mode marketplace"
-    spin 180 "context-mode install" claude plugin install $(_plugin_scope) context-mode@claude-context-mode/plugin --pty || echo_warn "Failed to install context-mode"
+    if claude plugin list 2>/dev/null | grep -q "context-mode"; then
+      if [ "$SKIP_UPDATES" = true ]; then
+        echo_skip "context-mode already installed (skipping update)"
+      else
+        echo_info "Updating context-mode..."
+        spin 60 "context-mode update" claude plugin install $(_plugin_scope) context-mode@claude-context-mode/plugin --pty || echo_warn "context-mode update failed"
+        echo_success "context-mode updated"
+      fi
+    else
+      echo_info "Installing context-mode..."
+      spin 120 "context-mode marketplace add" claude plugin marketplace add mksglu/claude-context-mode/plugin --pty || echo_warn "Failed to add context-mode marketplace"
+      spin 180 "context-mode install" claude plugin install $(_plugin_scope) context-mode@claude-context-mode/plugin --pty || echo_warn "Failed to install context-mode"
+    fi
   fi
 
   # RTK
@@ -1172,8 +1191,21 @@ with open('$_claude_settings', 'w') as f:
     echo_info "code-review is a Claude Code plugin — skipping for $AGENT_TYPE"
   fi
 
-  # MemPalace — primary memory layer (Claude Code plugin)
-  if [ "$AGENT_TYPE" = "claude" ]; then
+  # MemPalace — primary memory layer (Claude Code plugin / OMP plugin)
+  if [ "$AGENT_TYPE" = "oh-my-pi" ]; then
+    if omp plugin list 2>/dev/null | grep -q "mempalace"; then
+      if [ "$SKIP_UPDATES" = true ]; then
+        echo_skip "mempalace already installed (OMP) (skipping update)"
+      else
+        echo_info "Updating mempalace (OMP)..."
+        spin 60 "mempalace update (OMP)" omp plugin install mempalace --pty || echo_warn "mempalace update failed"
+        echo_success "mempalace updated (OMP)"
+      fi
+    else
+      echo_info "Installing mempalace (OMP)..."
+      spin 60 "mempalace install (OMP)" omp plugin install mempalace --pty || echo_warn "Failed to install mempalace"
+    fi
+  elif [ "$AGENT_TYPE" = "claude" ]; then
     if claude plugin list 2>/dev/null | grep -q "mempalace"; then
       if [ "$SKIP_UPDATES" = true ]; then
         echo_skip "mempalace already installed (skipping update)"
@@ -1224,7 +1256,6 @@ with open('$_claude_settings', 'w') as f:
       echo_warn "mempalace CLI not found, skipping init"
     fi
   fi
-fi
 
 # Step 3.6: Install lean-ctx (context optimization)
 if [ "$SKIP_OPTIONAL" = false ] && [ "${_skip_step_3:-false}" = "false" ]; then
@@ -1518,39 +1549,45 @@ if [ "$SKIP_OPTIONAL" = false ] && [ "${_skip_step_3:-false}" = "false" ]; then
       echo_warn "uv not found — install headroom manually: uv tool install 'headroom-ai[mcp,proxy]'"
     fi
 
-    if command -v headroom >/dev/null 2>&1; then
-      if [ "$AGENT_TYPE" = "claude" ]; then
-        # Configure MCP tools (compress/retrieve/stats — fallback when proxy is down)
-        if spin 30 "headroom MCP verify" "claude mcp list" 2>/dev/null | grep -q headroom; then
-          echo_success "headroom MCP already configured"
-        else
-          echo_info "Configuring headroom MCP..."
-          spin 120 "headroom MCP install" headroom mcp install || echo_warn "headroom mcp install timed out"
-        fi
-
-        # Detect upstream (local model or cloud API) from settings.json
-        _hr_upstream=$(grep -o '"ANTHROPIC_BASE_URL"[[:space:]]*:[[:space:]]*"[^"]*"' "$HOME/.claude/settings.json" 2>/dev/null | grep -o 'http[^"]*')
-        _hr_upstream=${_hr_upstream:-https://api.anthropic.com}
-
-        if [ "$_hr_proxy" = "true" ]; then
-          echo_info "Deploying headroom persistent proxy (upstream: $_hr_upstream)..."
-          spin 180 "headroom install apply" \
-            ANTHROPIC_TARGET_API_URL="$_hr_upstream" \
-            headroom install apply \
-              --preset persistent-service \
-              --runtime python \
-              --scope user \
-              --target claude \
-              --port ${_hr_port:-8787} 2>&1 || \
-            echo_warn "headroom persistent deploy failed — proxy will use fallback mode"
-
-          echo_success "headroom proxy deployed (fallback to $_hr_upstream if proxy unavailable)"
-        else
-          echo_skip "headroom proxy disabled (MCP tools only)"
-        fi
+    if [ "$AGENT_TYPE" = "oh-my-pi" ]; then
+      # Configure MCP tools for OMP
+      if omp plugin list 2>/dev/null | grep -q headroom; then
+        echo_success "headroom MCP already configured (OMP)"
       else
-        echo_info "headroom MCP — configure manually for $AGENT_TYPE"
+        echo_info "Configuring headroom MCP (OMP)..."
+        spin 120 "headroom MCP install (OMP)" headroom mcp install || echo_warn "headroom mcp install timed out"
       fi
+    elif [ "$AGENT_TYPE" = "claude" ]; then
+      # Configure MCP tools (compress/retrieve/stats — fallback when proxy is down)
+      if spin 30 "headroom MCP verify" "claude mcp list" 2>/dev/null | grep -q headroom; then
+        echo_success "headroom MCP already configured"
+      else
+        echo_info "Configuring headroom MCP..."
+        spin 120 "headroom MCP install" headroom mcp install || echo_warn "headroom mcp install timed out"
+      fi
+
+      # Detect upstream (local model or cloud API) from settings.json
+      _hr_upstream=$(grep -o '"ANTHROPIC_BASE_URL"[[:space:]]*:[[:space:]]*"[^"]*"' "$HOME/.claude/settings.json" 2>/dev/null | grep -o 'http[^"]*')
+      _hr_upstream=${_hr_upstream:-https://api.anthropic.com}
+
+      if [ "$_hr_proxy" = "true" ]; then
+        echo_info "Deploying headroom persistent proxy (upstream: $_hr_upstream)..."
+        spin 180 "headroom install apply" \
+          ANTHROPIC_TARGET_API_URL="$_hr_upstream" \
+          headroom install apply \
+            --preset persistent-service \
+            --runtime python \
+            --scope user \
+            --target claude \
+            --port ${_hr_port:-8787} 2>&1 || \
+          echo_warn "headroom persistent deploy failed — proxy will use fallback mode"
+
+        echo_success "headroom proxy deployed (fallback to $_hr_upstream if proxy unavailable)"
+      else
+        echo_skip "headroom proxy disabled (MCP tools only)"
+      fi
+    else
+      echo_info "headroom MCP — configure manually for $AGENT_TYPE"
     fi
   fi
 fi
@@ -1576,7 +1613,19 @@ if [ "$SKIP_OPTIONAL" = false ] && [ "${_skip_step_3:-false}" = "false" ]; then
 
   if command -v codegraph >/dev/null 2>&1; then
     # Install MCP server
-    if [ "$AGENT_TYPE" = "claude" ]; then
+    if [ "$AGENT_TYPE" = "oh-my-pi" ]; then
+      if omp plugin list 2>/dev/null | grep -qi codegraph; then
+        echo_success "codegraph MCP already configured (OMP)"
+      else
+        echo_info "Configuring codegraph MCP server (OMP)..."
+        spin 120 "codegraph MCP install (OMP)" codegraph install --yes || echo_warn "codegraph install timed out (run manually: codegraph install --yes)"
+        if omp plugin list 2>/dev/null | grep -qi codegraph; then
+          echo_success "codegraph MCP configured (OMP)"
+        else
+          echo_warn "codegraph MCP not detected after install — you may need to run: codegraph install --yes"
+        fi
+      fi
+    elif [ "$AGENT_TYPE" = "claude" ]; then
       if spin 30 "codegraph MCP check" "claude mcp list" 2>/dev/null | grep -qi codegraph; then
         echo_success "codegraph MCP already configured"
       else
@@ -1613,7 +1662,20 @@ if [ "$SKIP_OPTIONAL" = false ] && [ "${_skip_step_3:-false}" = "false" ]; then
   echo "=========================================="
   echo ""
 
-  if [ "$AGENT_TYPE" = "claude" ]; then
+  if [ "$AGENT_TYPE" = "oh-my-pi" ]; then
+    if omp plugin list 2>/dev/null | grep -q "ponytail"; then
+      if [ "$SKIP_UPDATES" = true ]; then
+        echo_skip "ponytail already installed (OMP) (skipping update)"
+      else
+        echo_info "Updating ponytail (OMP)..."
+        spin 60 "ponytail update (OMP)" omp plugin install ponytail --pty || echo_warn "ponytail update failed"
+        echo_success "ponytail updated (OMP)"
+      fi
+    else
+      echo_info "Installing ponytail (OMP)..."
+      spin 60 "ponytail install (OMP)" omp plugin install ponytail --pty || echo_warn "Failed to install ponytail (install manually: omp plugin install ponytail)"
+    fi
+  elif [ "$AGENT_TYPE" = "claude" ]; then
     if claude plugin list 2>/dev/null | grep -q "ponytail"; then
       if [ "$SKIP_UPDATES" = true ]; then
         echo_skip "ponytail already installed (skipping update)"
@@ -1633,19 +1695,20 @@ if [ "$SKIP_OPTIONAL" = false ] && [ "${_skip_step_3:-false}" = "false" ]; then
 fi
 
 # Step 3.10: Uninstall tokensave (replaced by codegraph)
-if [ "$SKIP_OPTIONAL" = false ] && [ "${_skip_step_3:-false}" = "false" ]; then
-  if command -v tokensave >/dev/null 2>&1; then
+  if [ "$AGENT_TYPE" = "oh-my-pi" ]; then
+    echo_skip "tokensave is a Claude Code tool — skipping for $AGENT_TYPE"
+  elif command -v tokensave >/dev/null 2>&1; then
     echo_info "tokensave detected — uninstalling (replaced by codegraph)..."
     spin 60 "tokensave uninstall" "tokensave uninstall --agent claude" || echo_warn "tokensave uninstall failed (remove manually)"
     echo_success "tokensave uninstalled"
   else
     echo_skip "tokensave not installed (no uninstall needed)"
   fi
-fi
 
 # Step 3.11: Uninstall agentmemory (replaced by mempalace)
-if [ "$SKIP_OPTIONAL" = false ] && [ "${_skip_step_3:-false}" = "false" ]; then
-  if claude plugin list 2>/dev/null | grep -q "agentmemory"; then
+  if [ "$AGENT_TYPE" = "oh-my-pi" ]; then
+    echo_skip "agentmemory is a Claude Code plugin — skipping for $AGENT_TYPE"
+  elif claude plugin list 2>/dev/null | grep -q "agentmemory"; then
     echo_info "agentmemory detected — uninstalling (replaced by mempalace)..."
     # Use -y to skip confirmation prompt, -s for scope, </dev/null for stdin safety
     timeout 15 claude plugin uninstall -s user agentmemory -y </dev/null 2>/dev/null || echo_warn "agentmemory uninstall failed (remove manually)"
@@ -1653,7 +1716,6 @@ if [ "$SKIP_OPTIONAL" = false ] && [ "${_skip_step_3:-false}" = "false" ]; then
   else
     echo_skip "agentmemory not installed (no uninstall needed)"
   fi
-fi
 
 # Step 4: Run doctor before cleanup
 echo "=========================================="
