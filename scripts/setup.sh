@@ -1250,7 +1250,7 @@ with open('$_claude_settings', 'w') as f:
       spin 600 "mempalace init (HNSW index)" mempalace init . --yes || echo_warn "Failed to initialize mempalace (run manually: mempalace init . --yes)"
       if [ -f "mempalace.yaml" ]; then
         echo_info "Mining mempalace index..."
-        spin 300 "mempalace mine (index mining)" mempalace mine . || echo_warn "mempalace mine timed out (run manually: mempalace mine .)"
+        spin 900 "mempalace mine (index mining, may take 15min for large projects)" mempalace mine . || echo_warn "mempalace mine timed out (run manually: mempalace mine .)"
       fi
     else
       echo_warn "mempalace CLI not found, skipping init"
@@ -1551,7 +1551,7 @@ if [ "$SKIP_OPTIONAL" = false ] && [ "${_skip_step_3:-false}" = "false" ]; then
 
     if [ "$AGENT_TYPE" = "oh-my-pi" ]; then
       # Configure MCP tools for OMP
-      if omp plugin list 2>/dev/null | grep -q headroom; then
+      if grep -qi "headroom" ~/.claude.json 2>/dev/null; then
         echo_success "headroom MCP already configured (OMP)"
       else
         echo_info "Configuring headroom MCP (OMP)..."
@@ -1614,15 +1614,15 @@ if [ "$SKIP_OPTIONAL" = false ] && [ "${_skip_step_3:-false}" = "false" ]; then
   if command -v codegraph >/dev/null 2>&1; then
     # Install MCP server
     if [ "$AGENT_TYPE" = "oh-my-pi" ]; then
-      if omp plugin list 2>/dev/null | grep -qi codegraph; then
+      if grep -qi "codegraph" ~/.claude.json 2>/dev/null; then
         echo_success "codegraph MCP already configured (OMP)"
       else
         echo_info "Configuring codegraph MCP server (OMP)..."
         spin 120 "codegraph MCP install (OMP)" codegraph install --yes || echo_warn "codegraph install timed out (run manually: codegraph install --yes)"
-        if omp plugin list 2>/dev/null | grep -qi codegraph; then
+        if grep -qi "codegraph" ~/.claude.json 2>/dev/null; then
           echo_success "codegraph MCP configured (OMP)"
         else
-          echo_warn "codegraph MCP not detected after install — you may need to run: codegraph install --yes"
+          echo_warn "codegraph MCP may not be in ~/.claude.json — run manually: codegraph install --yes"
         fi
       fi
     elif [ "$AGENT_TYPE" = "claude" ]; then

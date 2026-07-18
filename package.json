@@ -1,7 +1,7 @@
 {
   "name": "doit-skill",
   "version": "1.0.0",
-  "description": "Spec-driven TDD workflow \u2014 a composable AI agent skill",
+  "description": "Spec-driven TDD workflow — a composable AI agent skill",
   "main": "SKILL.md",
   "keywords": [
     "skill",

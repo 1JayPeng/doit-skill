@@ -282,6 +282,54 @@ mempalace_kg_stats → check entities, triples
 ```
 
 ### 11c. MemPalace Context Read (if available, before Announce)
+### 11c.5. lean-ctx Session Recovery (if available)
+
+**Purpose:** Recover work-in-progress from a previous session so the current session doesn't start from zero. If the user was building something last session and this session continues, lean-ctx's session history has the in-flight task/decision/finding state.
+
+```
+ctx_session(action="status")
+```
+
+If status returns a recent `last_saved` timestamp and non-empty entries:
+
+```
+ctx_session(action="list")
+```
+
+**Recovery heuristic:**
+1. Scan session entries for tasks with `status="in_progress"` or `status="pending"` that have a `Phase` prefix
+2. If found → announce `[RECOVER] Previous session had incomplete tasks: <task list>`
+3. Ask user via `[[USER:ask]]`: "Last session had in-progress tasks. Resume: (a) Recover all in-progress tasks, (b) Discard and start fresh, (c) Show details"
+4. If user chooses (a) → restore task list from session, continue with Phase 0 classification on top of recovered state
+5. If user chooses (b) → clear session with `ctx_session(action="save", value="")` and start fresh
+6. If user chooses (c) → show all entries, user picks which to recover
+
+**If session is empty or status returns error:** Skip silently. No previous session to recover from.
+
+**Why here:** Phase -1 is the earliest gate. Recovering session state here means Phase 0 classification can benefit from knowing what was being worked on last time. Without this, each session starts blind to prior context.
+
+### 11c.6. MemPalace Diary Context (if available, after lean-ctx recovery)
+
+Read MemPalace diary entries to give the agent awareness of what was accomplished last session:
+
+```
+mempalace_diary_read agent_name="doit" last_n=3
+```
+
+**Use recovered context for Phase 0:**
+- If diary mentions "working on X feature" → Phase 0 classification should consider X as a likely Type
+- If diary has error patterns → warn user in Phase 0 Step 2 announcement
+- If diary shows completed phase boundaries → Phase 0 can skip redundant env detection
+
+**Announcement format if context found:**
+```
+[MEMORY:Recovered from last session]
+- Last worked on: <project area>
+- Completed phases: <phase list>
+- Known issues: <error patterns>
+```
+
+**If no diary entries:** Skip silently. This is a fresh start.
 
 ### 7.5. OMP Compact Detection
 
