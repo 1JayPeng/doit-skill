@@ -291,13 +291,17 @@ for tool in "${EXTERNAL_TOOLS[@]}"; do
                 echo "  💡 Install: curl -fsSL https://leanctx.com/install.sh | sh && lean-ctx onboard"
             fi
             if [ "$_agent_type" = "oh-my-pi" ]; then
-                if [ -f "$HOME/.config/omp/rules/lean-ctx.md" ]; then
+                # OMP rules live in project .omp/rules/ or global ~/.config/omp/rules/
+                if [ -f ".omp/rules/lean-ctx.md" ]; then
                     echo "  ✅ lean-ctx rules configured (project-local)"
                 elif [ -f "$HOME/.config/omp/rules/lean-ctx.md" ]; then
                     echo "  ✅ lean-ctx rules configured (global)"
+                elif [ -f "$HOME/.claude/rules/lean-ctx.md" ]; then
+                    echo "  ⚠️  lean-ctx rules exist but only for Claude Code (not OMP)"
+                    echo "     Copy to ~/.config/omp/rules/lean-ctx.md or .omp/rules/lean-ctx.md"
                 else
                     echo "  ℹ️  lean-ctx rules not configured"
-                    echo "  💡 Run: lean-ctx init --agent oh-my-pi"
+                    echo "  💡 Run: lean-ctx init --agent pi"
                 fi
             else
                 if [ -f ".claude/rules/lean-ctx.md" ]; then
@@ -321,6 +325,10 @@ for tool in "${EXTERNAL_TOOLS[@]}"; do
             fi
             if _check_mcp "codegraph"; then
                 echo "  ✅ codegraph MCP configured"
+            elif [ "$_agent_type" = "oh-my-pi" ] && grep -qi "codegraph" "$HOME/.claude.json" 2>/dev/null; then
+                echo "  ⚠️  codegraph MCP configured for Claude Code only, not OMP"
+                echo "     Add to ~/.config/omp/mcp.json:"
+                echo '       {"mcpServers":{"codegraph":{"type":"stdio","command":"codegraph","args":["serve","--mcp"]}}}'
             else
                 echo "  ℹ️  codegraph MCP not configured"
                 echo "  💡 Configure: codegraph install --yes"

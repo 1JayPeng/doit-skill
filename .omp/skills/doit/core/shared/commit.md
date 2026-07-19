@@ -22,16 +22,37 @@
 **Don't use `git add -A`** — may include sensitive files (.env, credentials).
 
 **Step 3 — Draft commit message:**
-Follow project's commit convention:
+按下方模板撰写**完整**提交信息，写入 `.git/COMMIT_MSG`（或临时文件）。
+背景 / 已实现 / 未实现 / 结果 四段**必填**；模型训练或实验类任务必加「实验结果」段。
+
 ```
 type: short description
+
+## 背景 (Context)
+<来龙去脉 + 项目背景：为什么做这件事？解决什么问题？触发来源（需求 / 缺陷 / issue）？>
+
+## 已实现 (Implemented)
+- <完成项 1，对照 REQ 或需求逐项列出>
+- <完成项 2>
+
+## 未实现 (Not Implemented / Pending)
+- <已知缺口、未覆盖的 REQ、遗留风险、待办>（若无则写「无」）
+
+## 结果 (Result)
+<验证结论：构建 / 测试 / E2E 状态，关键指标或产物链接>
+
+## 实验结果 (Experiment Results)  —— 仅模型训练 / 实验类任务
+- 数据集 / 环境：
+- 关键超参：
+- 指标 (before → after)：
+- 结论：
 
 Co-Authored-By: Claude Opus 4.7 <noreply@anthropic.com>
 ```
 
 **Step 4 — Commit:**
 ```
-[[SHELL:run command="git commit -m 'type: description'"]]
+[[SHELL:run command="git commit -F .git/COMMIT_MSG"]]
 ```
 
 **Step 5 — Push decision:**

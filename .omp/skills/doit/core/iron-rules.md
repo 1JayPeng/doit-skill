@@ -43,16 +43,23 @@
 **铁律：每个 phase 完成后必须 commit + push。**
 
 ```
-[[SHELL:run command="git add -A && git commit -m 'type: description' && git push"]]
+[[SHELL:run command="git add <specific-files> && git commit -F .git/COMMIT_MSG && git push"]]
 ```
 
 If no changes → skip silently.
 
-**Commit message format:**
+**Commit message format（铁律强制）：**
+提交信息必须含 背景 / 已实现 / 未实现 / 结果 四段；模型训练或实验类任务必加「实验结果」段。
+完整模板与占位符见 `core/shared/commit.md` Step 3。结构骨架：
+
 ```
 type: short description
 
-Co-Authored-By: Claude Opus 4.7 <noreply@anthropic.com>
+## 背景 (Context)
+## 已实现 (Implemented)
+## 未实现 (Not Implemented / Pending)
+## 结果 (Result)
+## 实验结果 (Experiment Results)   —— 仅模型训练 / 实验类
 ```
 
 | Type | Usage |
