@@ -42,6 +42,8 @@ Check for:
 **Merge duplicates gate:** If Phase 5 finds duplicate logic across REQs → merge into shared helper.
 **Not Phase 6:** Phase 5 identifies duplicates, Phase 6 removes dead code and over-engineering.
 
+**Ponytail reuse check (mandatory before Phase 6):** Run `/ponytail`. Before simplifying, check existing codebase reuse → standard library/标准库 → native platform → installed dependency → GitHub/reference implementation. If GitHub code can be borrowed/copied, prefer the smallest license-compatible copy or direct reuse, cite the source, and avoid new custom code.
+
 ### Step 4 — Code Quality Check
 
 Quick scan for:

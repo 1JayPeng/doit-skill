@@ -24,6 +24,8 @@ Search for:
 - Common pitfalls, edge cases people hit in the wild
 - Competitive/alternative approaches the user may not know about
 - Framework best practices relevant to this feature
+- Standard-library/标准库 and native platform coverage before custom design
+- GitHub implementations/snippets that can be borrowed or copied (license-compatible, source cited)
 
 **Use search results to inform grill questions.** Real-world data makes grill sharper.
 
@@ -112,6 +114,10 @@ When the grill reveals ambiguity, present it as `[[USER:ask]]`:
 ```
 
 After asking all grill questions: if user doesn't answer within the same response cycle -> use the recommended default and continue. Grill questions MUST be asked before defaults are applied. Skipping grill questions entirely is NOT equivalent to user not answering.
+
+### Step 2c: Ponytail Reuse Gate (before REQs)
+
+Run `/ponytail`. For each candidate REQ/solution, check: existing codebase reuse → standard library/标准库 → native platform → installed dependency → GitHub/reference implementation. If GitHub code can be borrowed/copied, prefer the smallest license-compatible copy, cite the source in `.spec/current.md`, and avoid new custom code. Only write custom requirements after these fail.
 
 ### Step 3: Split to Acceptance Criteria
 

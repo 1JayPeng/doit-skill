@@ -10,7 +10,7 @@ Review all changes since Phase 3:
 
 ## Phase 6 — Simplify (MANDATORY — cannot skip)
 
-0. **Ponytail review (optional, fallback only):** If ponytail plugin available, run `/ponytail-review` as a final check. The main YAGNI prevention happens in Phase 1-3 via `/ponytail` (decision ladder activated before spec/plan/implementation). This step catches over-engineering missed earlier.
+0. **Ponytail reuse check (MANDATORY first):** Run `/ponytail` (and `/ponytail-review` if available). Before editing, check in order: existing codebase reuse → standard library/标准库 → native platform → installed dependency → GitHub/reference implementation. If GitHub code can be borrowed/copied, prefer the smallest license-compatible copy or direct reuse, cite the source, and avoid new custom code. Only write custom code after these fail.
 
 1. **Remove dead code:**
    Fallback: `[[SHELL:run]]` grep for unused imports + `[[FILE:edit]]`

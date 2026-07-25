@@ -57,9 +57,9 @@ This step complements Step 0.5 (Knowledge Injection) which uses lean-ctx's seman
 - MP search for prior specs — `mempalace_search wing="<project>"`
 - Write grill summary to `.doit/grill-summary.json`
 - **Do NOT write any REQs until grill is complete.**
-**Step 1.5: YAGNI Check (before spec) — /ponytail:**
+**Step 1.5: Ponytail Reuse Gate (before spec) — /ponytail:**
 
-If ponytail plugin available, run `/ponytail` to activate the decision ladder before writing spec. Forces spec design to prefer minimal viable solutions — native features, stdlib, standard patterns before custom code. This prevents over-engineering from the spec stage, not after.
+Run `/ponytail` before writing spec. For every REQ/solution idea, check in order: existing codebase reuse → standard library/标准库 → native platform → installed dependency → GitHub/reference implementation. If GitHub code can be borrowed/copied, prefer the smallest license-compatible copy or direct reuse, cite the source in the spec, and avoid new custom code. Only write custom requirements after these fail.
 
 ```
 /ponytail

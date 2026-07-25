@@ -16,7 +16,7 @@ Use findings to avoid repeating already-identified issues.
 
 ### 2. Code Review
 
-**Ponytail review (optional, fallback only):** If ponytail plugin available, run `/ponytail-review` as a final check. The main YAGNI prevention happens in Phase 1-3 via `/ponytail` (decision ladder activated before spec/plan/implementation). This catches what was missed earlier.
+**Ponytail reuse check (mandatory first):** Run `/ponytail` before review decisions. Check in order: existing codebase reuse → standard library/标准库 → native platform → installed dependency → GitHub/reference implementation. If GitHub code can be borrowed/copied, prefer the smallest license-compatible copy or direct reuse, cite the source, and avoid new custom code. Run `/ponytail-review` if available as the final complexity pass.
 
 **Caveman review (optional, recommended):** If caveman skill available, run `/caveman-review` for caveman-style code review. This provides terse, direct feedback on code quality.
 
