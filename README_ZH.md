@@ -1,399 +1,201 @@
-# Do It - 做就完了
+# Do It — AI 编程 Agent 的工作流编排器
 
-一个命令 `/doit`，完整的 spec 驱动 + TDD 开发工作流。为 [Claude Code](https://github.com/anthropics/claude-code) 设计。
+**`/doit <你想做什么>`** — 一个命令，把模糊需求变成可交付代码。
 
-[English](README.md) - [简体中文](README_ZH.md)
+[English](README.md) · [简体中文](README_ZH.md)
 
-## 一个命令，一切搞定
+## 它是什么
 
-```
-> /doit 我想要一个用户登录系统
+doit 是给 AI 编程 Agent 用的**工作流编排器**。它解决一个核心问题：AI Agent 太容易直接开始写代码。结果通常是：代码看似能跑，但漏边界、重复逻辑、没有真正解决需求。
 
-[DOIT] 类型: F (功能) -> 完整工作流
-[DOIT] Phase -1: 检测环境...
-[DOIT] Phase 1: Grill 验证想法...
-[DOIT] Phase 2: 代码图谱分析...
-[DOIT] Phase 3: TDD 执行...
-...
-```
-
-**不需要记多个命令。** `/doit` 自动分类需求、验证想法、写规格、规划、执行 TDD、E2E 测试、代码审查、简化、提交推送。全流程一个命令。
-
-| 场景 | 输入 | 发生了什么 |
-|------|------|-----------|
-| **新功能** | `/doit 加一个搜索功能` | 完整流程：规格 -> 计划 -> TDD -> E2E -> 审查 -> 简化 -> 提交 |
-| **Bug** | `/doit 登录页在空邮箱时崩溃` | 调试流程：诊断 -> 回归测试 -> 修复 -> 验证 -> 提交 |
-| **简单修改** | `/doit 把配置文件改成 settings.yaml` | 直接执行，跳过流程 |
-| **继续** | `/doit`（无参数） | 从上次中断处恢复 |
-
-## 工作原理
-
-doit 解决了一个根本问题：**AI Agent 直接写代码，不思考。** 这产生的代码看似正确，但遗漏边界情况、逻辑重复，或者没有真正解决用户描述的问题。
-
-doit 在"用户提出"和"Agent 编码"之间插入结构化思考：
+doit 在「用户提出需求」和「Agent 编码」之间插入强制结构化流程：
 
 ```
-用户需求 -> 分类 -> 规格（Grill + REQ） -> 计划（代码图谱）
-    -> 执行（TDD 逐 REQ） -> E2E（真实环境） -> 审查 -> 简化 -> E2E 验证 -> 提交
+用户 → `/doit 加登录`
+        ├─ Phase 1: Grill（追问假设，澄清需求）
+        ├─ Phase 2: Spec（写需求、验收标准）
+        ├─ Phase 3: Plan（先设计，再动代码）
+        ├─ Phase 4: TDD（测试先行，红绿重构）
+        ├─ Phase 5: E2E（完整用户路径测试）
+        ├─ Phase 6: Review + Simplify（安全审查、去重、删死代码）
+        ├─ Phase 7: Commit（提交、推送）
+        └─ 完成
 ```
 
-每个 phase 不可跳过。工作流通过质量关卡防止常见问题：
+每个 phase **不可跳过**。每个边界都有质量关卡。
 
-| 关卡 | 防止什么 |
-|------|---------|
-| 规格优先 | 建了错误的东西 |
-| TDD 逐 REQ | 没有测试的代码 |
-| E2E 测试 | 测试通过但功能不可用 |
-| 审查 + 简化 | 重复代码、过度设计、死代码 |
-| 简化后 E2E 验证 | 简化破坏已有功能 |
-| 提交 + 推送 | 工作丢失 |
+## 支持平台
 
-## 工具生态
+| 平台 | 安装 |
+|------|------|
+| **Claude Code** | `setup.sh --agent claude` |
+| **OpenCode** | `setup.sh --agent opencode` |
+| **Oh My Pi** | `setup.sh --agent omp` |
+| **Codex CLI** | `setup.sh --agent codex` |
+| **MCP Agent** | `setup.sh --agent mcp` |
+| **手动安装** | `curl -fsSL https://raw.githubusercontent.com/1JayPeng/doit-skill/main/scripts/setup.sh \| bash` |
+| **更新** | 重新运行 `setup.sh`，自动检测并原地升级 |
 
-doit 不是一个孤立的 skill，它是**工具编排器**。它整合了 8 个外部工具和 6 个内置技能，形成三层记忆架构：
+## 特性
 
-```
-                    /doit
-                  (编排器)
-                   /   |   \
-                  /    |    \
-                 v     v     v
-           [内置技能] [外部工具] [记忆层]
-```
+### Spec 到代码的自动化流水线
 
-### 内置技能（随 doit 一起安装）
+7 个强制阶段：**Grill → Spec → Plan → TDD → E2E → Review → Commit**。不能跳步。每阶段必须满足关卡：验收标准明确、测试通过、审查通过，才能进入下一步。
 
-| 技能 | 用途 | 使用阶段 |
-|-------|---------|---------|
-| `grill-me` | 想法验证 | Phase 1 |
-| `tdd` | TDD 循环 | Phase 3 |
-| `diagnose` | Bug 诊断 | Debug D0 |
-| `prototype` | 一次性原型 | Phase 1 |
-| `handoff` | 会话交接 | 任意阶段 |
-| `improve-codebase-architecture` | 架构深化 | Phase 5 |
+### 多 CLI，同一套流程
 
-### 外部工具（setup.sh 自动安装）
+同一套 `/doit` 工作流可运行在 Claude Code、OpenCode、Codex CLI、oh-my-pi、MiMo Code，以及任何支持 MCP 的 Agent。安装时自动选择工具适配器。
 
-任何工具缺失 -> 优雅降级，doit 跳过该步骤继续。
+### 优雅降级
 
-#### RTK（Rust Token Killer）
+| 等级 | 工具缺失时 |
+|------|------------|
+| **关键工具**（context-mode、caveman、mempalace、headroom、codegraph） | 降级运行或显示警告 |
+| **可选工具**（rtk、uv、tavily、ponytail） | 跳过对应能力，流程继续 |
 
-Token 优化 CLI 代理 — 所有 Bash 命令节省 60-90% token。[GitHub](https://github.com/rtk-ai/rtk)
+没有单点硬依赖。缺一个工具，不会让整套流程瘫痪。
 
-```bash
-# 1. 安装二进制到 $HOME/.local/bin/rtk
-curl -fsSL https://v6.gh-proxy.org/https://raw.githubusercontent.com/rtk-ai/rtk/refs/heads/master/install.sh | sh
+### 五层记忆
 
-# 2. 将 $HOME/.local/bin 加入 PATH（安装脚本不会自动做）
-export PATH="$HOME/.local/bin:$PATH"
-# 持久化到 shell 配置：
-grep -q 'export PATH=.*\$HOME/.local/bin' ~/.bashrc 2>/dev/null || \
-  echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
+| 层级 | 工具 | 存什么 |
+|------|------|--------|
+| 会话知识库 | Context-mode | 命令输出、可搜索上下文 |
+| Token 优化 | RTK | 自动压缩 Bash 命令输出，节省 60-90% token |
+| 连接记忆 | Headroom | Compress-Cache-Retrieve 代理压缩 |
+| 跨会话记忆 | MemPalace | 知识图谱、语义搜索、spec、决策、agent diary |
+| 任务记忆 | AgentMemory | 任务进度、完成状态 |
 
-# 3. 为 Claude Code 初始化（安装 hook + RTK.md 到全局）
-rtk init -g
-```
+MemPalace 提供 30 个 MCP 工具，遵循读写对称：写入过的 phase，后续运行会读回。Phase 0 通过 10 个并行调用恢复项目上下文。
 
-#### Context-Mode
+### 默认懒人哲学：少写、删掉、复用
 
-上下文窗口管理 — 命令输出索引、语义搜索。[GitHub](https://github.com/mksglu/context-mode)
+Ponytail 原则贯穿全流程：先问代码是否需要存在，优先标准库，删除死代码，压平无意义抽象。Phase 6（Review + Simplify）强制执行。
 
-```bash
-# 作为 Claude Code 插件安装
-claude plugin marketplace add mksglu/claude-context-mode/plugin
-claude plugin install context-mode@claude-context-mode/plugin
-```
+### 统一工具注册表 `tools.sh`
 
-#### Headroom
+所有外部工具由一个可 source 的 bash 注册表管理：`scripts/tools.sh`。
 
-上下文优化 — 代理压缩 + 记忆持久化。[GitHub](https://github.com/nicholasgriffintn/headroom)
+它负责：
 
-```bash
-# 1. 通过 uv 安装
-uv tool install "headroom-ai[proxy]"
+- **元数据数组**：工具 ID、显示名、关键性、fallback 策略
+- **缓存 I/O**：`tools_save_status` 安装后写 JSON；`tools_read_status` 读取状态
+- **显示辅助**：`_tool_emoji` 把状态映射成 emoji；`_tool_check_cached` 先读缓存，缺失再 fallback 到 `command -v`
+- **doctor 集成**：`doctor.sh` 先读缓存，避免重复探测
 
-# 2. 注册 MCP 服务器
-headroom mcp install
-```
+`setup.sh` 和 `doctor.sh` 共用同一个注册表，不再复制两套工具逻辑。
 
+## 原理
 
-#### MemPalace（记忆层）
-
-跨会话语义记忆 — 规格、决策、知识图谱、agent diary。[GitHub](https://github.com/milla-jovovich/mempalace)
-
-```bash
-# 1. 安装插件
-claude plugin add mempalace@mempalace --marketplace github:milla-jovovich/mempalace
-
-# 2. 安装 CLI（可选）
-uv tool install mempalace
-
-# 3. 在项目中初始化
-mempalace init .
-```
-
-#### caveman
-
-简洁模式 — token 紧凑的响应、commit message。[GitHub](https://github.com/JuliusBrussee/caveman)
-
-```bash
-# 作为 Claude Code 插件安装
-claude plugin marketplace add JuliusBrussee/caveman
-claude plugin install caveman@caveman
-
-# 安装 hooks（状态栏徽章）
-npx -y "github:JuliusBrussee/caveman" --with-hooks --skip-skills
-
-# 配置 settings.json 中的 statusLine
-# setup.sh 会自动完成 — 将 statusLine 设置为 caveman-statusline.sh
-```
-
-#### uv
-
-快速 Python 包管理器。[GitHub](https://github.com/astral-sh/uv)
-
-```bash
-pip install uv
-```
-
-#### Tavily MCP
-
-网络搜索 — 规格 grill 阶段使用。[Tavily](https://tavily.com)
-
-```bash
-# 添加到 .mcp.json（需要 API key）：
-claude mcp add --transport http tavily https://mcp.tavily.com/mcp/?tavilyApiKey=<your-key>
-```
-
-#### CodeGraph
-
-精准代码图查询 — 跨语言 AST 符号查找、调用图、影响分析。与 TokenSave 互补并行（CodeGraph 精准查询，TokenSave 即时检测）。[GitHub](https://github.com/colbymchenry/codegraph)
-
-```bash
-# 通过 npm 安装
-npm i -g @colbymchenry/codegraph
-
-# 配置 MCP 服务器
-codegraph install --yes
-
-# 在项目中初始化
-codegraph init -i
-```
-
-#### codegraph
-
-代码图谱 — 符号查找、影响分析、调用图。[GitHub](https://github.com/colbymchenry/codegraph)
-
-```bash
-npx -y codegraph install --yes
-codegraph init -i
-```
-
-### 知识沉淀模块
-
-Phase 9.5.5 自动提取结构化知识（决策、错误、代码模式），并在 Phase 1/2 注入相关经验。
-
-**提取时机：** Phase 9.5 完成后，Phase 10 前
-**注入时机：** Phase 1/2 开始前
-**存储：** MemPalace + Filesystem
+### 架构
 
 ```
-Session 完成 -> Phase 9.5.5 提取 -> 用户确认 -> 多层存储
-下次 Session -> Phase 1/2 注入 -> 搜索相关经验 -> 注入 top-3
+GitHub 远端 ──push──→ setup.sh ──install──→ ~/.claude/skills/doit/
+                         │                         │
+                     tools.sh                  doctor.sh
+                         │                         │
+              ┌──────────┴──────────┐       cache-first 检查
+              ▼                     ▼             │
+        每工具安装脚本          缓存 I/O      tools_read_status
+        scripts/installers/     env-cache.json     │
+                                                    ▼
+                                             缺缓存时 fallback
+                                             到 command -v
 ```
 
-### 审查 + 简化（不可跳过）
+变更流向：**本地开发 → git push → GitHub → setup.sh → ~/.claude/skills/doit/**。
 
-阶段 5 审查代码：重复代码、安全漏洞（OWASP Top 10）、过度抽象、死代码。阶段 6 简化：合并重复逻辑、删除死代码、压平不必要的抽象层、减少代码行数。
+### Phase 明细
 
-**未经审查的代码不能提交。** 简化后阶段 7 重新运行所有 E2E 测试验证没有破坏功能。
-
-### E2E 质量
-
-阶段 4 测试用户的完整旅程 — 退出码、stdout、文件输出、数据库状态 — 不是用 `subprocess` 写的单元测试。
-
-| 层级 | 内容 | 模式 |
-|------|------|------|
-| L0 | 必填参数、快乐路径 | 自动生成 |
-| L1 | 边界值 | 自动生成 |
-| L2 | 冲突参数组合 | HITL（人工介入） |
-| L3 | 模糊/随机输入、稳定性 | HITL（人工介入） |
-
-### 三层记忆架构
-
-| 层级 | 工具 | 持久化范围 |
-|------|------|-----------|
-| 代码层 | CodeGraph | 代码符号、调用关系、影响分析 — 代码变更存活 |
-| 跨会话层 | MemPalace | 规格、决策、知识图谱、agent diary — 重启存活 |
-| Token 优化层 | Headroom | CCR 代理压缩 — token 节省 |
-
-**MemPalace**（30 MCP tools, KG + 语义搜索, 日记）。遵循**读写对称铁律**：每个 phase 写入的数据，后续运行都会读回。Phase 0 通过 10 个并行调用重建项目上下文。
-
-知识存储简化为 **MemPalace + Filesystem** 两层，移除 AgentMemory 和 Context-Mode 层以减少重复写入。
-
-RTK 通过 PreToolUse hook 自动代理所有 Bash 命令，全阶段节省 60-90% Token。
-
-详见 [tool-integration-guide.md](tool-integration-guide.md)。
-
-## 工作流程
-
-| 阶段 | 内容 | 工具 |
-|------|------|------|
-| -1 | 检测项目环境 | 内置 |
-| 0 | 需求分类（R/S/F/B） | 内置, caveman, mempalace |
-| 1 | 规格生成 + Grill | Tavily MCP, grill-me, mempalace |
-| 2 | 代码图谱规划 | codegraph, mempalace |
-| 3 | TDD 执行 + 审查+简化 | RTK, uv, context-mode |
-| 4 | 端到端测试（不可跳过） | context-mode |
-| 5 | 代码审查 | codegraph |
-| 6 | 审视 + 简化（不可跳过） | codegraph |
-| 7 | E2E 验证循环 | context-mode |
-| 8 | Git 提交 + Push | git |
-| 9.5 | 完成总结 + 知识提取 | mempalace |
-| 9.5.5 | 知识沉淀（结构化学习） | learn/, mempalace |
-| 10 | Session Summary | RTK, headroom, mempalace |
+| # | Phase | 内容 | 工具 | 关卡 |
+|---|-------|------|------|------|
+| 0 | Context sweep | 从记忆恢复项目状态 | MemPalace, codegraph | 10 个并行调用完成 |
+| 1 | Grill | 追问假设，澄清需求 | Tavily, MemPalace | spec 无歧义 |
+| 2 | Spec | 写需求和验收标准 | MemPalace | AC 可测试 |
+| 3 | Plan | 先设计，再写代码 | codegraph | plan 已审查 |
+| 4 | TDD | 测试先行，红绿重构 | RTK, Headroom | 测试通过 |
+| 5 | E2E | 完整用户路径测试 | — | E2E 通过 |
+| 6 | Review + Simplify | OWASP、去重、删死代码 | code-review, Ponytail | 无开放发现 |
+| 7 | Commit | commit message、push | caveman | 已推送 |
 
 ### E2E 验证循环
 
-阶段 6（审视 + 简化）修改了代码。阶段 7 重新运行所有 E2E 测试，验证简化没有破坏行为，然后将实际输出与 spec REQ 对比。
+Phase 6 会改代码。Phase 7 重新跑所有 E2E，确认简化没有破坏行为，再把实际输出和 spec REQ 对比。**修代码，不改 spec 去适配错误输出。** 最多 3 次循环，仍失败则升级给用户。
 
-```
-简化完成 -> E2E 测试 -> 通过？ -> 需求对齐 -> 符合 spec？ -> 提交
-                 ↓              ↓              ↓
-                失败          修复代码       完成
-```
+## 内置技能
 
-最多 3 次循环。Spec 是唯一真理，不修改 spec 匹配错误输出。
+| 技能 | 用途 | 阶段 |
+|------|------|------|
+| `.iron-rules` | 强制工作流规则 | 全阶段 |
+| `caveman` | 极简表达、commit message | Phase 7 |
+| `code-review` | 安全、架构、重复逻辑审查 | Phase 6 |
+| `context-mode` | 可搜索会话知识库 | Phase 0，全 ctx_* 调用 |
+| `mempalace` | 跨会话语义记忆 | Phase 0, 1, 2, 7 |
+| `ponytail` | YAGNI 简化 | Phase 6 |
 
-### 断点续传
+## 外部工具
 
-单次 `/doit` 调用可能无法完成整个工作流。再次输入 `/doit` 从上次中断处恢复。doit 通过对话上下文、git 状态和 spec 文件推断当前阶段。MemPalace diary 和 KG 事实提供跨会话恢复能力。
+`setup.sh` 自动安装。缺失时优雅降级。
 
----
+| 工具 | 作用 | 安装 | Fallback |
+|------|------|------|----------|
+| [Context-Mode](https://github.com/mksglu/context-mode) | 上下文窗口管理 | `npm install -g context-mode` | degraded |
+| [RTK](https://github.com/rtk-ai/rtk) | Token 优化 CLI 代理 | `npm install -g rtk` | skip |
+| [Headroom](https://github.com/nicholasgriffintn/headroom) | 代理压缩 + 记忆 | `npm install -g headroom` | skip |
+| [MemPalace](https://github.com/MemPalace/mempalace) | 跨会话语义记忆 | `uv tool install mempalace` | degraded |
+| [Caveman](https://github.com/JuliusBrussee/caveman) | 极简表达模式 | 内置 skill | skip |
+| [Code Review](https://github.com/anthropics/claude-code-plugins) | OWASP 安全审查 | 内置 skill | skip |
+| [Tavily MCP](https://tavily.com) | 规格阶段联网研究 | `pip install tavily-mcp` | skip |
+| [uv](https://github.com/astral-sh/uv) | 快速 Python 包管理器 | `curl -LsSf https://astral.sh/uv/install.sh \| sh` | degraded |
+| [CodeGraph](https://github.com/colbymchenry/codegraph) | AST 符号查询、调用图、影响分析 | `npm install -g @codegraph/codegraph` | degraded |
+| Ponytail | YAGNI 简化 | 内置 skill | skip |
 
-## 安装
+## 四个核心原则
 
-### 一键安装（推荐）
-
-```bash
-curl -fsSL https://v6.gh-proxy.org/https://raw.githubusercontent.com/1JayPeng/doit-skill/master/scripts/setup.sh | bash
-```
-
-安装 doit-skill + 所有内置技能 + 所有外部工具。自动检测已安装的。
-
-```bash
-# 跳过可选工具和技能
-curl -fsSL https://v6.gh-proxy.org/https://raw.githubusercontent.com/1JayPeng/doit-skill/master/scripts/setup.sh | bash -s -- --skip-optional
-
-# 预演（显示将要安装的内容）
-curl -fsSL https://v6.gh-proxy.org/https://raw.githubusercontent.com/1JayPeng/doit-skill/master/scripts/setup.sh | bash -s -- --dry-run
-```
-
-**更新：** 重新运行相同命令。
-
-### 通过 npx
-
-```bash
-npx skills add 1JayPeng/doit-skill
-```
-
-### 本地开发
-
-```bash
-git clone https://v6.gh-proxy.org/https://github.com/1JayPeng/doit-skill.git
-cd doit-skill
-./scripts/setup.sh
-
-# 验证
-./scripts/doctor.sh
-```
-
-**更新：** `git pull && ./scripts/setup.sh`
-
-## 近期更新
-
-**2026-06-07** - 知识沉淀模块（Phase 9.5.5）：
-- 新增 `learn/` 模块：Phase 9.5.5 结构化知识提取
-- Phase 1/2 知识注入 — 在 grill 前注入相关历史经验
-- 历史数据迁移：从 git、mempalace、worklog 提取
-- 多层存储：mempalace + filesystem
-- learn/evals.md：评估执行指南
-
-**2026-06-12** - MemPalace 成为唯一记忆层：
-- 移除 AgentMemory（实际从未被使用）
-- MemPalace 为主：语义搜索 + KG + 日记
-- setup.sh: 清理 MemPalace 安装，移除 agentmemory
-- doctor.sh: 检查 MemPalace 插件 + CLI
-
-**2026-06-04** - 工作流提升为铁律 - 任何 phase 不可跳过：
-- 新增铁律："完整工作流不可跳过" - 每个 phase 必须按顺序完成
-- 新增铁律："Review + Simplify 不可跳过" - 未经审查的代码不能提交
-- 铁律总数：3 -> 6
-
-**2026-06-04** - MemPalace 读写对称集成：
-- 铁律："MemPalace 读写对称" - MP 调用与 codegraph 同级别，可用则必做
-- Phase 0：内嵌 4 个并行 MP sweep 调用
-- 各 phase 文档新增 `[MP-READ]` / `[MP-WRITE]` 标记
-
-**2026-06-04** - 全面代码审查修复：
-- 安全：修复 `scripts/add-dependency.sh` 命令注入漏洞
-- Bug：修复 `env-check.md` bash 语法错误
-- Bug：删除 `scripts/setup.sh` 重复的 Rust 安装代码
+| 原则 | 防止什么 | 用在哪里 |
+|------|----------|----------|
+| **先想清楚再写代码** | 需求没搞清就开写 | Grill、Spec、Plan |
+| **测试保护行为** | 回归、假阳性信心 | TDD、E2E、最终复验 |
+| **删除优先于新增** | 膨胀、死代码、无意义抽象 | Review + Simplify, Ponytail |
+| **优雅降级** | 工具链脆弱、安装失败 | tools.sh criticality/fallback |
 
 ## 项目结构
 
 ```
 doit-skill/
-├── SKILL.md          # 主入口
-├── env-check.md      # 阶段 -1: 环境检测
-├── classifier.md     # 需求类型检测
-├── doc-capture.md    # 文档捕获（预阶段）
-├── doit-config.md    # 配置参考
-├── spec.md           # 阶段 1: Grill + REQ 生成
-├── plan.md           # 阶段 2: 代码图谱扫描
-├── debug.md          # 调试工作流 D0-D6 (类型 B)
-├── execute.md        # 阶段 3: TDD 循环 + 审查+简化
-├── e2e.md            # 阶段 4: 端到端测试
-├── review.md         # 阶段 5: 代码审查
-├── review-simplify.md -> shared/review-simplify.md
-├── commit.md -> shared/commit.md
-├── errors.md         # 失败处理
-├── shared/           # 共享阶段（功能 + 调试共用）
-│   ├── review-simplify.md
-│   ├── e2e-verify.md
-│   └── commit.md
-├── skills/           # 内置技能依赖
-│   ├── grill-me/     # 想法验证
-│   ├── tdd/          # TDD 循环
-│   ├── diagnose/     # Bug 诊断
-│   ├── prototype/    # 一次性原型
-│   ├── handoff/      # 会话交接
-│   └── improve-codebase-architecture/
-└── scripts/          # 安装和工具脚本
-    ├── setup.sh      # 完整安装
-    ├── doctor.sh     # 依赖健康检查
-    └── add-dependency.sh
+├── scripts/
+│   ├── setup.sh                # 安装器：自动检测 CLI、安装工具、写缓存
+│   ├── doctor.sh               # 诊断器：cache-first 检查、按 agent 报告
+│   ├── tools.sh                # 注册表：元数据、缓存 I/O、显示 helper
+│   ├── setup.ps1 / doctor.ps1  # Windows PowerShell 版本
+│   └── installers/             # 每个工具一个安装脚本
+├── .omp/
+│   └── skills/doit/scripts/    # 运行时副本
+├── core/
+│   └── env-check.md            # doctor 文档 + cache I/O 说明
+├── skills/                     # 内置 skills
+│   ├── caveman/
+│   ├── code-review/
+│   ├── context-mode/
+│   ├── mempalace/
+│   └── ponytail/
+├── setup.md                    # 完整安装文档
+└── README.md / README_ZH.md
 ```
 
-## 添加依赖
+## 断点续跑
 
-### 添加内置技能
-```bash
-./scripts/add-dependency.sh <skill-name> bundled
-```
+一次 `/doit` 不一定跑完整流程。再次输入 `/doit`，它会根据对话上下文、git 状态、spec 文件判断当前 phase。MemPalace diary 和 KG 事实用于跨会话恢复。
 
-### 添加可选技能
-```bash
-# 编辑 package.json
-"dependencies.optionalSkills": {
-  "new-skill": "recommended"
-}
-```
+## 添加工具
 
 ### 添加外部工具
+
+1. 创建 `scripts/installers/install_<tool>.sh`，包含 `install_<t>()`、`verify_<t>()`、`version_<t>()`
+2. 在 `scripts/tools.sh` 注册：`ALL_TOOLS`、`TOOL_NAMES`、criticality、fallback
+3. `doctor.sh` 会自动通过注册表循环使用它
+
+### 添加内置技能
+
 ```bash
-# 编辑 package.json
-"dependencies.tools": {
-  "new-tool": "install-command"
-}
+./scripts/setup.sh --add-skill <name> --repo <url>
 ```
