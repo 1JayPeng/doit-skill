@@ -83,15 +83,19 @@ Run `improve-codebase-architecture` skill for insight only. **Do not execute arc
 **Fallback:** `codegraph_search` + `grep -rn` for security scanning.
 - **Fallback:** If TokenSave unavailable -> `grep -rn "TODO\|FIXME\|HACK\|unsafe" src/`.
 
-### 4. Spec Final Check
+### 4. Spec Final Check + 偏离检查
 
 Re-read `.spec/current.md`. Every REQ must be DONE. Gaps -> flag, don't auto-fix.
 
+For each REQ, classify implementation/spec mismatch:
+- **左偏离 (encouraged):** implementation fully satisfies the REQ, improves on the spec, is integrated into the main system, and is callable from the normal path → update `.spec/current.md` to match reality.
+- **右偏离 (fix):** implementation is fake or isolated, matches only function/file names, or is unused by the normal path → loop back to Phase 3 and wire/fix it.
+- **部分偏离 (fix):** only part of the REQ is implemented → loop back to Phase 3 for the missing behavior.
+- **完全偏离/未实现 (fix):** implementation does not address the REQ, or no implementation exists → loop back to Phase 3 for that REQ.
+
+**偏离检查 gate:** Only 左偏离 may pass Phase 5, and it must update the spec before continuing.
+
 **codegraph tools for cross-referencing spec vs implementation:**
-- `codegraph_search(query="<REQ keyword>")` — verify the REQ functionality exists in code
-- `codegraph_context(task="<REQ description>")` — get relevant code context for the REQ
-- `ctx_search(queries=[<REQ descriptions>])` — look up previously indexed spec content
-- **Fallback:** Read `.spec/current.md` directly + `grep -rn` for keywords.
 
 **[MP-WRITE] File review findings for cross-session reference:**
 ```

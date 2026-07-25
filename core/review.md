@@ -18,14 +18,19 @@ Review all changes for:
 - Any REQ that was partially implemented?
 - Any unexpected file changes?
 
-### Step 2 — REQ-by-REQ Verification
+### Step 2 — REQ-by-REQ Verification + 偏离检查
 
 For each REQ in `.spec/current.md`:
 1. Check spec statement → implementation exists
 2. Check tests cover the REQ
 3. Check no REQ was dropped or silently changed
+4. Classify any implementation/spec mismatch:
+   - **左偏离 (encouraged):** implementation fully satisfies the REQ, improves on the spec, is integrated into the main system, and is callable from the normal path → update `.spec/current.md` to match reality.
+   - **右偏离 (fix):** implementation is fake or isolated, matches only function/file names, or is unused by the normal path → loop back to Phase 3 and wire/fix it.
+   - **部分偏离 (fix):** only part of the REQ is implemented → loop back to Phase 3 for the missing behavior.
+   - **完全偏离/未实现 (fix):** implementation does not address the REQ, or no implementation exists → loop back to Phase 3 for that REQ.
 
-**Partial REQ gate:** If any REQ is partially implemented → loop back to Phase 3 for that REQ.
+**偏离检查 gate:** Only 左偏离 may pass Phase 5, and it must update the spec before continuing.
 
 ### Step 3 — Cross-REQ Consistency
 
