@@ -116,12 +116,6 @@ uv tool install "headroom-ai[proxy]"
 headroom mcp install
 ```
 
-上下文优化 — 精简上下文窗口管理 + AI Agent 集成。[Website](https://leanctx.com)
-
-```bash
-# 安装并自动配置
-curl -fsSL https://leanctx.com/install.sh | sh
-lean-ctx onboard
 
 #### MemPalace（记忆层）
 

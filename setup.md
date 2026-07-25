@@ -88,30 +88,6 @@ headroom proxy
 ANTHROPIC_BASE_URL=http://127.0.0.1:8787 claude
 ```
 
-## lean-ctx (Context Optimization)
-
-Lean context window management with AI agent integration. [Website](https://leanctx.com)
-
-```bash
-# 1. Install binary
-curl -fsSL https://leanctx.com/install.sh | sh
-
-# 2. Verify
-lean-ctx --version
-
-# 3. Connect all AI tools
-lean-ctx onboard
-source ~/.bashrc
-lean-ctx init --agent claude
-
-# 4. Manual fallback (if step 3 doesn't configure Claude Code)
-claude mcp add lean-ctx lean-ctx
-
-# 5. Verify
-lean-ctx doctor
-```
-
-After installation, usage rules appear at `~/.claude/rules/lean-ctx.md`.
 
 ## Tavily MCP (Internet Search)
 
@@ -147,8 +123,6 @@ doit uses a **bundled dependency model**. Core skills ship inside `skills/` and 
 | Context-Mode | `claude plugin marketplace add mksglu/context-mode` | Phase 1-6 |
 | RTK | `curl ... \| sh` + `rtk init -g` (see above) | All phases (auto-wrap) |
 | uv | `pip install uv` | Phase 3 |
-| Headroom | `uv tool install "headroom-ai[mcp,proxy]"` + `headroom mcp install` | Phase 10 |
-| lean-ctx | `curl ... \| sh` + `lean-ctx onboard` + `lean-ctx init --agent claude` | All phases |
 | MemPalace | `claude plugin marketplace add MemPalace/mempalace` | Phase 0, 1, 3, 5, 8, 9.5, 10 |
 | caveman | `claude plugin marketplace add JuliusBrussee/caveman && claude plugin install caveman@caveman` (curl fallback) | Phase 0+ |
 | code-review | `claude plugin install code-review` | Phase 5 |
@@ -205,9 +179,5 @@ CodeGraph file watcher auto-syncs (~500ms debounce) — no PostToolUse hook need
 
 A complete inventory of all tools in the doit ecosystem is available in
 [docs/tools-catalog.md](docs/tools-catalog.md). It covers MCP servers,
-lean-ctx context engine tools (ctx_*), doit skills, communication/style
-tools (caveman, ponytail), code review tools, utility skills, and the
-lean-ctx addon ecosystem.
+tools (caveman, ponytail), code review tools, and contextual utilities.
 
-See [docs/lean-ctx-addons-complete.md](docs/lean-ctx-addons-complete.md) for
-the full lean-ctx addons documentation, including all known addon candidates.

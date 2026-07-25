@@ -36,7 +36,6 @@ doit is a **workflow orchestrator** — it relies on specialized tools for each 
 
 | **Cross-session memory** | [MemPalace](https://github.com/MemPalace/mempalace) | Specs, decisions, knowledge graph — survives restarts |
 | **Token optimization** | [Headroom](https://github.com/nicholasgriffintn/headroom) | CCR (Compress-Cache-Retrieve) proxy compression — token savings |
-| **Context optimization** | [lean-ctx](https://leanctx.com) | Lean context window management — token savings |
 | **Token optimization** | [RTK](https://github.com/rtk-ai/rtk) | Auto-wraps Bash commands, saves 60-90% tokens |
 | **Code review** | [code-review](https://github.com/anthropics/claude-code-plugins) | OWASP security, architecture review |
 | **Brevity mode** | [caveman](https://github.com/JuliusBrussee/caveman) | Token-compact responses, commit messages |
@@ -273,30 +272,6 @@ uv tool install "headroom-ai[mcp,proxy]"
 headroom mcp install
 ```
 
-#### lean-ctx
-
-Context optimization — lean context window management with AI agent integration. [Website](https://leanctx.com)
-
-```bash
-# 1. Install binary
-curl -fsSL https://leanctx.com/install.sh | sh
-
-# 2. Verify
-lean-ctx --version
-
-# 3. Connect all AI tools
-lean-ctx onboard
-source ~/.bashrc
-lean-ctx onboard (auto-detected)
-
-# 4. Manual fallback (if step 3 doesn't configure Claude Code)
-claude mcp add lean-ctx lean-ctx
-
-# 5. Verify
-lean-ctx doctor
-```
-
-After installation, usage rules appear at `~/.claude/rules/lean-ctx.md`.
 
 #### MemPalace (memory layer)
 

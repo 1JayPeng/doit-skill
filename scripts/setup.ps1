@@ -17,7 +17,7 @@
     Skip updating already-installed tools
 
 .PARAMETER SkipInits
-    Skip tool initialization (rtk init, lean-ctx onboard, etc.)
+    Skip tool initialization (rtk init, etc.)
 
 .PARAMETER Global
     Install to global skill directory instead of project-local
@@ -471,7 +471,6 @@ if ($DryRun) {
     Write-Host "    • rtk              (cargo install rtk or $($script:PkgMgr))"
     Write-Host "    • uv               (official installer)"
     Write-Host "    • rustup           (Rust toolchain)"
-    Write-Host "    • lean-ctx         (curl installer)"
     Write-Host "    • headroom         (uv tool install)"
     Write-Host "    • codegraph        (npm i -g @colbymchenry/codegraph)"
     Write-Host "    • caveman          (Claude Code plugin)"
@@ -914,7 +913,7 @@ function Download-AndInstall {
 # ============================================================================
 $skipStep3 = $false
 $installedCount = 0
-$toolChecks = @("rtk", "uv", "cargo", "lean-ctx", "codegraph", "headroom")
+$toolChecks = @("rtk", "uv", "cargo", "codegraph", "headroom")
 foreach ($tool in $toolChecks) {
   if (Test-Command $tool) { $installedCount++ }
 }
@@ -1269,110 +1268,6 @@ registry = "sparse+https://mirrors.ustc.edu.cn/crates.io-index/"
     }
   }
 
-  # =========================================================================
-  # lean-ctx (context optimization)
-  # =========================================================================
-  Write-Host "=========================================="
-  Write-Host "  Step 3.6: Installing lean-ctx"
-  Write-Host "=========================================="
-  Write-Host ""
-
-  if (Test-Command lean-ctx) {
-    if ($SkipUpdates) {
-      Write-Skip "lean-ctx already installed (skipping update)"
-    } else {
-      Write-Info "Updating lean-ctx..."
-      # lean-ctx has a PowerShell installer
-      $leanCtxUrl = "https://leanctx.com/install.ps1"
-      try {
-        Invoke-WebRequest -Uri $leanCtxUrl -OutFile (Join-Path $env:TEMP "lean-ctx-install.ps1") -UseBasicParsing
-        & (Join-Path $env:TEMP "lean-ctx-install.ps1") 2>&1
-        Remove-Item (Join-Path $env:TEMP "lean-ctx-install.ps1") -ErrorAction SilentlyContinue
-      } catch {
-        # Fallback: download binary directly
-        Write-Info "Trying direct download..."
-        $leanCtxBinUrl = "https://leanctx.com/install.sh"
-        Write-Warn "lean-ctx installer requires bash on Windows — run in Git Bash: curl -fsSL https://leanctx.com/install.sh | bash"
-      }
-    }
-  } else {
-    Write-Info "Installing lean-ctx..."
-    $leanCtxUrl = "https://leanctx.com/install.ps1"
-    try {
-      Invoke-WebRequest -Uri $leanCtxUrl -OutFile (Join-Path $env:TEMP "lean-ctx-install.ps1") -UseBasicParsing
-      & (Join-Path $env:TEMP "lean-ctx-install.ps1") 2>&1
-      Remove-Item (Join-Path $env:TEMP "lean-ctx-install.ps1") -ErrorAction SilentlyContinue
-    } catch {
-      Write-Warn "lean-ctx installer requires bash on Windows — run in Git Bash: curl -fsSL https://leanctx.com/install.sh | bash"
-    }
-  }
-
-  if (Test-Command lean-ctx) {
-    lean-ctx --version 2>&1
-    Write-Info "Connecting lean-ctx to all AI tools..."
-    lean-ctx onboard 2>&1
-
-    # lean-ctx project rules
-    $leanCtxGlobalRules = "$HOME/.claude/rules/lean-ctx.md"
-    $projectRulesDir = ".claude/rules"
-    $projectRulesFile = Join-Path $projectRulesDir "lean-ctx.md"
-
-    if (Test-Path $leanCtxGlobalRules) {
-      if (-not (Test-Path $projectRulesDir)) {
-        New-Item -ItemType Directory -Path $projectRulesDir -Force | Out-Null
-      }
-      Copy-Item -Path $leanCtxGlobalRules -Destination $projectRulesFile -Force
-      Write-Success "lean-ctx project rules configured ($projectRulesFile)"
-    }
-
-    # lean-ctx project hooks
-    $projectSettingsFile = ".claude/settings.local.json"
-    if (-not (Test-Path $projectSettingsFile)) {
-      $settingsDir = ".claude"
-      if (-not (Test-Path $settingsDir)) {
-        New-Item -ItemType Directory -Path $settingsDir -Force | Out-Null
-      }
-
-      $localSettings = @{
-        hooks = @{
-          PostToolUse = @(
-            @{ hooks = @(
-                @{ command = "lean-ctx hook observe"; type = "command" }
-              ); matcher = ".*" }
-          )
-          PreCompact = @(
-            @{ hooks = @(
-                @{ command = "lean-ctx hook observe"; type = "command" }
-              ); matcher = ".*" }
-          )
-          PreToolUse = @(
-            @{ hooks = @(
-                @{ command = "lean-ctx hook rewrite"; type = "command" }
-              ); matcher = "Bash|bash" },
-            @{ hooks = @(
-                @{ command = "lean-ctx hook redirect"; type = "command" }
-              ); matcher = "Read|read|ReadFile|read_file|View|view|Grep|grep|Search|search|ListFiles|list_files|ListDirectory|list_directory" }
-          )
-          Stop = @(
-            @{ hooks = @(
-                @{ command = "lean-ctx hook observe"; type = "command" }
-              ); matcher = ".*" }
-          )
-          UserPromptSubmit = @(
-            @{ hooks = @(
-                @{ command = "lean-ctx hook observe"; type = "command" }
-              ); matcher = ".*" }
-          )
-        }
-      }
-      $localSettings | ConvertTo-Json -Depth 5 | Set-Content -Path $projectSettingsFile -Encoding UTF8
-      Write-Success "lean-ctx project hooks configured ($projectSettingsFile)"
-    } else {
-      Write-Success "lean-ctx project hooks already configured"
-    }
-
-    Write-Success "lean-ctx installed"
-  }
 
   # =========================================================================
   # Headroom (token optimization)

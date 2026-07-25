@@ -286,22 +286,6 @@ try {
   }
 } catch { }
 
-# lean-ctx
-if (Test-Command lean-ctx) {
-  Write-Host "  [OK] lean-ctx installed" -ForegroundColor Green
-} else {
-  Write-Host "  [INFO] lean-ctx not installed (recommended)" -ForegroundColor Yellow
-  Write-Host "     Install: curl -fsSL https://leanctx.com/install.sh | sh"
-}
-
-if (Test-Path ".claude/rules/lean-ctx.md") {
-  Write-Host "  [OK] lean-ctx rules configured (project-local)" -ForegroundColor Green
-} elseif (Test-Path "$HOME/.claude/rules/lean-ctx.md") {
-  Write-Host "  [OK] lean-ctx rules configured (global)" -ForegroundColor Green
-} else {
-  Write-Host "  [INFO] lean-ctx rules not configured" -ForegroundColor Yellow
-  Write-Host "     Configure: lean-ctx onboard (auto-detected)"
-}
 
 # codegraph
 if (Test-Command codegraph) {

@@ -127,6 +127,7 @@ SKIP_INITS=false
 INSTALL_SCOPE=""  # ""=not set (will prompt), "project", "global"
 UPDATED_FILES=()
 INSTALL_CACHE="$HOME/.doit/install-cache.json"
+SELECTIVE_TOOLS=""
 
 # Hash function: portable across Linux/macOS
 file_hash() {
@@ -321,12 +322,18 @@ while [ $i -le $# ]; do
     --dry-run) DRY_RUN=true ;;
     --skip-optional) SKIP_OPTIONAL=true ;;
     --skip-updates) SKIP_UPDATES=true ;;
+    --tool)
+      i=$((i + 1))
+      SELECTIVE_TOOLS="${!i}"
+      SKIP_OPTIONAL=false
+      ;;
     --skip-inits) SKIP_INITS=true ;;
     --global) INSTALL_SCOPE="global" ;;
     --agent)
       i=$((i + 1))
       AGENT_TYPE="${!i:-auto}"
       AGENT_TYPE=$(detect_agent "$AGENT_TYPE")
+      AGENT_LIST="$AGENT_TYPE"
       export AGENT_TYPE
       _set_agent_paths "$AGENT_TYPE"
       ;;
@@ -338,24 +345,25 @@ while [ $i -le $# ]; do
       AGENT_TYPE=$(echo "$AGENT_LIST" | awk '{print $1}')
       export AGENT_TYPE
       _set_agent_paths "$AGENT_TYPE"
-      ;;
-    *) ;;
   esac
-  i=$((i + 1))
 done
+# Check if a tool should be installed (all tools when SELECTIVE_TOOLS is empty)
+_tool_selected() { [ -z "$SELECTIVE_TOOLS" ] && return 0; local t; for t in $SELECTIVE_TOOLS; do [ "$t" = "$1" ] && return 0; done; return 1; }
 
-# --global applies after --agent resolves paths
+if [ -z "$AGENT_LIST" ]; then
+  if [ -n "${AGENT:-}" ] && [ "$AGENT" != "auto" ]; then
+    AGENT_LIST="$AGENT_TYPE"
+  else
+    AGENT_LIST=$(detect_all_agents)
+  fi
+fi
+AGENT_TYPE=$(echo "$AGENT_LIST" | awk '{print $1}')
+export AGENT_TYPE
+_set_agent_paths "$AGENT_TYPE"
+
+# --global applies after final agent paths resolve.
 if [ "$INSTALL_SCOPE" = "global" ]; then
   SKILL_DIR="$GLOBAL_SKILL_DIR"
-fi
-
-# Set AGENT_LIST: if --agents was used, it's already set;
-# if --agent was used (single), use that; otherwise auto-detect all
-if [ -z "$AGENT_LIST" ]; then
-  AGENT_LIST="$AGENT_TYPE"
-fi
-if [ -z "$AGENT_LIST" ]; then
-  AGENT_LIST=$(detect_all_agents)
 fi
 
 # Colors (defined early — used in install scope prompt below)
@@ -370,8 +378,8 @@ NC='\033[0m'
 if [ -z "$INSTALL_SCOPE" ] && [ -t 0 ] && [ -t 1 ]; then
   echo ""
   echo -e "  ${CYAN}Install scope:${NC}"
-  echo -e "  ${GREEN}(1) Project-local${NC}  — skills in .claude/skills/, plugins/MCP scoped to this project"
-  echo -e "  ${GREEN}(2) Global${NC}         — skills in ~/.claude/skills/, plugins/MCP available everywhere"
+  echo -e "  ${GREEN}(1) Project-local${NC}  — skills in each agent's project-local directory, plugins/MCP scoped to this project"
+  echo -e "  ${GREEN}(2) Global${NC}         — skills in each agent's global directory, plugins/MCP available everywhere"
   echo ""
   read -r -p "  Install scope? [1/2] (default: 1) " answer
   case "${answer:-1}" in
@@ -538,6 +546,9 @@ _configure_tavily_for_agent() {
     claude)   _mcp_config_file="$HOME/.claude.json" ;;
     opencode) _mcp_config_file="$HOME/.config/opencode/opencode.json" ;;
     codex)    _mcp_config_file="$HOME/.codex/config.toml" ;;
+    oh-my-pi) _mcp_config_file="$HOME/.config/omp/mcp.json" ;;
+    mimo)     _mcp_config_file="$HOME/.config/mimo/settings.json" ;;
+    jcode)    _mcp_config_file="$HOME/.jcode/mcp.json" ;;
     *)        _mcp_config_file="$HOME/.ai/mcp.json" ;;
   esac
 
@@ -548,6 +559,7 @@ _configure_tavily_for_agent() {
   fi
 
   echo_info "Configuring Tavily MCP for $_tavily_agent ($_mcp_config_file)..."
+  mkdir -p "$(dirname "$_mcp_config_file")"
 
   # Remove old tavily entry if exists (JSON config)
   if [ -f "$_mcp_config_file" ] && [[ "$_mcp_config_file" == *.json ]]; then
@@ -608,7 +620,7 @@ elif path.endswith('.toml'):
   fi
 }
 
-if [ -n "$TAVILY_API_KEY" ]; then
+if [ "$DRY_RUN" != true ] && [ -n "$TAVILY_API_KEY" ]; then
   echo_info "Configuring Tavily MCP for all detected agents..."
   for _tavily_agent in $AGENT_LIST; do
     _configure_tavily_for_agent "$_tavily_agent"
@@ -648,25 +660,34 @@ if [ "$DRY_RUN" = true ]; then
   echo ""
   if [ "$SKIP_OPTIONAL" = false ]; then
     echo "  External tools (installed by default):"
-    echo "    • context-mode     (claude plugin marketplace add mksglu/claude-context-mode/plugin)"
-    echo "    • rtk              (cargo install rtk)"
-    echo "    • uv               (official install script)"
-    echo "    • rust               (rustup, Tsinghua mirror)"
-    echo "    • tavily           (claude mcp add --transport http tavily ...)"
-    echo "    • caveman          (claude plugin + hooks + statusline config)"
-echo "    • code-review      (claude plugin install code-review)"
-    echo "    • mempalace        (claude plugin install --scope user mempalace)"
-    echo "    • headroom         (uv tool install headroom-ai[mcp,proxy])"
-    echo "    • lean-ctx         (curl install script)"
-    echo "    • codegraph        (npm i -g @colbymchenry/codegraph)"
-    echo "    • ponytail         (claude plugin install ponytail@ponytail)"
+    echo "    CLI tools (installed once, agent-independent):"
+    echo "      • rtk              (cargo install rtk)"
+    echo "      • uv               (official install script)"
+    echo "      • rustup           (rustup, Tsinghua mirror)"
+    echo "      • mempalace CLI    (uv tool install mempalace)"
+    echo "      • headroom         (uv tool install headroom-ai[mcp,proxy])"
+    echo "      • codegraph        (npm i -g @colbymchenry/codegraph)"
+    echo "    Per-agent integrations (configured per detected CLI where supported):"
+    echo "      • context-mode     (plugin)"
+    echo "      • tavily           (MCP)"
+    echo "      • mempalace        (plugin)"
+    echo "      • headroom MCP     (MCP)"
+    echo "      • codegraph MCP    (MCP)"
+    echo "      • ponytail         (plugin)"
+    echo "    Claude-only plugins (skipped on OMP, opencode, codex, mimo, jcode):"
+    echo "      • caveman          (plugin + hooks + statusline config)"
+    echo "      • code-review      (plugin)"
+    if [ "$(echo "$AGENT_LIST" | wc -w)" -gt 1 ]; then
+      echo ""
+      echo "  Multi-agent install: each detected CLI gets its own plugin + MCP config."
+    fi
   fi
 
   echo "  Options (configurable at install):"
   echo "    • doc-capture    (persist reference docs, default: enabled)"
   echo "    • subagent       (parallel orchestration, default: enabled)"
   echo "    • auto_commit    (skip commit/push confirmation, default: disabled)"
-  echo "    • --global       install to ~/.claude/skills/ instead of .claude/skills/"
+  echo "    • --global       install to each agent's global skill directory instead of project-local"
 
   echo ""
   echo "=========================================="
@@ -674,17 +695,25 @@ echo "    • code-review      (claude plugin install code-review)"
   exit 0
 fi
 
-# Clone repository to temp directory
-TEMP_DIR=$(mktemp -d)
-DOIT_DIR="$TEMP_DIR/doit-skill"
-
-echo_info "Cloning doit-skill repository..."
-if ! git clone --depth 1 "$REPO_URL" "$DOIT_DIR"; then
-  echo_error "Failed to clone repository: $REPO_URL"
-  echo_error "Check your network connection, or try again later."
-  exit 1
+# Use the current checkout when run from the repo; curl-piped installs clone latest.
+SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+source "$SCRIPT_DIR/tools.sh"
+LOCAL_DOIT_DIR=$(cd "$SCRIPT_DIR/.." && pwd)
+TEMP_DIR=""
+if [ -f "$LOCAL_DOIT_DIR/SKILL.md" ] && [ -d "$LOCAL_DOIT_DIR/core" ]; then
+  DOIT_DIR="$LOCAL_DOIT_DIR"
+  echo_info "Using local doit-skill repository: $DOIT_DIR"
+else
+  TEMP_DIR=$(mktemp -d)
+  DOIT_DIR="$TEMP_DIR/doit-skill"
+  echo_info "Cloning doit-skill repository..."
+  if ! git clone --depth 1 "$REPO_URL" "$DOIT_DIR"; then
+    echo_error "Failed to clone repository: $REPO_URL"
+    echo_error "Check your network connection, or try again later."
+    exit 1
+  fi
+  echo_success "Repository cloned to $DOIT_DIR"
 fi
-echo_success "Repository cloned to $DOIT_DIR"
 
 # Read version from SKILL.md
 DOIT_VERSION=$(grep -m1 '^version:' "$DOIT_DIR/SKILL.md" 2>/dev/null | cut -d'"' -f2 || echo "unknown")
@@ -904,77 +933,87 @@ else
 
 
   # Install bump-spec-version helper script
-  if [ -f "$DOIT_DIR/scripts/bump-spec-version.sh" ]; then
-    mkdir -p "$_install_skill_dir/doit/scripts"
-    cp "$DOIT_DIR/scripts/bump-spec-version.sh" "$_install_skill_dir/doit/scripts/bump-spec-version.sh"
-    chmod +x "$_install_skill_dir/doit/scripts/bump-spec-version.sh"
-    echo_success "bump-spec-version.sh installed"
-  fi
+if [ -f "$DOIT_DIR/scripts/bump-spec-version.sh" ]; then
+  for _agent in $AGENT_LIST; do
+    _set_agent_paths "$_agent"
+    if [ "$INSTALL_SCOPE" = "global" ]; then
+      _bump_skill_dir="$GLOBAL_SKILL_DIR"
+    else
+      _bump_skill_dir="$SKILL_DIR"
+    fi
+    mkdir -p "$_bump_skill_dir/doit/scripts"
+    cp "$DOIT_DIR/scripts/bump-spec-version.sh" "$_bump_skill_dir/doit/scripts/bump-spec-version.sh"
+    chmod +x "$_bump_skill_dir/doit/scripts/bump-spec-version.sh"
+    echo_success "[$_agent] bump-spec-version.sh installed"
+  done
+fi
 fi
 
+# Tools in Step 3's main install block (not in individual 3.x sub-steps)
+BIG_BLOCK_TOOLS="context-mode rtk uv caveman mempalace"
+
 # Step 3: Install external tools
-if [ "$SKIP_OPTIONAL" = true ]; then
+_run_main_block=false
+if [ "$SKIP_OPTIONAL" = true ] && [ -z "$SELECTIVE_TOOLS" ]; then
   echo "=========================================="
   echo "  Step 3: Skipping external tools (--skip-optional)"
   echo "=========================================="
   echo ""
+elif [ -n "$SELECTIVE_TOOLS" ]; then
+  for _mbt in $SELECTIVE_TOOLS; do
+    case " $BIG_BLOCK_TOOLS " in *" $_mbt "*) _run_main_block=true; break;; esac
+  done
+  if [ "$_run_main_block" = true ]; then
+    echo "=========================================="
+    echo "  Step 3: Installing selected tools"
+    echo "=========================================="
+    echo ""
+  fi
 else
+  _run_main_block=true
   echo "=========================================="
   echo "  Step 3: Installing external tools"
   echo "=========================================="
   echo ""
-
-  # Fast-track: all tools installed recently -> skip Step 3
-  _skip_step_3=false
-  if [ ! -f "$INSTALL_CACHE" ]; then
-    _installed_count=0
-    for _t in rtk uv cargo lean-ctx codegraph headroom; do
-      command -v "$_t" >/dev/null 2>&1 && _installed_count=$(( _installed_count + 1 ))
-    done
-    if [ "$AGENT_TYPE" = "oh-my-pi" ]; then
-      omp plugin list 2>/dev/null | grep -q "context-mode" && _installed_count=$(( _installed_count + 1 ))
-      omp plugin list 2>/dev/null | grep -q "ponytail" && _installed_count=$(( _installed_count + 1 ))
-    else
-      claude plugin list 2>/dev/null | grep -q "context-mode" && _installed_count=$(( _installed_count + 1 ))
-      claude plugin list 2>/dev/null | grep -q "caveman" && _installed_count=$(( _installed_count + 1 ))
-      claude plugin list 2>/dev/null | grep -q "ponytail" && _installed_count=$(( _installed_count + 1 ))
-    fi
-    [ "$_installed_count" -ge 10 ] && _skip_step_3=true
-  fi
-
-  if [ "$_skip_step_3" = "true" ]; then
-    echo_skip "All tools installed — skipping Step 3 (re-run with --skip-updates=false to force)"
-    echo ""
-  fi
-
-# Context-Mode (Claude Code plugin)
-  if [ "$AGENT_TYPE" = "oh-my-pi" ]; then
-    if omp plugin list 2>/dev/null | grep -q "context-mode"; then
-      if [ "$SKIP_UPDATES" = true ]; then
-        echo_skip "context-mode already installed (OMP) (skipping update)"
-      else
-        echo_info "Updating context-mode (OMP)..."
-        spin 60 "context-mode update (OMP)" omp plugin install context-mode --pty || echo_warn "context-mode update failed"
-        echo_success "context-mode updated (OMP)"
-      fi
-    else
-      echo_info "Installing context-mode (OMP)..."
-      spin 180 "context-mode install (OMP)" omp plugin install context-mode --pty || echo_warn "Failed to install context-mode"
-    fi
-  else
-    if claude plugin list 2>/dev/null | grep -q "context-mode"; then
-      if [ "$SKIP_UPDATES" = true ]; then
-        echo_skip "context-mode already installed (skipping update)"
-      else
-        echo_info "Updating context-mode..."
-        spin 60 "context-mode update" claude plugin install $(_plugin_scope) context-mode@claude-context-mode/plugin --pty || echo_warn "context-mode update failed"
-        echo_success "context-mode updated"
-      fi
-    else
-      echo_info "Installing context-mode..."
-      spin 120 "context-mode marketplace add" claude plugin marketplace add mksglu/claude-context-mode/plugin --pty || echo_warn "Failed to add context-mode marketplace"
-      spin 180 "context-mode install" claude plugin install $(_plugin_scope) context-mode@claude-context-mode/plugin --pty || echo_warn "Failed to install context-mode"
-    fi
+fi
+if [ "$_run_main_block" = true ]; then
+  if _tool_selected context-mode; then
+  for _cm_agent in $AGENT_LIST; do
+    case "$_cm_agent" in
+      oh-my-pi)
+        if omp plugin list 2>/dev/null | grep -q "context-mode"; then
+          if [ "$SKIP_UPDATES" = true ]; then
+            echo_skip "[oh-my-pi] context-mode already installed (skipping update)"
+          else
+            echo_info "Updating context-mode (OMP)..."
+            spin 60 "context-mode update (OMP)" omp plugin install context-mode --pty || echo_warn "context-mode update failed"
+            echo_success "[oh-my-pi] context-mode updated"
+          fi
+        else
+          echo_info "Installing context-mode (OMP)..."
+          spin 180 "context-mode install (OMP)" omp plugin install context-mode --pty || echo_warn "Failed to install context-mode for OMP"
+        fi
+        ;;
+      claude)
+        if claude plugin list 2>/dev/null | grep -q "context-mode"; then
+          if [ "$SKIP_UPDATES" = true ]; then
+            echo_skip "[claude] context-mode already installed (skipping update)"
+          else
+            echo_info "Updating context-mode (claude)..."
+            spin 60 "context-mode update (claude)" claude plugin install $(_plugin_scope) context-mode@claude-context-mode/plugin --pty || echo_warn "context-mode update failed"
+            echo_success "[claude] context-mode updated"
+          fi
+        else
+          echo_info "Installing context-mode (claude)..."
+          spin 120 "context-mode marketplace add" claude plugin marketplace add mksglu/claude-context-mode/plugin --pty || echo_warn "Failed to add context-mode marketplace"
+          spin 180 "context-mode install" claude plugin install $(_plugin_scope) context-mode@claude-context-mode/plugin --pty || echo_warn "Failed to install context-mode for claude"
+        fi
+        ;;
+      *)
+        echo_info "[$_cm_agent] context-mode — not applicable (Claude/OMP only), skipping"
+        ;;
+    esac
+  done
   fi
 
   # RTK
@@ -993,6 +1032,7 @@ else
     fi
   done
 
+  if _tool_selected rtk; then
   if command -v rtk >/dev/null 2>&1; then
     if [ "$SKIP_UPDATES" = true ]; then
       echo_skip "rtk already installed (skipping update)"
@@ -1021,6 +1061,7 @@ else
     spin 30 "rtk init" "rtk init -g < /dev/null" 2>/dev/null || true
     echo_success "rtk installed and initialized"
   fi
+  fi
 
   # Configure pip mirror (Tsinghua) — needed for uv's pip fallback
   if command -v pip >/dev/null 2>&1; then
@@ -1030,6 +1071,7 @@ else
     }
   fi
 
+  if _tool_selected uv; then
   # UV
   if command -v uv >/dev/null 2>&1; then
     if [ "$SKIP_UPDATES" = true ]; then
@@ -1062,7 +1104,9 @@ UV_EOF
       echo_success "uv PyPI mirror configured (Tsinghua)"
     fi
   fi
+  fi
 
+  if _tool_selected rtk; then
   # Rust (required by rtk) — always check for updates
   if command -v cargo >/dev/null 2>&1; then
     echo_info "Updating Rust via rustup..."
@@ -1098,26 +1142,33 @@ CARGO_EOF
       echo 'export RUSTUP_UPDATE_ROOT=https://mirrors.tuna.tsinghua.edu.cn/rustup/rustup' >> "$HOME/.bashrc"
     }
   fi
+  fi
 
-# Caveman (token-compact mode + statusline) — Claude Code only
-  if [ "$AGENT_TYPE" = "claude" ]; then
+# Caveman (token-compact mode + statusline) — Claude Code only.
+# Iterate all detected agents; only claude gets caveman installed.
+  if _tool_selected caveman; then
+  for _cv_agent in $AGENT_LIST; do
+    if [ "$_cv_agent" != "claude" ]; then
+      echo_info "[$_cv_agent] caveman is Claude-only — skipping"
+      continue
+    fi
     if claude plugin list 2>/dev/null | grep -q "caveman"; then
       if [ "$SKIP_UPDATES" = true ]; then
-        echo_skip "caveman already installed (skipping update)"
+        echo_skip "[claude] caveman already installed (skipping update)"
       else
         echo_info "Updating caveman..."
         spin 60 "caveman update" claude plugin install $(_plugin_scope) caveman@caveman --pty || echo_warn "caveman update failed"
-        echo_success "caveman updated"
+        echo_success "[claude] caveman updated"
       fi
     else
       echo_info "Installing caveman (marketplace -> plugin -> npx fallback)..."
       if spin 120 "caveman marketplace add" claude plugin marketplace add JuliusBrussee/caveman --pty && \
          spin 180 "caveman install" claude plugin install $(_plugin_scope) caveman@caveman --pty; then
-        echo_success "caveman installed (claude plugin)"
+        echo_success "[claude] caveman installed (claude plugin)"
       else
         echo_warn "claude plugin install failed, trying npx installer..."
         if spin 120 "caveman npx installer" curl -fsSL "${GH_PROXY}/https://raw.githubusercontent.com/JuliusBrussee/caveman/main/install.sh" 2>/dev/null | bash -s -- --all; then
-          echo_success "caveman installed (npx installer)"
+          echo_success "[claude] caveman installed (npx installer)"
         else
           echo_warn "Failed to install caveman"
         fi
@@ -1169,59 +1220,69 @@ with open('$_claude_settings', 'w') as f:
         fi
       fi
     fi
-  else
-    echo_info "caveman is a Claude Code plugin — skipping for $AGENT_TYPE"
+  done
   fi
 
-  # Code Review — Claude Code only
-  if [ "$AGENT_TYPE" = "claude" ]; then
+  # Code Review — Claude Code only. Per-agent loop.
+  if _tool_selected code-review; then
+  for _cr_agent in $AGENT_LIST; do
+    if [ "$_cr_agent" != "claude" ]; then
+      echo_info "[$_cr_agent] code-review is Claude-only — skipping"
+      continue
+    fi
     if claude plugin list 2>/dev/null | grep -q "code-review"; then
       if [ "$SKIP_UPDATES" = true ]; then
-        echo_skip "code-review already installed (skipping update)"
+        echo_skip "[claude] code-review already installed (skipping update)"
       else
         echo_info "Updating code-review..."
         spin 60 "code-review update" claude plugin install $(_plugin_scope) code-review --pty || echo_warn "code-review update failed"
-        echo_success "code-review updated"
+        echo_success "[claude] code-review updated"
       fi
     else
       echo_info "Installing code-review..."
       spin 180 "code-review install" claude plugin install $(_plugin_scope) code-review --pty || echo_warn "Failed to install code-review (install manually: claude plugin install code-review)"
     fi
-  else
-    echo_info "code-review is a Claude Code plugin — skipping for $AGENT_TYPE"
+  done
   fi
 
-  # MemPalace — primary memory layer (Claude Code plugin / OMP plugin)
-  if [ "$AGENT_TYPE" = "oh-my-pi" ]; then
-    if omp plugin list 2>/dev/null | grep -q "mempalace"; then
-      if [ "$SKIP_UPDATES" = true ]; then
-        echo_skip "mempalace already installed (OMP) (skipping update)"
-      else
-        echo_info "Updating mempalace (OMP)..."
-        spin 60 "mempalace update (OMP)" omp plugin install mempalace --pty || echo_warn "mempalace update failed"
-        echo_success "mempalace updated (OMP)"
-      fi
-    else
-      echo_info "Installing mempalace (OMP)..."
-      spin 60 "mempalace install (OMP)" omp plugin install mempalace --pty || echo_warn "Failed to install mempalace"
-    fi
-  elif [ "$AGENT_TYPE" = "claude" ]; then
-    if claude plugin list 2>/dev/null | grep -q "mempalace"; then
-      if [ "$SKIP_UPDATES" = true ]; then
-        echo_skip "mempalace already installed (skipping update)"
-      else
-        echo_info "Updating mempalace..."
-        spin 60 "mempalace update" claude plugin install $(_plugin_scope) mempalace --pty || echo_warn "mempalace update failed"
-        echo_success "mempalace updated"
-      fi
-    else
-      echo_info "Installing mempalace..."
-      spin 120 "mempalace marketplace add" claude plugin marketplace add milla-jovovich/mempalace || echo_warn "Failed to add mempalace marketplace"
-      spin 60 "mempalace install" claude plugin install $(_plugin_scope) mempalace@mempalace --pty || echo_warn "Failed to install mempalace"
-    fi
-  else
-    echo_info "mempalace Claude Code plugin — skipping for $AGENT_TYPE (MCP server configured separately)"
-  fi
+  # MemPalace plugin — per-agent (OMP + Claude). CLI tool installed separately below.
+  if _tool_selected mempalace; then
+  for _mp_agent in $AGENT_LIST; do
+    case "$_mp_agent" in
+      oh-my-pi)
+        if omp plugin list 2>/dev/null | grep -q "mempalace"; then
+          if [ "$SKIP_UPDATES" = true ]; then
+            echo_skip "[oh-my-pi] mempalace already installed (skipping update)"
+          else
+            echo_info "Updating mempalace (OMP)..."
+            spin 60 "mempalace update (OMP)" omp plugin install mempalace --pty || echo_warn "mempalace update failed"
+            echo_success "[oh-my-pi] mempalace updated"
+          fi
+        else
+          echo_info "Installing mempalace (OMP)..."
+          spin 60 "mempalace install (OMP)" omp plugin install mempalace --pty || echo_warn "Failed to install mempalace for OMP"
+        fi
+        ;;
+      claude)
+        if claude plugin list 2>/dev/null | grep -q "mempalace"; then
+          if [ "$SKIP_UPDATES" = true ]; then
+            echo_skip "[claude] mempalace already installed (skipping update)"
+          else
+            echo_info "Updating mempalace (claude)..."
+            spin 60 "mempalace update (claude)" claude plugin install $(_plugin_scope) mempalace --pty || echo_warn "mempalace update failed"
+            echo_success "[claude] mempalace updated"
+          fi
+        else
+          echo_info "Installing mempalace (claude)..."
+          spin 120 "mempalace marketplace add" claude plugin marketplace add milla-jovovich/mempalace || echo_warn "Failed to add mempalace marketplace"
+          spin 60 "mempalace install" claude plugin install $(_plugin_scope) mempalace@mempalace --pty || echo_warn "Failed to install mempalace for claude"
+        fi
+        ;;
+      *)
+        echo_info "[$_mp_agent] mempalace plugin not applicable (Claude/OMP only) — MCP server configured separately"
+        ;;
+    esac
+  done
 
   # MemPalace CLI (uv tool)
   if command -v uv >/dev/null 2>&1; then
@@ -1250,260 +1311,18 @@ with open('$_claude_settings', 'w') as f:
       spin 600 "mempalace init (HNSW index)" mempalace init . --yes || echo_warn "Failed to initialize mempalace (run manually: mempalace init . --yes)"
       if [ -f "mempalace.yaml" ]; then
         echo_info "Mining mempalace index..."
-        spin 300 "mempalace mine (index mining)" mempalace mine . || echo_warn "mempalace mine timed out (run manually: mempalace mine .)"
+        spin 900 "mempalace mine (index mining, may take 15min for large projects)" mempalace mine . || echo_warn "mempalace mine timed out (run manually: mempalace mine .)"
       fi
     else
       echo_warn "mempalace CLI not found, skipping init"
     fi
   fi
-
-# Step 3.6: Install lean-ctx (context optimization)
-if [ "$SKIP_OPTIONAL" = false ] && [ "${_skip_step_3:-false}" = "false" ]; then
-  echo "=========================================="
-  echo "  Step 3.6: Installing lean-ctx"
-  echo "=========================================="
-  echo ""
-
-  if command -v lean-ctx >/dev/null 2>&1; then
-    if [ "$SKIP_UPDATES" = true ]; then
-      echo_skip "lean-ctx already installed (skipping update)"
-    else
-      echo_info "Updating lean-ctx..."
-      spin 60 "lean-ctx install (curl | sh)" "curl -fsSL https://leanctx.com/install.sh 2>/dev/null | sh" || echo_warn "Failed to update lean-ctx"
-    fi
-  else
-    echo_info "Installing lean-ctx..."
-    spin 60 "lean-ctx install (curl | sh)" "curl -fsSL https://leanctx.com/install.sh 2>/dev/null | sh" || echo_warn "Failed to install lean-ctx"
-  fi
-
-  if command -v lean-ctx >/dev/null 2>&1; then
-    lean-ctx --version 2>&1 || true
-
-    # --- Inline lean-ctx initialization (replaces black-box `lean-ctx onboard`) ---
-    # lean-ctx onboard is non-interactive but hides what it does. We inline the
-    # key steps so setup.sh is self-contained, verifiable, and works in piped mode.
-
-    echo_info "Configuring lean-ctx global rules..."
-    _lean_ctx_global_rules="$HOME/.claude/rules/lean-ctx.md"
-    if [ ! -f "$_lean_ctx_global_rules" ]; then
-      mkdir -p "$HOME/.claude/rules"
-      cat > "$_lean_ctx_global_rules" <<'LEANCTX_RULES_EOF'
-# lean-ctx — Context Engineering Layer
-<!-- lean-ctx-rules-v11 -->
-
-## Tool Mapping (MANDATORY — use instead of native equivalents)
-| Instead of | Use | Example |
-|------------|-----|---------|
-| Read/cat/head/tail | `ctx_read(path, mode)` | `ctx_read("src/main.rs", "full")` |
-| Grep/rg/find | `ctx_search(pattern, path)` | `ctx_search("fn handle", "src/")` |
-| Shell/bash | `ctx_shell(command)` | `ctx_shell("cargo test")` |
-| Edit (when Read unavailable) | `ctx_edit(path, old, new)` | `ctx_edit("f.rs", "old", "new")` |
-
-## ctx_read Mode Selection
-| Goal | When |
-|------|------|
-| `full` | Files you will edit |
-| `map` | Context-only, won't edit |
-| `signatures` | API surface only |
-| `diff` | After edits (changed lines) |
-| `aggressive` | Large files, syntax-stripped |
-| `lines:N-M` | Specific region |
-| `auto` | Unsure — system selects |
-
-## Workflow (follow this order)
-1. **Orient:** `ctx_overview(task)` or `ctx_compose(task, path)` for unfamiliar tasks
-2. **Locate:** `ctx_search(pattern, path)` for exact text; `ctx_semantic_search(query)` for concepts
-3. **Read:** `ctx_read(path, mode)` with appropriate mode from table above
-4. **Edit:** `ctx_edit(path, old_string, new_string)` or native Edit if available
-5. **Verify:** `ctx_read(path, "diff")` + `ctx_shell("test command")`
-6. **Record:** `ctx_knowledge(action="remember", content="...")` for non-obvious findings
-
-## Proactive (use without being asked)
-- `ctx_overview(task)` — at session start for orientation
-- `ctx_compress` — when context grows large (at phase boundaries)
-- `ctx_knowledge(action="wakeup")` — at session start to surface prior findings
-
-## Compression Bypass (only when compressed output hides needed detail)
-`ctx_read(path, "lines:N-M")` → `ctx_read(path, "full")` → `ctx_shell(cmd, raw=true)`
-Return to compressed defaults after one expanded retrieval.
-
-## Risk Gate (before high-impact edits)
-Before editing exported symbols, auth, DB schemas, or 3+ files: run `ctx_impact(action="analyze")`
-and `ctx_callgraph(action="callers")` to confirm blast radius.
-
-## Session
-- **Start:** `ctx_session(action="status")` + `ctx_knowledge(action="wakeup")`
-- **End:** `ctx_session(action="decision", content="what was done + next steps")`
-- **On [CHECKPOINT]:** `ctx_session(action="task", value="current status")`
-
-NEVER use native Read/Grep/Shell when ctx_* equivalents are available.
-<!-- /lean-ctx -->
-LEANCTX_RULES_EOF
-      echo_success "lean-ctx global rules written ($_lean_ctx_global_rules)"
-    else
-      echo_success "lean-ctx global rules already exist ($_lean_ctx_global_rules)"
-    fi
-
-    echo_info "Configuring lean-ctx permissions..."
-    # Ensure ctx_* tools are in permissions.allow
-    python3 -c "
-import json, os
-cfg_path = os.path.expanduser('~/.claude/settings.json')
-if os.path.exists(cfg_path):
-    with open(cfg_path) as f:
-        cfg = json.load(f)
-    required = [
-        'mcp__lean-ctx__ctx_compose',
-        'mcp__lean-ctx__ctx_shell',
-        'mcp__lean-ctx__ctx_glob',
-        'mcp__lean-ctx__ctx_callgraph',
-        'mcp__lean-ctx__ctx_expand',
-        'mcp__lean-ctx__ctx_delta',
-        'mcp__lean-ctx__ctx_overview',
-    ]
-    cfg.setdefault('permissions', {}).setdefault('allow', []).extend([
-        t for t in required if t not in cfg['permissions']['allow']
-    ])
-    with open(cfg_path, 'w') as f:
-        json.dump(cfg, f, indent=2)
-    print('permissions.allow updated')
-" 2>/dev/null || true
-
-    echo_info "Installing doit-skill addons to lean-ctx..."
-    # Auto-install all addons from scripts/addons/ directory
-    _addon_dir="$DOIT_DIR/scripts/addons"
-    if [ -d "$_addon_dir" ]; then
-      for _addon_manifest in "$_addon_dir"/*/lean-ctx-addon.toml; do
-        if [ -f "$_addon_manifest" ]; then
-          _addon_name=$(basename "$(dirname "$_addon_manifest")")
-          echo_info "  Adding addon: $_addon_name"
-          lean-ctx addon add "$_addon_manifest" 2>/dev/null || echo_warn "  Failed to add addon: $_addon_name"
-        fi
-      done
-      echo_success "doit-skill addons installed ($(ls -d "$_addon_dir"/*/ 2>/dev/null | wc -l) addons)"
-    fi
-
-    echo_info "Configuring lean-ctx shell hook..."
-    # Add shell hook to .bashrc if not present
-    if ! grep -q 'lean-ctx shell hook' "$HOME/.bashrc" 2>/dev/null; then
-      cat >> "$HOME/.bashrc" <<'LEANCTX_BASHRC_EOF'
-
-# lean-ctx shell hook — begin
-if [ -f "$HOME/.config/lean-ctx/shell-hook.bash" ]; then
-. "$HOME/.config/lean-ctx/shell-hook.bash"
-fi
-# lean-ctx shell hook — end
-LEANCTX_BASHRC_EOF
-      # Add agent aliases
-      echo '# >>> lean-ctx agent aliases >>>' >> "$HOME/.bashrc"
-      echo 'alias claude='"'"'LEAN_CTX_AGENT=1 BASH_ENV="$HOME/.bashenv" claude'"'"'' >> "$HOME/.bashrc"
-      echo 'alias opencode='"'"'LEAN_CTX_AGENT=1 BASH_ENV="$HOME/.bashenv" opencode'"'"'' >> "$HOME/.bashrc"
-      echo 'alias codex='"'"'LEAN_CTX_AGENT=1 BASH_ENV="$HOME/.bashenv" codex'"'"'' >> "$HOME/.bashrc"
-      echo '# <<< lean-ctx agent aliases <<<' >> "$HOME/.bashrc"
-      echo_success "lean-ctx shell hook + agent aliases written to .bashrc"
-    else
-      echo_success "lean-ctx shell hook already in .bashrc"
-    fi
-
-    echo_info "Configuring lean-ctx for each detected AI tool..."
-    # lean-ctx init --agent X configures MCP, rules, and hooks per CLI
-    # Supported: claude, opencode, codex, pi (oh-my-pi)
-    # NOT supported: mimo, jcode (skip silently)
-    _lean_ctx_supported="claude opencode codex pi"
-    for _agent in $AGENT_LIST; do
-      # Map oh-my-pi -> pi (lean-ctx name)
-      _lc_agent="$_agent"
-      [ "$_agent" = "oh-my-pi" ] && _lc_agent="pi"
-
-      if echo "$_lean_ctx_supported" | grep -qw "$_lc_agent"; then
-        echo_info "  lean-ctx init --agent $_lc_agent..."
-        lean-ctx init --agent "$_lc_agent" >/dev/null 2>&1 && \
-          echo_success "  lean-ctx configured for $_agent ($_lc_agent)" || \
-          echo_warn "  lean-ctx init failed for $_agent ($_lc_agent)"
-      else
-        echo_info "  lean-ctx does not support $_agent — skipping"
-      fi
-    done
-
-    # Write global Claude Code hooks to ~/.claude/settings.json
-    echo_info "Configuring lean-ctx global hooks..."
-    _claude_settings="$HOME/.claude/settings.json"
-    if [ -f "$_claude_settings" ] && grep -q 'lean-ctx hook' "$_claude_settings" 2>/dev/null; then
-      echo_success "lean-ctx global hooks already in settings.json"
-    elif [ -f "$_claude_settings" ]; then
-      # Inject lean-ctx hooks into existing settings.json
-      python3 -c "
-import json
-with open('$_claude_settings', 'r') as f:
-    data = json.load(f)
-hooks = data.setdefault('hooks', {})
-lean_hooks = {
-    'PostToolUse': [{'hooks': [{'command': 'lean-ctx hook observe', 'type': 'command'}], 'matcher': '.*'}],
-    'PreCompact': [{'hooks': [{'command': 'lean-ctx hook observe', 'type': 'command'}], 'matcher': '.*'}],
-    'PreToolUse': [
-        {'hooks': [{'command': 'lean-ctx hook rewrite', 'type': 'command'}], 'matcher': 'Bash|bash'},
-        {'hooks': [{'command': 'lean-ctx hook redirect', 'type': 'command'}], 'matcher': 'Read|read|ReadFile|read_file|View|view|Grep|grep|Search|search|ListFiles|list_files|ListDirectory|list_directory'}
-    ],
-    'SessionEnd': [{'hooks': [{'command': 'lean-ctx hook observe', 'type': 'command'}], 'matcher': '.*'}],
-    'SessionStart': [{'hooks': [{'command': 'lean-ctx hook observe', 'type': 'command'}], 'matcher': '.*'}],
-    'Stop': [{'hooks': [{'command': 'lean-ctx hook observe', 'type': 'command'}], 'matcher': '.*'}],
-    'UserPromptSubmit': [{'hooks': [{'command': 'lean-ctx hook observe', 'type': 'command'}], 'matcher': '.*'}]
-}
-hooks.update(lean_hooks)
-with open('$_claude_settings', 'w') as f:
-    json.dump(data, f, indent=2, ensure_ascii=False)
-" 2>/dev/null && echo_success "lean-ctx global hooks written to settings.json" || echo_warn "Failed to write lean-ctx global hooks"
-    else
-      echo_info "No settings.json found — lean-ctx hooks will be configured by lean-ctx init --agent claude"
-    fi
-
-    # Copy global rules → project-local .claude/rules/lean-ctx.md
-    if [ -f "$_lean_ctx_global_rules" ]; then
-      mkdir -p .claude/rules
-      cp "$_lean_ctx_global_rules" .claude/rules/lean-ctx.md
-      echo_success "lean-ctx project rules configured (.claude/rules/lean-ctx.md)"
-    fi
-
-    # Write project-local hooks
-    if [ ! -f ".claude/settings.local.json" ]; then
-      mkdir -p .claude
-      cat > .claude/settings.local.json <<'LEANCTX_PROJECT_EOF'
-{
-  "hooks": {
-    "PostToolUse": [{"hooks": [{"command": "lean-ctx hook observe", "type": "command"}], "matcher": ".*"}],
-    "PreCompact": [{"hooks": [{"command": "lean-ctx hook observe", "type": "command"}], "matcher": ".*"}],
-    "PreToolUse": [
-      {"hooks": [{"command": "lean-ctx hook rewrite", "type": "command"}], "matcher": "Bash|bash"},
-      {"hooks": [{"command": "lean-ctx hook redirect", "type": "command"}], "matcher": "Read|read|ReadFile|read_file|View|view|Grep|grep|Search|search|ListFiles|list_files|ListDirectory|list_directory"}
-    ],
-    "Stop": [{"hooks": [{"command": "lean-ctx hook observe", "type": "command"}], "matcher": ".*"}],
-    "UserPromptSubmit": [{"hooks": [{"command": "lean-ctx hook observe", "type": "command"}], "matcher": ".*"}]
-  }
-}
-LEANCTX_PROJECT_EOF
-      echo_success "lean-ctx project hooks configured (.claude/settings.local.json)"
-    else
-      echo_success "lean-ctx project hooks already configured"
-    fi
-
-    source "$HOME/.bashrc" 2>/dev/null || true
-
-    # Configure lean-ctx allowlist for common commands (prevents shell block)
-    echo_info "Configuring lean-ctx allowlist..."
-    _lean_ctx_common_cmds="bash python3 git curl wget cat head tail ls find echo sed awk chmod chown mkdir rm cp mv test timeout rtk uv cargo"
-    for _cmd in $_lean_ctx_common_cmds; do
-      if command -v "$_cmd" >/dev/null 2>&1; then
-        lean-ctx allow "$_cmd" >/dev/null 2>&1 || true
-      fi
-    done
-    echo_success "lean-ctx allowlist configured for common commands"
-
-    echo_success "lean-ctx installed and configured"
   fi
 fi
+
 
 # Step 3.7: Install headroom (token optimization / CCR proxy compression)
-if [ "$SKIP_OPTIONAL" = false ] && [ "${_skip_step_3:-false}" = "false" ]; then
+if [ "$SKIP_OPTIONAL" = false ] && _tool_selected headroom; then
   echo "=========================================="
   echo "  Step 3.7: Installing headroom"
   echo "=========================================="
@@ -1549,23 +1368,33 @@ if [ "$SKIP_OPTIONAL" = false ] && [ "${_skip_step_3:-false}" = "false" ]; then
       echo_warn "uv not found — install headroom manually: uv tool install 'headroom-ai[mcp,proxy]'"
     fi
 
-    if [ "$AGENT_TYPE" = "oh-my-pi" ]; then
-      # Configure MCP tools for OMP
-      if omp plugin list 2>/dev/null | grep -q headroom; then
-        echo_success "headroom MCP already configured (OMP)"
-      else
-        echo_info "Configuring headroom MCP (OMP)..."
-        spin 120 "headroom MCP install (OMP)" headroom mcp install || echo_warn "headroom mcp install timed out"
-      fi
-    elif [ "$AGENT_TYPE" = "claude" ]; then
-      # Configure MCP tools (compress/retrieve/stats — fallback when proxy is down)
-      if spin 30 "headroom MCP verify" "claude mcp list" 2>/dev/null | grep -q headroom; then
-        echo_success "headroom MCP already configured"
-      else
-        echo_info "Configuring headroom MCP..."
-        spin 120 "headroom MCP install" headroom mcp install || echo_warn "headroom mcp install timed out"
-      fi
+    # Per-agent MCP configuration. CLI binary was installed above (agent-independent).
+    for _hr_agent in $AGENT_LIST; do
+      case "$_hr_agent" in
+        oh-my-pi)
+          if grep -qi "headroom" ~/.claude.json 2>/dev/null; then
+            echo_success "[oh-my-pi] headroom MCP already configured"
+          else
+            echo_info "Configuring headroom MCP (OMP)..."
+            spin 120 "headroom MCP install (OMP)" headroom mcp install || echo_warn "headroom mcp install timed out"
+          fi
+          ;;
+        claude)
+          if spin 30 "headroom MCP verify" "claude mcp list" 2>/dev/null | grep -q headroom; then
+            echo_success "[claude] headroom MCP already configured"
+          else
+            echo_info "Configuring headroom MCP (claude)..."
+            spin 120 "headroom MCP install (claude)" headroom mcp install || echo_warn "headroom mcp install timed out"
+          fi
+          ;;
+        *)
+          echo_info "[$_hr_agent] headroom MCP — configure manually"
+          ;;
+      esac
+    done
 
+    # Persistent proxy deploy — claude-only (ANTHROPIC_BASE_URL is claude-specific).
+    if echo " $AGENT_LIST " | grep -q " claude "; then
       # Detect upstream (local model or cloud API) from settings.json
       _hr_upstream=$(grep -o '"ANTHROPIC_BASE_URL"[[:space:]]*:[[:space:]]*"[^"]*"' "$HOME/.claude/settings.json" 2>/dev/null | grep -o 'http[^"]*')
       _hr_upstream=${_hr_upstream:-https://api.anthropic.com}
@@ -1586,14 +1415,21 @@ if [ "$SKIP_OPTIONAL" = false ] && [ "${_skip_step_3:-false}" = "false" ]; then
       else
         echo_skip "headroom proxy disabled (MCP tools only)"
       fi
-    else
-      echo_info "headroom MCP — configure manually for $AGENT_TYPE"
     fi
   fi
 fi
+  # Cache status after headroom install block
+if _tool_selected headroom; then
+  if command -v headroom >/dev/null 2>&1; then
+    tools_save_status headroom ok "installed via uv"
+  else
+    tools_save_status headroom fail "install failed or skipped"
+  fi
+  echo ""
+fi
 
 # Step 3.8: Install CodeGraph (pre-built code graph index)
-if [ "$SKIP_OPTIONAL" = false ] && [ "${_skip_step_3:-false}" = "false" ]; then
+if [ "$SKIP_OPTIONAL" = false ] && _tool_selected codegraph; then
   echo "=========================================="
   echo "  Step 3.8: Installing CodeGraph"
   echo "=========================================="
@@ -1612,34 +1448,40 @@ if [ "$SKIP_OPTIONAL" = false ] && [ "${_skip_step_3:-false}" = "false" ]; then
   fi
 
   if command -v codegraph >/dev/null 2>&1; then
-    # Install MCP server
-    if [ "$AGENT_TYPE" = "oh-my-pi" ]; then
-      if omp plugin list 2>/dev/null | grep -qi codegraph; then
-        echo_success "codegraph MCP already configured (OMP)"
-      else
-        echo_info "Configuring codegraph MCP server (OMP)..."
-        spin 120 "codegraph MCP install (OMP)" codegraph install --yes || echo_warn "codegraph install timed out (run manually: codegraph install --yes)"
-        if omp plugin list 2>/dev/null | grep -qi codegraph; then
-          echo_success "codegraph MCP configured (OMP)"
-        else
-          echo_warn "codegraph MCP not detected after install — you may need to run: codegraph install --yes"
-        fi
-      fi
-    elif [ "$AGENT_TYPE" = "claude" ]; then
-      if spin 30 "codegraph MCP check" "claude mcp list" 2>/dev/null | grep -qi codegraph; then
-        echo_success "codegraph MCP already configured"
-      else
-        echo_info "Configuring codegraph MCP server..."
-        spin 120 "codegraph MCP install" codegraph install --yes || echo_warn "codegraph install timed out (run manually: codegraph install --yes)"
-        if spin 30 "codegraph MCP verify" "claude mcp list" 2>/dev/null | grep -qi codegraph; then
-          echo_success "codegraph MCP configured"
-        else
-          echo_warn "codegraph MCP not detected after install — you may need to run: codegraph install --yes"
-        fi
-      fi
-    else
-      echo_info "codegraph MCP — configure manually for $AGENT_TYPE"
-    fi
+    # Install MCP server — per-agent (OMP + Claude each get their own MCP config).
+    for _cg_agent in $AGENT_LIST; do
+      case "$_cg_agent" in
+        oh-my-pi)
+          if grep -qi "codegraph" ~/.claude.json 2>/dev/null; then
+            echo_success "[oh-my-pi] codegraph MCP already configured"
+          else
+            echo_info "Configuring codegraph MCP (OMP)..."
+            spin 120 "codegraph MCP install (OMP)" codegraph install --yes || echo_warn "codegraph install timed out (run manually: codegraph install --yes)"
+            if grep -qi "codegraph" ~/.claude.json 2>/dev/null; then
+              echo_success "[oh-my-pi] codegraph MCP configured"
+            else
+              echo_warn "[oh-my-pi] codegraph MCP may not be in ~/.claude.json — run manually: codegraph install --yes"
+            fi
+          fi
+          ;;
+        claude)
+          if spin 30 "codegraph MCP check" "claude mcp list" 2>/dev/null | grep -qi codegraph; then
+            echo_success "[claude] codegraph MCP already configured"
+          else
+            echo_info "Configuring codegraph MCP (claude)..."
+            spin 120 "codegraph MCP install (claude)" codegraph install --yes || echo_warn "codegraph install timed out (run manually: codegraph install --yes)"
+            if spin 30 "codegraph MCP verify" "claude mcp list" 2>/dev/null | grep -qi codegraph; then
+              echo_success "[claude] codegraph MCP configured"
+            else
+              echo_warn "[claude] codegraph MCP not detected after install — you may need to run: codegraph install --yes"
+            fi
+          fi
+          ;;
+        *)
+          echo_info "[$_cg_agent] codegraph MCP — configure manually"
+          ;;
+      esac
+    done
 
     # Initialize project index (skip if already exists)
     if [ -d ".codegraph" ]; then
@@ -1652,87 +1494,118 @@ if [ "$SKIP_OPTIONAL" = false ] && [ "${_skip_step_3:-false}" = "false" ]; then
       fi
     fi
   fi
-  fi  # end _skip_step_3 wrapper
+fi
+if _tool_selected codegraph; then
+  # Cache status after codegraph install block
+  if command -v codegraph >/dev/null 2>&1; then
+    tools_save_status codegraph ok "installed via npm"
+  else
+    tools_save_status codegraph fail "install failed"
+  fi
+  echo ""
 fi
 
 # Step 3.9: Install Ponytail (lazy senior dev mode)
-if [ "$SKIP_OPTIONAL" = false ] && [ "${_skip_step_3:-false}" = "false" ]; then
+if [ "$SKIP_OPTIONAL" = false ] && _tool_selected ponytail; then
   echo "=========================================="
   echo "  Step 3.9: Installing Ponytail"
   echo "=========================================="
   echo ""
 
-  if [ "$AGENT_TYPE" = "oh-my-pi" ]; then
-    if omp plugin list 2>/dev/null | grep -q "ponytail"; then
-      if [ "$SKIP_UPDATES" = true ]; then
-        echo_skip "ponytail already installed (OMP) (skipping update)"
-      else
-        echo_info "Updating ponytail (OMP)..."
-        spin 60 "ponytail update (OMP)" omp plugin install ponytail --pty || echo_warn "ponytail update failed"
-        echo_success "ponytail updated (OMP)"
-      fi
-    else
-      echo_info "Installing ponytail (OMP)..."
-      spin 60 "ponytail install (OMP)" omp plugin install ponytail --pty || echo_warn "Failed to install ponytail (install manually: omp plugin install ponytail)"
-    fi
-  elif [ "$AGENT_TYPE" = "claude" ]; then
-    if claude plugin list 2>/dev/null | grep -q "ponytail"; then
-      if [ "$SKIP_UPDATES" = true ]; then
-        echo_skip "ponytail already installed (skipping update)"
-      else
-        echo_info "Updating ponytail..."
-        spin 60 "ponytail update" claude plugin install $(_plugin_scope) ponytail@ponytail --pty || echo_warn "ponytail update failed"
-        echo_success "ponytail updated"
-      fi
-    else
-      echo_info "Installing ponytail..."
-      spin 120 "ponytail add" claude plugin marketplace add DietrichGebert/ponytail --pty || echo_warn "Failed to add ponytail marketplace"
-      spin 60 "ponytail install" claude plugin install $(_plugin_scope) ponytail@ponytail --pty || echo_warn "Failed to install ponytail (install manually: claude plugin install ponytail@ponytail)"
-    fi
-  else
-    echo_info "ponytail is a Claude Code plugin — skipping for $AGENT_TYPE"
-  fi
+  for _pt_agent in $AGENT_LIST; do
+    case "$_pt_agent" in
+      oh-my-pi)
+        if omp plugin list 2>/dev/null | grep -q "ponytail"; then
+          if [ "$SKIP_UPDATES" = true ]; then
+            echo_skip "[oh-my-pi] ponytail already installed (skipping update)"
+          else
+            echo_info "Updating ponytail (OMP)..."
+            spin 60 "ponytail update (OMP)" omp plugin install ponytail --pty || echo_warn "ponytail update failed"
+            echo_success "[oh-my-pi] ponytail updated"
+          fi
+        else
+          echo_info "Installing ponytail (OMP)..."
+          spin 60 "ponytail install (OMP)" omp plugin install ponytail --pty || echo_warn "Failed to install ponytail for OMP"
+        fi
+        ;;
+      claude)
+        if claude plugin list 2>/dev/null | grep -q "ponytail"; then
+          if [ "$SKIP_UPDATES" = true ]; then
+            echo_skip "[claude] ponytail already installed (skipping update)"
+          else
+            echo_info "Updating ponytail (claude)..."
+            spin 60 "ponytail update (claude)" claude plugin install $(_plugin_scope) ponytail@ponytail --pty || echo_warn "ponytail update failed"
+            echo_success "[claude] ponytail updated"
+          fi
+        else
+          echo_info "Installing ponytail (claude)..."
+          spin 120 "ponytail add" claude plugin marketplace add DietrichGebert/ponytail --pty || echo_warn "Failed to add ponytail marketplace"
+          spin 60 "ponytail install" claude plugin install $(_plugin_scope) ponytail@ponytail --pty || echo_warn "Failed to install ponytail for claude"
+        fi
+        ;;
+      *)
+        echo_info "[$_pt_agent] ponytail is Claude/OMP-only — skipping"
+        ;;
+    esac
+  done
 fi
-
-# Step 3.10: Uninstall tokensave (replaced by codegraph)
-  if [ "$AGENT_TYPE" = "oh-my-pi" ]; then
-    echo_skip "tokensave is a Claude Code tool — skipping for $AGENT_TYPE"
-  elif command -v tokensave >/dev/null 2>&1; then
-    echo_info "tokensave detected — uninstalling (replaced by codegraph)..."
-    spin 60 "tokensave uninstall" "tokensave uninstall --agent claude" || echo_warn "tokensave uninstall failed (remove manually)"
-    echo_success "tokensave uninstalled"
+if _tool_selected ponytail; then
+  # Cache status after ponytail install block
+  _ponytail_installed=false
+  for _pt_check_agent in $AGENT_LIST; do
+    case "$_pt_check_agent" in
+      oh-my-pi) omp plugin list 2>/dev/null | grep -q "ponytail" && _ponytail_installed=true ;;
+      claude) claude plugin list 2>/dev/null | grep -q "ponytail" && _ponytail_installed=true ;;
+    esac
+  done
+  if [ "$_ponytail_installed" = true ]; then
+    tools_save_status ponytail ok "installed via plugin"
   else
-    echo_skip "tokensave not installed (no uninstall needed)"
+    tools_save_status ponytail fail "install failed or not supported"
+  fi
+  echo ""
+fi
+# Step 3.10: Uninstall tokensave (replaced by codegraph) — Claude-only
+  if echo " $AGENT_LIST " | grep -q " claude "; then
+    if command -v tokensave >/dev/null 2>&1; then
+      echo_info "tokensave detected — uninstalling (replaced by codegraph)..."
+      spin 60 "tokensave uninstall" "tokensave uninstall --agent claude" || echo_warn "tokensave uninstall failed (remove manually)"
+      echo_success "tokensave uninstalled"
+    else
+      echo_skip "tokensave not installed (no uninstall needed)"
+    fi
+  else
+    echo_skip "tokensave is a Claude Code tool — no claude agent detected, skipping"
+  fi
+  # Cache status after tokensave uninstall block
+  if command -v tokensave >/dev/null 2>&1; then
+    tools_save_status tokensave fail "uninstall failed"
+  else
+    tools_save_status tokensave ok "uninstalled or not installed"
   fi
 
-# Step 3.11: Uninstall agentmemory (replaced by mempalace)
-  if [ "$AGENT_TYPE" = "oh-my-pi" ]; then
-    echo_skip "agentmemory is a Claude Code plugin — skipping for $AGENT_TYPE"
-  elif claude plugin list 2>/dev/null | grep -q "agentmemory"; then
-    echo_info "agentmemory detected — uninstalling (replaced by mempalace)..."
-    # Use -y to skip confirmation prompt, -s for scope, </dev/null for stdin safety
-    timeout 15 claude plugin uninstall -s user agentmemory -y </dev/null 2>/dev/null || echo_warn "agentmemory uninstall failed (remove manually)"
-    echo_success "agentmemory uninstalled"
+# Step 3.11: Uninstall agentmemory (replaced by mempalace) — Claude-only
+  if echo " $AGENT_LIST " | grep -q " claude "; then
+    if claude plugin list 2>/dev/null | grep -q "agentmemory"; then
+      echo_info "agentmemory detected — uninstalling (replaced by mempalace)..."
+      # Use -y to skip confirmation prompt, -s for scope, </dev/null for stdin safety
+      timeout 15 claude plugin uninstall -s user agentmemory -y </dev/null 2>/dev/null || echo_warn "agentmemory uninstall failed (remove manually)"
+      echo_success "agentmemory uninstalled"
+    else
+      echo_skip "agentmemory not installed (no uninstall needed)"
+    fi
   else
-    echo_skip "agentmemory not installed (no uninstall needed)"
+    echo_skip "agentmemory is a Claude Code plugin — no claude agent detected, skipping"
+  fi
+  # Cache status after agentmemory uninstall block
+  if claude plugin list 2>/dev/null | grep -q "agentmemory"; then
+    tools_save_status agentmemory fail "uninstall failed"
+  else
+    tools_save_status agentmemory ok "uninstalled or not installed"
   fi
 
 # Step 4: Run doctor before cleanup
 echo "=========================================="
-echo "  Step 3.12: Initializing lean-ctx for all agents"
-echo ""
-
-# Ensure lean-ctx initialized for all agents (runs even if Step 3 fast-tracked)
-if command -v lean-ctx >/dev/null 2>&1; then
-  _lc_supported="claude opencode codex pi"
-  for _agent in $AGENT_LIST; do
-    _lc_agent="$_agent"
-    [ "$_agent" = "oh-my-pi" ] && _lc_agent="pi"
-    if echo "$_lc_supported" | grep -qw "$_lc_agent"; then
-      lean-ctx init --agent "$_lc_agent" >/dev/null 2>&1 || true
-    fi
-  done
-fi
 
 echo ""
 echo "=========================================="
@@ -1751,7 +1624,7 @@ if [ -f "$DOIT_DIR/scripts/multi-model.sh" ]; then
 fi
 
 # Cleanup
-rm -rf "$TEMP_DIR"
+[ -n "$TEMP_DIR" ] && rm -rf "$TEMP_DIR"
 
 echo ""
 echo "=========================================="

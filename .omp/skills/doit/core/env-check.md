@@ -282,9 +282,9 @@ mempalace_kg_stats → check entities, triples
 ```
 
 ### 11c. MemPalace Context Read (if available, before Announce)
-### 11c.5. lean-ctx Session Recovery (if available)
+### 11c.5. Context-Mode Session Recovery (if available)
 
-**Purpose:** Recover work-in-progress from a previous session so the current session doesn't start from zero. If the user was building something last session and this session continues, lean-ctx's session history has the in-flight task/decision/finding state.
+**Purpose:** Recover work-in-progress from a previous session so the current session doesn't start from zero. If the user was building something last session and this session continues, context-mode's session history has the in-flight task/decision/finding state.
 
 ```
 ctx_session(action="status")
@@ -308,7 +308,7 @@ ctx_session(action="list")
 
 **Why here:** Phase -1 is the earliest gate. Recovering session state here means Phase 0 classification can benefit from knowing what was being worked on last time. Without this, each session starts blind to prior context.
 
-### 11c.6. MemPalace Diary Context (if available, after lean-ctx recovery)
+### 11c.6. MemPalace Diary Context (if available, after context-mode recovery)
 
 Read MemPalace diary entries to give the agent awareness of what was accomplished last session:
 

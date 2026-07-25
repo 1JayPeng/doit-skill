@@ -1,73 +1,64 @@
 <!-- lean-ctx-owned: PROJECT-LEAN-CTX.md v1 -->
-# lean-ctx — Context Engineering Layer
-<!-- lean-ctx-rules-v11 -->
+<!-- lean-ctx-rules -->
+<!-- version: 8 -->
 
-## Tool Mapping (MANDATORY — use instead of native equivalents)
-| Instead of | Use | Example |
-|------------|-----|---------|
-| Read/cat/head/tail | `ctx_read(path, mode)` | `ctx_read("src/main.rs", "full")` |
-| Grep/rg/find | `ctx_search(pattern, path)` | `ctx_search("fn handle", "src/")` |
-| Shell/bash | `ctx_shell(command)` | `ctx_shell("cargo test")` |
-| Edit (when Read unavailable) | `ctx_edit(path, old, new)` | `ctx_edit("f.rs", "old", "new")` |
-| Multi file read | `ctx_multi_read(paths, mode)` | `ctx_multi_read(["a.rs", "b.rs"], "signatures")` |
-| Incremental diff | `ctx_delta(path)` | `ctx_delta("src/main.rs")` |
-| LSP refactor | `ctx_refactor(action, path, line)` | `ctx_refactor("rename", "f.rs", 42)` |
-| Architecture | `ctx_architecture(action)` | `ctx_architecture("overview")` |
-| PageRank map | `ctx_repomap(path)` | `ctx_repomap("src/")` |
-| Semantic search | `ctx_semantic_search(query)` | `ctx_semantic_search("auth flow")` |
-| URL fetch | `ctx_url_read(url, mode)` | `ctx_url_read("https://...", "facts")` |
-| Routes | `ctx_routes(path)` | `ctx_routes("src/api/")` |
-| Session memory | `ctx_session(action)` | `ctx_session("wakeup")` |
-| Knowledge | `ctx_knowledge(action)` | `ctx_knowledge("remember", key="x")` |
-| Stats | `ctx_stats()` | `ctx_stats()` |
+CRITICAL: ALWAYS use lean-ctx ctx_* tools instead of native equivalents. This is NOT optional.
 
-## ctx_read Mode Selection
-| Goal | Mode | When |
-|------|------|------|
-| Edit this file | `full` | Before any edit |
-| Understand API | `signatures` | Context-only, won't edit |
-| Re-read after edit | `diff` | Post-edit verification |
-| Re-read after edit (better) | `delta` | Incremental diff, ~98% savings |
-| Large file overview | `map` | >500 lines, won't edit |
-| Large file (max compress) | `aggressive` | >500 lines, ~90% savings |
-| Task-relevant sections | `task` | ~85% savings, uses task desc |
-| Cross-session reference | `reference` | ~80% savings, retains identifiers |
-| Data/log files | `entropy` | ~70% savings, high-entropy sections |
-| Specific region | `lines:N-M` | Know exact location |
-| Unsure | `auto` | System selects optimal mode |
+ACTUALLY EMIT the ctx_* tool call (ctx_compose first) — describing a tool is not calling it.
 
-## Workflow (follow this order)
-1. **Orient:** `ctx_repomap` for large codebases, `ctx_overview(task)` for unfamiliar tasks
-2. **Architecture:** `ctx_architecture(action="overview")` for structure, `ctx_routes` for web projects
-3. **Locate:** `ctx_search(pattern, path)` for exact text; `ctx_semantic_search(query)` for concepts
-4. **Read:** `ctx_read(path, mode)` with appropriate mode. Batch with `ctx_multi_read(paths, mode)`.
-5. **Edit:** `ctx_edit(path, old_string, new_string)` or native Edit if available
-6. **Refactor:** `ctx_refactor(action="rename|references|definition|implementations")` via LSP
-7. **Verify:** `ctx_delta(path)` (incremental diff) or `ctx_read(path, "diff")` + `ctx_shell("test command")`
-8. **Record:** `ctx_knowledge(action="remember|pattern|feedback|relate")` for non-obvious findings
-9. **External:** `ctx_url_read(url, mode="markdown|facts")` for web/PDF/YouTube
+MANDATORY MAPPING:
+• Read/cat -> ctx_read(path, mode)
+• Grep -> ctx_search(pattern, path)
+• Shell/bash -> ctx_shell(command)
+• Glob/find -> ctx_glob(pattern)
+• ls/find -> ctx_tree(path, depth)
 
-## Proactive (use without being asked)
-- `ctx_repomap` — at session start for large codebases (PageRank importance map)
-- `ctx_overview(task)` — at session start for orientation
-- `ctx_architecture(action="overview")` — Phase 2 before code graph scan
-- `headroom_compress` — when context grows large (at phase boundaries)
-- `ctx_knowledge(action="wakeup")` — at session start to surface prior findings
-- `ctx_session(action="budget")` — set token budget at session start
-- `ctx_stats` — Phase 10 for precise token consumption stats
+NEVER use native Read/Grep/Shell/Glob when a ctx_* equivalent exists. SELF-CORRECT: the moment you reach for one, stop and call the ctx_* tool instead.
 
-## Compression Bypass (only when compressed output hides needed detail)
-`ctx_read(path, "lines:N-M")` → `ctx_read(path, "full")` → `ctx_shell(cmd, raw=true)`
-Return to compressed defaults after one expanded retrieval.
+Tool selection by intent:
+• Orient / understand code (call FIRST) -> ctx_compose
+• Read a file -> ctx_read(path, mode=signatures|map|full); edit after reading -> ctx_patch
+• Exact symbol -> ctx_search(action=symbol); pattern -> ctx_search; by meaning -> ctx_search(action=semantic)
+• Files by glob -> ctx_glob; structure -> ctx_tree; callers/impact -> ctx_callgraph
+• Verify after edits -> ctx_shell(test/build); memory -> ctx_session / ctx_knowledge
+Semantic questions -> search tools, not whole-file reads: reading more ≠ understanding more.
 
-## Risk Gate (before high-impact edits)
-Before editing exported symbols, auth, DB schemas, or 3+ files: run `ctx_impact(action="analyze")`
-and `ctx_callgraph(action="callers")` to confirm blast radius.
+AGENT LOOP (phase -> tool):
+• Orient — understand before acting -> ctx_compose
+• Find — exact symbol by name -> ctx_search(action=symbol)
+• Read — a file, structurally -> ctx_read(mode=signatures|map)
+• Locate — a pattern across files -> ctx_search
+• Trace — callers / callees / blast radius -> ctx_callgraph
+• Verify — after an edit -> ctx_shell(test/build) + native lints
 
-## Session
-- **Start:** `ctx_session(action="status")` + `ctx_knowledge(action="wakeup")`
-- **End:** `ctx_session(action="decision", content="what was done + next steps")`
-- **On [CHECKPOINT]:** `ctx_session(action="task", value="current status")`
+Anti-patterns — do NOT:
+• Chain ctx_search -> ctx_read -> ctx_search(action=symbol) — one ctx_compose replaces all three
+• Use ctx_read(mode=full) for orientation — use mode=signatures
+• Use ctx_callgraph/ctx_graph for const/static/variable refs — they track call edges and file deps only; use ctx_search instead
 
-NEVER use native Read/Grep/Shell when ctx_* equivalents are available.
-<!-- /lean-ctx -->
+NAVIGATION PARADOX: reading more ≠ understanding more.
+• Semantic question ("where/how is X handled?") -> ctx_search (BM25) + ctx_search(action=semantic) (meaning), not whole-file reads
+• Hidden architectural deps (who calls this, what breaks) -> ctx_callgraph / ctx_graph — for these only
+• Navigate structure (signatures, symbols) before reading entire files
+
+PARALLEL: fire independent tool calls in the SAME turn — ctx_compose bundles multiple lookups into one call.
+
+Auto: preload/dedup/compress run in background. ctx_session=memory, ctx_knowledge=facts, ctx_shell raw=true=uncompressed. Full guide: LEAN-CTX.md
+
+RECOVER: compressed output is reversible — never re-read line-by-line. Need full/exact? Read the shown file path with any tool (no MCP), or ctx_read(mode=full|raw=true); [Archived]/tee/firewall → ctx_expand(id=...).
+
+CEP v1: 1.ACT FIRST 2.DELTA ONLY (Fn refs) 3.STRUCTURED (+/-/~) 4.ONE LINE PER ACTION 5.QUALITY ANCHOR
+
+OUTPUT: never echo tool output, no narration comments, show only changed code.
+
+TOOL PREFERENCE (END): ctx_compose>chain ctx_read>Read ctx_shell>Shell ctx_search>Grep ctx_glob>Glob ctx_tree>ls | Edit/Write/Delete=native
+
+Advanced tools not in your profile are available via ctx_call(tool=<name>) gateway.
+<!-- lean-ctx-compression -->
+OUTPUT STYLE: concise
+- Bullet points over paragraphs
+- Skip filler words and hedging ("I think", "probably", "it seems")
+- 1-sentence explanations max, then code/action
+- No repeating what the user said
+<!-- /lean-ctx-compression -->
+<!-- /lean-ctx-rules -->

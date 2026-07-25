@@ -1,0 +1,159 @@
+# External tool registry for doit-skill
+# Used by: setup.sh (install), doctor.sh (check), env-check.md (Phase -1)
+# Fields:
+#   id          : short identifier
+#   name        : display name
+#   critical    : true = required for E2E workflow, false = nice-to-have
+#   phases      : which workflow phases depend on this tool
+#   description : what it does
+#   install     : shell command(s) to install (supports env vars $AGENT, $AGENT_DIR)
+#   verify      : command that exits 0 when tool is available and working
+#   version_cmd : command to show version (for doctor.sh)
+#   fallback    : what happens if tool is missing ("skip", "degraded", "broken")
+#   addon       : path to addon dir in scripts/addons/ (if exists)
+#   skip_flag   : flag that skips this tool (--skip-optional for optional tools)
+
+tools:
+  - id: rtk
+    name: RTK (Rust Token Killer)
+    critical: false
+    phases: ["all"]
+    description: "Token-saving CLI proxy, hook-based rewriting"
+    install: |
+      test -f "$RTK_INSTALL" || curl -fsSL "$RTK_INSTALL" | sh
+      ln -sf "$HOME/.rtk/bin/rtk" "$HOME/.local/bin/rtk"
+    verify: "command -v rtk && rtk --version"
+    version_cmd: "rtk --version 2>&1 | head -1"
+    fallback: "skip"
+    addon: "addons/rtk"
+    skip_flag: "skip-optional"
+
+  - id: uv
+    name: uv (Python Package Manager)
+    critical: false
+    phases: ["Phase 5"]
+    description: "Fast Python package installer, required for some Python tools"
+    install: |
+      curl -LsSf https://astral.sh/uv/install.sh | sh
+      export PATH="$HOME/.local/bin:$PATH"
+    verify: "command -v uv"
+    version_cmd: "uv --version"
+    fallback: "degraded"
+    skip_flag: "skip-optional"
+
+  - id: context-mode
+    name: Context Mode MCP Plugin
+    critical: true
+    phases: ["Phase 3", "Phase -1"]
+    description: "Knowledge base indexing and compression for AI context"
+    install: |
+      if [ "$AGENT" = "oh-my-pi" ]; then
+        omp plugin install context-mode --pty
+      else
+        claude plugin install "$(_plugin_scope)" context-mode@claude-context-mode/plugin --pty
+      fi
+    verify: |
+      if [ "$AGENT" = "oh-my-pi" ]; then
+        omp plugin list 2>/dev/null | grep -qi context-mode
+      else
+        claude plugin list 2>/dev/null | grep -qi context-mode
+      fi
+    version_cmd: "echo 'MCP plugin (version unknown)'"
+    fallback: "degraded"
+    addon: "addons/context-mode"
+    skip_flag: "skip-optional"
+
+  - id: caveman
+    name: Caveman Skill
+    critical: true
+    phases: ["Phase 1", "Phase 2", "Phase 4"]
+    description: "Ultra-compressed communication mode for token efficiency"
+    install: |
+      npm install -g @claude-caveman/caveman@latest
+    verify: "command -v caveman-skill || (test -d ~/.claude/skills/caveman)"
+    version_cmd: "caveman --version 2>/dev/null || echo 'installed'"
+    fallback: "skip"
+    addon: "addons/caveman"
+
+  - id: mempalace
+    name: MemPalace MCP Plugin
+    critical: true
+    phases: ["Phase 2", "Phase 5"]
+    description: "Semantic memory palace for AI knowledge organization"
+    install: |
+      if [ "$AGENT" = "oh-my-pi" ]; then
+        omp plugin install mempalace --pty
+      else
+        claude plugin install "$(_plugin_scope)" mempalace@claude-mempalace/plugin --pty
+      fi
+    verify: |
+      if [ "$AGENT" = "oh-my-pi" ]; then
+        omp plugin list 2>/dev/null | grep -qi mempalace
+      else
+        claude plugin list 2>/dev/null | grep -qi mempalace
+      fi
+    version_cmd: "echo 'MCP plugin (version unknown)'"
+    fallback: "degraded"
+    addon: "addons/mempalace"
+    skip_flag: "skip-optional"
+
+  - id: headroom
+    name: Headroom MCP Plugin
+    critical: true
+    phases: ["Phase 2", "Phase 3"]
+    description: "Agent-layer token savings, compresses tool outputs"
+    install: |
+      if [ "$AGENT" = "oh-my-pi" ]; then
+        omp plugin install headroom --pty
+      else
+        claude plugin install "$(_plugin_scope)" headroom@claude-headroom/plugin --pty
+      fi
+    verify: |
+      if [ "$AGENT" = "oh-my-pi" ]; then
+        omp plugin list 2>/dev/null | grep -qi headroom
+      else
+        claude plugin list 2>/dev/null | grep -qi headroom
+      fi
+    version_cmd: "echo 'MCP plugin (version unknown)'"
+    fallback: "skip"
+    addon: "addons/headroom"
+    skip_flag: "skip-optional"
+
+  - id: tavily
+    name: Tavily MCP Plugin
+    critical: false
+    phases: ["Phase 1"]
+    description: "MCP-powered web search for AI agents"
+    install: |
+      npm install -g @tavily-ai/mcp
+    verify: "command -v tavily-mcp || (test -d ~/.tavily-mcp)"
+    version_cmd: "tavily-mcp --version 2>/dev/null || echo 'installed'"
+    fallback: "skip"
+    addon: "addons/tavily"
+    skip_flag: "skip-optional"
+
+  - id: codegraph
+    name: CodeGraph MCP Server
+    critical: true
+    phases: ["Phase 2"]
+    description: "AST-based code knowledge graph for symbol lookup"
+    install: |
+      npm install -g @codegraph/server
+      cd "$WORKSPACE" && codegraph init -i
+    verify: "command -v codegraph && test -d $WORKSPACE/.codegraph"
+    version_cmd: "codegraph --version 2>/dev/null || echo 'installed'"
+    fallback: "degraded"
+    addon: "addons/codegraph"
+
+  - id: ponytail
+    name: Ponytail Skill
+    critical: false
+    phases: ["Phase 6"]
+    description: "Over-engineering review and code simplification"
+    install: |
+      npm install -g @claude-caveman/ponytail@latest
+    verify: "command -v ponytail-skill || (test -d ~/.claude/skills/ponytail)"
+    version_cmd: "ponytail --version 2>/dev/null || echo 'installed'"
+    fallback: "skip"
+    addon: "addons/ponytail"
+    skip_flag: "skip-optional"

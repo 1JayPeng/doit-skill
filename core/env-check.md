@@ -2,6 +2,36 @@
 
 **Writes detected environment to `[[CONFIG:main-instructions]]`.**
 
+
+## Tool Registry (`tools.sh`)
+
+**Path:** `scripts/tools.sh` (root) / `.omp/skills/doit/scripts/tools.sh` (skill runtime)
+
+Single sourceable bash registry defining tool IDs, names, criticality, fallback strategies, and cache I/O functions.
+
+### Metadata arrays
+- `ALL_TOOLS` — all managed tool IDs
+- `CRITICAL_TOOLS` / `OPTIONAL_TOOLS` — partitioned by severity
+- `TOOL_NAMES[tool_id]` — display name
+- `TOOL_CRITICAL[tool_id]` — "true"/"false"
+- `TOOL_FALLBACK[tool_id]` — "skip"/"degraded"
+
+### Cache I/O
+
+Cache file: `.doit/env-cache.json`
+
+- `tools_save_status <tool_id> <status> [message]` — writes status (`ok`/`fail`/`degraded`) + timestamp
+- `tools_read_status <tool_id>` — echoes `ok`, `fail`, `degraded`, or `unknown`
+
+### Display helpers
+- `_tool_emoji <status>` — maps status: ok→✅, fail/missing→❌, degraded→⚠️, other→❓
+- `_tool_check_cached <tool_id>` — cache-first check; falls back to `command -v` on cache miss. Sets `_tool_status`, `_tool_emoji`. Returns 0 = installed, 1 = not installed.
+
+### Coverage
+- **setup.sh** writes cache after each tool install via `tools_save_status`
+- **doctor.sh** reads cache via `_tool_check_cached` before falling back to `command -v`
+  - CLI tools: cache-first loop, skips `command -v` on cache hit
+  - Agent tools: cache-first wrapper per tool block, falls through to detailed check on miss
 ## Cache Check (Before Scanning)
 
 Check if env cache exists and is valid (< 24h):
@@ -282,9 +312,9 @@ mempalace_kg_stats → check entities, triples
 ```
 
 ### 11c. MemPalace Context Read (if available, before Announce)
-### 11c.5. lean-ctx Session Recovery (if available)
+### 11c.5. Context-Mode Session Recovery (if available)
 
-**Purpose:** Recover work-in-progress from a previous session so the current session doesn't start from zero. If the user was building something last session and this session continues, lean-ctx's session history has the in-flight task/decision/finding state.
+**Purpose:** Recover work-in-progress from a previous session so the current session doesn't start from zero. If the user was building something last session and this session continues, context-mode's session history has the in-flight task/decision/finding state.
 
 ```
 ctx_session(action="status")
@@ -308,7 +338,7 @@ ctx_session(action="list")
 
 **Why here:** Phase -1 is the earliest gate. Recovering session state here means Phase 0 classification can benefit from knowing what was being worked on last time. Without this, each session starts blind to prior context.
 
-### 11c.6. MemPalace Diary Context (if available, after lean-ctx recovery)
+### 11c.6. MemPalace Diary Context (if available, after context-mode recovery)
 
 Read MemPalace diary entries to give the agent awareness of what was accomplished last session:
 
