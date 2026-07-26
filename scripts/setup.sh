@@ -92,6 +92,8 @@ _set_agent_paths() {
     oh-my-pi)
       SKILL_DIR=".omp/skills"
       GLOBAL_SKILL_DIR="$HOME/.config/omp/skills"
+      COMMANDS_DIR=".omp/commands"
+      GLOBAL_COMMANDS_DIR="$HOME/.omp/agent/commands"
       MAIN_INSTRUCTIONS="AGENTS.md"
       MCP_CONFIG_FILE="$HOME/.config/omp/mcp.json"
       ;;
@@ -360,6 +362,12 @@ fi
 AGENT_TYPE=$(echo "$AGENT_LIST" | awk '{print $1}')
 export AGENT_TYPE
 _set_agent_paths "$AGENT_TYPE"
+
+# OMP exits immediately without a session id in non-interactive installer shells.
+if [ -z "${OMP_SESSION_ID:-}" ]; then
+  OMP_SESSION_ID="$(uuidgen 2>/dev/null || python3 -c 'import uuid; print(uuid.uuid4())' 2>/dev/null || date +%s)"
+  export OMP_SESSION_ID
+fi
 
 # --global applies after final agent paths resolve.
 if [ "$INSTALL_SCOPE" = "global" ]; then
