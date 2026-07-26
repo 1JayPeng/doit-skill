@@ -64,9 +64,9 @@ Agent({
 **When to skip:** Single-domain feature, or research topics have dependencies between them.
 **Cost:** Each agent = one API call. haiku models save ~90% vs opus. 3 parallel haiku agents ~ 1 opus agent cost.
 
-### Step 2: Grill (MANDATORY minimum 4 questions for Type F, 3 for Type B)
+### Step 2: deep-grill Interrogation (MANDATORY minimum 4 questions for Type F, 3 for Type B)
 
-Use `grill-me` skill to pressure-test the idea. Find holes, contradictions, scope creep. Resolve each before proceeding.
+Use `deep-grill` skill (4-movement Socratic/First Principles engine) to pressure-test the idea. Find holes, contradictions, scope creep, mental traps. For Type B (bug) / Type S (simple) tasks, fall back to `grill-me`.
 
 **铁律: Grill questions via `[[USER:ask]]`, never stop and wait.**
 **铁律: Minimum 4 grill questions per feature (Type F), 3 per bug (Type B). < minimum = incomplete Phase 1 = cannot proceed to Phase 2.**
@@ -89,25 +89,29 @@ Each `[[USER:ask]]` option MUST contain:
 3. **Build options from research** — Each option backed by data, not guesswork
 
 **GRILL CHECKLIST — all must complete before writing REQs:**
-- [ ] Challenge assumptions — at least 1 question
+- [ ] Deconstruct — at least 1 question challenging core assumptions (Mode B)
+- [ ] Cross-examine — at least 1 question from alternative perspective (Mode A)
+- [ ] FP Injection — switch to first-principles if triggers fired
 - [ ] Internet search for existing solutions — Tavily MCP or WebSearch
 - [ ] MP search for prior specs/knowledge — `mempalace_search wing="<project>"`
 - [ ] Alternative approaches — at least 1 question
 - [ ] Scope clarification — at least 1 question
+- [ ] **Mental traps identified** — call out Confirmation bias, Anchoring, etc.
 - [ ] **Every option has consequence + trade-off + project fit**
 - [ ] **Exactly one (Recommended) per question with justification**
-
 **Step 2b: Grill Summary (after grill complete, before REQs):**
 Write `.doit/grill-summary.json`:
 ```json
 {
   "questions_asked": 4,
-  "checklist": {"challenge_assumptions": true, "internet_search": true, "mp_search": true, "alternative_approaches": true, "scope_clarification": true, "option_quality": true},
+  "checklist": {"deconstruct": true, "cross_examine": true, "fp_injection": true, "internet_search": true, "mp_search": true, "alternative_approaches": true, "scope_clarification": true, "mental_traps": true, "option_quality": true},
   "questions": ["Q1 text", "Q2 text", ...],
-  "answers": {"Q1": "user answer or default used"}
+  "answers": {"Q1": "user answer or default used"},
+  "assumptions_challenged": ["A1", "A2"],
+  "rebuilt_truths": ["T1", "T2"],
+  "meta_insights": ["M1"]
 }
 ```
-
 When the grill reveals ambiguity, present it as `[[USER:ask]]`:
 ```
 [[USER:ask question="Grill found ambiguity: Should X handle Y case — 选择影响范围定义和后续扩展？" header="Scope" options=[...]]]

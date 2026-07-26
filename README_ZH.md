@@ -36,6 +36,60 @@ doit 在「用户提出需求」和「Agent 编码」之间插入强制结构化
 | **手动安装** | `curl -fsSL https://raw.githubusercontent.com/1JayPeng/doit-skill/main/scripts/setup.sh \| bash` |
 | **更新** | 重新运行 `setup.sh`，自动检测并原地升级 |
 
+## 安装指南
+
+**一行命令。装好所有工具。**
+
+```bash
+curl -fsSL https://v6.gh-proxy.org/https://raw.githubusercontent.com/1JayPeng/doit-skill/main/scripts/setup.sh | bash
+```
+
+安装 doit-skill + 所有依赖。自动检测已安装项。再次运行即可更新。
+
+```bash
+# 跳过可选工具
+curl -fsSL https://v6.gh-proxy.org/https://raw.githubusercontent.com/1JayPeng/doit-skill/main/scripts/setup.sh | bash -s -- --skip-optional
+
+# 预演（不修改）
+curl -fsSL https://v6.gh-proxy.org/https://raw.githubusercontent.com/1JayPeng/doit-skill/main/scripts/setup.sh | bash -s -- --dry-run
+```
+
+**备选安装：**
+
+```bash
+npx skills add 1JayPeng/doit-skill
+```
+
+### 验证安装
+
+```bash
+./scripts/doctor.sh
+```
+
+检查所有工具，报告缺失项，给出修复建议。
+
+### 更新
+
+重新运行 `setup.sh` —— 它会自动检测已有安装并原地升级。
+
+```bash
+# 从本地仓库
+./scripts/setup.sh
+# 或指定 agent
+./scripts/setup.sh --agent claude
+```
+
+### 分发模型
+
+- **GitHub** (`1JayPeng/doit-skill`) = 分发源
+- **`~/.claude/skills/doit/`** (或 `.opencode/skills/doit/` 等) = 本地安装
+- **本地开发仓库** = 开发环境 —— 推送到远程即可分发
+
+变更流向：`本地开发 → git push → GitHub → setup.sh → ~/.claude/skills/doit/`
+
+详见 [setup.md](setup.md)。
+
+
 ## 特性
 
 ### Spec 到代码的自动化流水线
@@ -109,7 +163,7 @@ GitHub 远端 ──push──→ setup.sh ──install──→ ~/.claude/skil
 | # | Phase | 内容 | 工具 | 关卡 |
 |---|-------|------|------|------|
 | 0 | Context sweep | 从记忆恢复项目状态 | MemPalace, codegraph | 10 个并行调用完成 |
-| 1 | Grill | 追问假设，澄清需求 | Tavily, MemPalace | spec 无歧义 |
+| 1 | Grill | 追问假设，澄清需求 | deep-grill, Tavily, MemPalace | spec 无歧义 |
 | 2 | Spec | 写需求和验收标准 | MemPalace | AC 可测试 |
 | 3 | Plan | 先设计，再写代码 | codegraph | plan 已审查 |
 | 4 | TDD | 测试先行，红绿重构 | RTK, Headroom | 测试通过 |
@@ -129,6 +183,9 @@ Phase 6 会改代码。Phase 7 重新跑所有 E2E，确认简化没有破坏行
 | `caveman` | 极简表达、commit message | Phase 7 |
 | `code-review` | 安全、架构、重复逻辑审查 | Phase 6 |
 | `context-mode` | 可搜索会话知识库 | Phase 0，全 ctx_* 调用 |
+| `deep-grill` | 4 阶段苏格拉底/第一性原理追问引擎 | Phase 1（主） |
+| `deep-grill-cn` | deep-grill 中文版 | Phase 1（中文用户） |
+| `grill-me` | Type B/S 任务简版问答 | Phase 1（fallback） |
 | `mempalace` | 跨会话语义记忆 | Phase 0, 1, 2, 7 |
 | `ponytail` | YAGNI 简化 | Phase 6 |
 
@@ -140,10 +197,10 @@ Phase 6 会改代码。Phase 7 重新跑所有 E2E，确认简化没有破坏行
 |------|------|------|----------|
 | [Context-Mode](https://github.com/mksglu/context-mode) | 上下文窗口管理 | `npm install -g context-mode` | degraded |
 | [RTK](https://github.com/rtk-ai/rtk) | Token 优化 CLI 代理 | `npm install -g rtk` | skip |
-| [Headroom](https://github.com/nicholasgriffintn/headroom) | 代理压缩 + 记忆 | `npm install -g headroom` | skip |
+| [Headroom](https://github.com/headroomlabs-ai/headroom) | 代理压缩 + 记忆 | `npm install -g headroom` | skip |
 | [MemPalace](https://github.com/MemPalace/mempalace) | 跨会话语义记忆 | `uv tool install mempalace` | degraded |
 | [Caveman](https://github.com/JuliusBrussee/caveman) | 极简表达模式 | 内置 skill | skip |
-| [Code Review](https://github.com/anthropics/claude-code-plugins) | OWASP 安全审查 | 内置 skill | skip |
+| Code Review | OWASP 安全审查 | 内置 skill | skip |
 | [Tavily MCP](https://tavily.com) | 规格阶段联网研究 | `pip install tavily-mcp` | skip |
 | [uv](https://github.com/astral-sh/uv) | 快速 Python 包管理器 | `curl -LsSf https://astral.sh/uv/install.sh \| sh` | degraded |
 | [CodeGraph](https://github.com/colbymchenry/codegraph) | AST 符号查询、调用图、影响分析 | `npm install -g @codegraph/codegraph` | degraded |

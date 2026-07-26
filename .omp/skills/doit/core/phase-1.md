@@ -34,44 +34,45 @@ If results found, synthesize them as `[LEARN] MemPalace prior knowledge:` and us
 This step complements Step 0.5 (Knowledge Injection) which uses lean-ctx's semantic search. MemPalace provides structured KG facts that lean-ctx doesn't index.
 
 **If MemPalace unavailable or no results:** Skip silently. Grill proceeds without pre-fill.
-**Step 1: [LOAD:phase-1] grill-me → Grill FIRST (before writing any REQs):**
-- `[[SKILL:route target="grill-me"]]` — load grill protocol
-- **Uncertainty scan:** List 3-5 things you're uncertain about. Rate 1-5. Focus questions on items >= 3.
+- `[[SKILL:route target="deep-grill"]]` — load deep-grill (EN) or `[[SKILL:route target="deep-grill-cn"]]` (CN)
+- **Mode A (Socratic):** Attack claims from every angle — evidence, perspective, implications, counterfactuals
+- **Mode B (First Principles):** Reduce to fundamentals when assumptions surface. Don't announce mode switches — just ask the question.
+- **FP Injection Triggers (MANDATORY switch to Mode B):**
+  + Trigger #1: Rebuilding with old-framework parts → "What do we know to be absolutely true about X?"
+  + Trigger #2: Circular reasoning → "How do we know this premise is true?"
+  + Trigger #3: Authority-based claim → "What's the evidence independent of authority?"
+  + Trigger #4: Unexamined definition → "How would we define X without referencing Y?"
+  + Trigger #5: Complexity accepted as necessary → "Is this complexity truly required, or assumed?"
+  + Trigger #6: Emotional/ego attachment → "If you were wrong about X, what would change?"
+- **4 Movements (direction, not sequence):**
+  + **Deconstruct:** Surface and dismantle core assumptions (Mode B heavy)
+  + **Cross-examine:** Attack surviving assumptions (Mode A heavy)
+  + **Rebuild:** Only from verified truths — simplest solution (Occam's Razor)
+  + **Meta:** Are we asking the right question? Blind spots? What overturns the conclusion?
 - Ask 4+ questions via `[[USER:ask]]` (Type F) or 3+ (Type B). Each question must:
-  - Reference a specific detail from the user's request
-  - Explain WHY the answer matters
-  - Provide 2-4 concrete options with: **named approach** + **`->` consequence** + **`Trade-off:`** + **`适合:` project fit**
-  - Exactly one option marked `(Recommended)`
+  + Reference a specific detail from the user's request
+  + Explain WHY the answer matters
+  + Provide 2-4 concrete options with: **named approach** + **`->` consequence** + **`Trade-off:`** + **`适合:` project fit**
+  + Exactly one option marked `(Recommended)`
+- **Watch for Mental Traps** — call them out: Confirmation bias, Anchoring, Scope creep, Analysis paralysis, Survivorship bias, Authority bias, Sunk cost
 - E2E feasibility check — `[[USER:ask]]`: "Which of the following does this feature rely on for E2E testing?" (check ALL that apply):
-  - `Network service` (API endpoint that must be reachable)
-  - `Database` (PostgreSQL/Redis/MySQL that must be running)
-  - `Browser` (Playwright/headless Chromium for web E2E)
-  - `Docker` (containerized service for integration tests)
-  - `Filesystem` (specific paths or mounts required)
-  - `None` (CLI-only, no external dependencies)
+  + `Network service` (API endpoint that must be reachable)
+  + `Database` (PostgreSQL/Redis/MySQL that must be running)
+  + `Browser` (Playwright/headless Chromium for web E2E)
+  + `Docker` (containerized service for integration tests)
+  + `Filesystem` (specific paths or mounts required)
+  + `None` (CLI-only, no external dependencies)
 - **If any dependency is checked**, announce in grill summary: `[E2E DEPENDENCY: <name>] <host:port / driver>`
 - **Cross-reference with Phase -1 probe results:** If Phase -1 probe `[FAIL]`ed a service that the user selected here, explicitly flag it in the grill summary as `[CRITICAL E2E BLOCKER]` and ask: "Should we mark this REQ as HITL-only, or wait until the service is available?"
 - This question MUST be asked even if Phase -1 probes succeeded — Phase -1 probes the *machine*, Phase 1 confirms *this feature's* actual dependencies. Different services may be needed than what Phase -1 found.
 - Internet search — Tavily MCP (primary), Firecrawl MCP/CLI (when Tavily unavailable), `[[WEB:search]]` (fallback)
 - **External docs:** `[CALL] ctx_url_read(url, mode="markdown")` — fetch web pages/PDFs
 - MP search for prior specs — `mempalace_search wing="<project>"`
-- Write grill summary to `.doit/grill-summary.json`
-- **Do NOT write any REQs until grill is complete.**
-**Step 1.5: Ponytail Reuse Gate (before spec) — /ponytail:**
+- Write grill summary to `.doit/grill-summary.json` (including assumptions challenged, rebuilt truths, meta-insights)
+- **Do NOT write any REQs until interrogation is complete.**
 
-Run `/ponytail` before writing spec. For every REQ/solution idea, check in order: existing codebase reuse → standard library/标准库 → native platform → installed dependency → GitHub/reference implementation. If GitHub code can be borrowed/copied, prefer the smallest license-compatible copy or direct reuse, cite the source in the spec, and avoid new custom code. Only write custom requirements after these fail.
-
-```
-/ponytail
-```
-
-**Step 2: Write spec** — Split grill output into REQ-N items, save to `.spec/current.md`. See [../spec.md](../spec.md).
-
-**铁律：Grill 最低 4 个问题(Type F) / 3 个(Type B)。** Phase 1 必须至少 4 个 grill 问题（通过 `[[USER:ask]]`）。少于 4 个 = 未完成的 Phase 1 = 不能进入 Phase 2。
-
-**Phase 1 完成后：** 记录工作日志。See [../worklog.md](../worklog.md)。
-
-**[RELEASE:phase-1] grill-me** — grill protocol complete, release grill-me skill. Execute `[[MEMORY:compress]]`.
+**For Type B (bug) / Type S (simple) tasks:** fall back to `grill-me` for abbreviated Q&A:
+- `[[SKILL:route target="grill-me"]]` — 3 questions (Type B), skip grill for trivial Type S
 
 ### Phase 1 → Phase 2 Gate
 

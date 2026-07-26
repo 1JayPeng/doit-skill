@@ -34,6 +34,59 @@ Every phase is **mandatory**. No skipping. Quality gates at each boundary.
 | **Manual** | `curl -fsSL https://raw.githubusercontent.com/1JayPeng/doit-skill/main/scripts/setup.sh \| bash` |
 | **Update** | Re-run `setup.sh` — detects existing install, upgrades in place |
 
+## Installation
+
+**One line. All tools.**
+
+```bash
+curl -fsSL https://v6.gh-proxy.org/https://raw.githubusercontent.com/1JayPeng/doit-skill/main/scripts/setup.sh | bash
+```
+
+Installs doit-skill + all dependencies. Detects what's already installed. Re-run to update.
+
+```bash
+# Skip optional tools
+curl -fsSL https://v6.gh-proxy.org/https://raw.githubusercontent.com/1JayPeng/doit-skill/main/scripts/setup.sh | bash -s -- --skip-optional
+
+# Dry run (no changes)
+curl -fsSL https://v6.gh-proxy.org/https://raw.githubusercontent.com/1JayPeng/doit-skill/main/scripts/setup.sh | bash -s -- --dry-run
+```
+
+**Alternative install:**
+
+```bash
+npx skills add 1JayPeng/doit-skill
+```
+
+### Verify Installation
+
+```bash
+./scripts/doctor.sh
+```
+
+Checks all tools, reports missing ones, and suggests fixes.
+
+### Update
+
+Re-run `setup.sh` — it detects existing installs and upgrades in place.
+
+```bash
+# From local repo
+./scripts/setup.sh
+# or with agent flag
+./scripts/setup.sh --agent claude
+```
+
+### Distribution Model
+
+- **GitHub** (`1JayPeng/doit-skill`) = distribution source
+- **`~/.claude/skills/doit/`** (or `.opencode/skills/doit/` etc.) = local installation
+- **Local dev repo** = development environment — push to remote to distribute
+
+Changes flow: `Local Dev → git push → GitHub → setup.sh → ~/.claude/skills/doit/`
+
+See [setup.md](setup.md) for dependency details.
+
 ## Features
 
 ### Automated Spec-to-Code Pipeline
@@ -105,7 +158,7 @@ Changes flow: **Local Dev → git push → Remote (GitHub) → setup.sh → ~/.c
 | # | Phase | What | Tools | Gate |
 |---|-------|------|-------|------|
 | 0 | Context sweep | Reconstruct project state from memory | MemPalace, codegraph | All 10 parallel calls return |
-| 1 | Grill | Challenge assumptions, clarify spec | Tavily (optional), MemPalace | Spec is unambiguous |
+| 1 | Grill | Challenge assumptions, clarify spec | deep-grill, Tavily (optional), MemPalace | Spec is unambiguous |
 | 2 | Spec | Write requirements, acceptance criteria | MemPalace | All ACs testable |
 | 3 | Plan | Design before code | codegraph | Plan reviewed |
 | 4 | TDD | Test-first, red-green-refactor | RTK, Headroom | Tests pass |
@@ -127,9 +180,11 @@ Six skills ship inside `skills/`, installed with doit:
 | `caveman` | Ultra-compressed communication | Phase 7 commit messages |
 | `code-review` | Security, architecture, duplication review | Phase 6 |
 | `context-mode` | Searchable session knowledge base | Phase 0, all ctx_* calls |
+| `deep-grill` | 4-phase Socratic/First Principles interrogation engine | Phase 1 (primary) |
+| `deep-grill-cn` | Chinese version of deep-grill | Phase 1 (CN users) |
+| `grill-me` | Abbreviated Q&A for Type B/S tasks | Phase 1 fallback |
 | `mempalace` | Cross-session semantic memory | Phase 0, 1, 2, 7 |
 | `ponytail` | YAGNI-enforced simplification | Phase 6 |
-
 ### External Tools
 
 All installed by `setup.sh`. Missing tools = graceful degradation, not failure.
@@ -138,14 +193,14 @@ All installed by `setup.sh`. Missing tools = graceful degradation, not failure.
 |------|------|---------|----------|
 | [Context-Mode](https://github.com/mksglu/context-mode) | Context window management | `npm install -g context-mode` | Degraded |
 | [RTK](https://github.com/rtk-ai/rtk) | Token-optimized CLI proxy | `npm install -g rtk` | Skip |
-| [Headroom](https://github.com/nicholasgriffintn/headroom) | Proxy compression + memory | `npm install -g headroom` | Skip |
+| [Headroom](https://github.com/headroomlabs-ai/headroom) | Proxy compression + memory | `npm install -g headroom` | Skip |
 | [MemPalace](https://github.com/MemPalace/mempalace) | Cross-session semantic memory | `uv tool install mempalace` | Degraded |
 | [Caveman](https://github.com/JuliusBrussee/caveman) | Brevity mode | Bundled skill | Skip |
-| [Code Review](https://github.com/anthropics/claude-code-plugins) | OWASP security review | Bundled skill | Skip |
+| Code Review | OWASP security review | Bundled skill | Skip |
 | [Tavily MCP](https://tavily.com) | Internet research | `pip install tavily-mcp` | Skip |
 | [uv](https://github.com/astral-sh/uv) | Fast Python package manager | `curl -LsSf https://astral.sh/uv/install.sh \| sh` | Degraded |
 | [CodeGraph](https://github.com/colbymchenry/codegraph) | AST code intelligence | `npm install -g @codegraph/codegraph` | Degraded |
-| [Ponytail](https://github.com/.../ponytail) | YAGNI simplification | Bundled skill | Skip |
+| [Ponytail](https://github.com/DietrichGebert/ponytail) | YAGNI simplification | Bundled skill | Skip |
 
 ## Four Core Principles
 

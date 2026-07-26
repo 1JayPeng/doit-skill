@@ -65,7 +65,7 @@ claude plugin install context-mode@context-mode
 
 ## Headroom (Context Optimization)
 
-Proxy compression + memory persistence for token optimization. [GitHub](https://github.com/nicholasgriffintn/headroom)
+Proxy compression + memory persistence for token optimization. [GitHub](https://github.com/headroomlabs-ai/headroom)
 
 ```bash
 # Install via uv tool
