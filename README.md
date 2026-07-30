@@ -31,7 +31,7 @@ Every phase is **mandatory**. No skipping. Quality gates at each boundary.
 | **Oh My Pi** | `setup.sh --agent omp` |
 | **Codex CLI** | `setup.sh --agent codex` |
 | **MCP (any agent)** | `setup.sh --agent mcp` |
-| **Manual** | `curl -fsSL https://raw.githubusercontent.com/1JayPeng/doit-skill/main/scripts/setup.sh \| bash` |
+| **Manual** | `curl -fsSL https://raw.githubusercontent.com/1JayPeng/doit-skill/master/scripts/setup.sh \| bash` |
 | **Update** | Re-run `setup.sh` — detects existing install, upgrades in place |
 
 ## Installation
@@ -39,17 +39,17 @@ Every phase is **mandatory**. No skipping. Quality gates at each boundary.
 **One line. All tools.**
 
 ```bash
-curl -fsSL https://v6.gh-proxy.org/https://raw.githubusercontent.com/1JayPeng/doit-skill/main/scripts/setup.sh | bash
+curl -fsSL https://v6.gh-proxy.org/https://raw.githubusercontent.com/1JayPeng/doit-skill/master/scripts/setup.sh | bash
 ```
 
 Installs doit-skill + all dependencies. Detects what's already installed. Re-run to update.
 
 ```bash
 # Skip optional tools
-curl -fsSL https://v6.gh-proxy.org/https://raw.githubusercontent.com/1JayPeng/doit-skill/main/scripts/setup.sh | bash -s -- --skip-optional
+curl -fsSL https://v6.gh-proxy.org/https://raw.githubusercontent.com/1JayPeng/doit-skill/master/scripts/setup.sh | bash -s -- --skip-optional
 
 # Dry run (no changes)
-curl -fsSL https://v6.gh-proxy.org/https://raw.githubusercontent.com/1JayPeng/doit-skill/main/scripts/setup.sh | bash -s -- --dry-run
+curl -fsSL https://v6.gh-proxy.org/https://raw.githubusercontent.com/1JayPeng/doit-skill/master/scripts/setup.sh | bash -s -- --dry-run
 ```
 
 **Alternative install:**

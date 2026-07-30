@@ -33,7 +33,7 @@ doit 在「用户提出需求」和「Agent 编码」之间插入强制结构化
 | **Oh My Pi** | `setup.sh --agent omp` |
 | **Codex CLI** | `setup.sh --agent codex` |
 | **MCP Agent** | `setup.sh --agent mcp` |
-| **手动安装** | `curl -fsSL https://raw.githubusercontent.com/1JayPeng/doit-skill/main/scripts/setup.sh \| bash` |
+| **手动安装** | `curl -fsSL https://raw.githubusercontent.com/1JayPeng/doit-skill/master/scripts/setup.sh \| bash` |
 | **更新** | 重新运行 `setup.sh`，自动检测并原地升级 |
 
 ## 安装指南
@@ -41,17 +41,17 @@ doit 在「用户提出需求」和「Agent 编码」之间插入强制结构化
 **一行命令。装好所有工具。**
 
 ```bash
-curl -fsSL https://v6.gh-proxy.org/https://raw.githubusercontent.com/1JayPeng/doit-skill/main/scripts/setup.sh | bash
+curl -fsSL https://v6.gh-proxy.org/https://raw.githubusercontent.com/1JayPeng/doit-skill/master/scripts/setup.sh | bash
 ```
 
 安装 doit-skill + 所有依赖。自动检测已安装项。再次运行即可更新。
 
 ```bash
 # 跳过可选工具
-curl -fsSL https://v6.gh-proxy.org/https://raw.githubusercontent.com/1JayPeng/doit-skill/main/scripts/setup.sh | bash -s -- --skip-optional
+curl -fsSL https://v6.gh-proxy.org/https://raw.githubusercontent.com/1JayPeng/doit-skill/master/scripts/setup.sh | bash -s -- --skip-optional
 
 # 预演（不修改）
-curl -fsSL https://v6.gh-proxy.org/https://raw.githubusercontent.com/1JayPeng/doit-skill/main/scripts/setup.sh | bash -s -- --dry-run
+curl -fsSL https://v6.gh-proxy.org/https://raw.githubusercontent.com/1JayPeng/doit-skill/master/scripts/setup.sh | bash -s -- --dry-run
 ```
 
 **备选安装：**
